@@ -12,6 +12,14 @@ const $ = id => document.getElementById(id);
 const duration = 30000;
 let pokedex = [], index = 0, score = 0, phase = 'idle';
 let phaseStart = 0, roundStart = 0, pausedAt = null, pausedDuration = 0;
+let attempts = 0;
+const pixels = $('pixels');
+const pixelContext = pixels.getContext('2d');
+
+$('music').volume = Number($('volume').value) / 100;
+$('volume').addEventListener('input', () => {
+  $('music').volume = Number($('volume').value) / 100;
+});
 
 function normalize(name) {
   return name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -56,8 +64,21 @@ function remaining(now) {
 function renderTime(now) {
   const left = remaining(now);
   $('seconds').textContent = `${Math.ceil(left / 1000)}s`;
-  $('card').style.setProperty('--blur', `${2 + 48 * left / duration}px`);
+  renderPixels(left);
   return left;
+}
+
+// Draw the original asset at low resolution; CSS enlarges its square pixels.
+// Resolution follows elapsed time and stays unchanged while the round is paused.
+function renderPixels(left, force = false) {
+  const asset = cards[index].asset;
+  const blockSize = 40 - 37 * (1 - left / duration);
+  const width = Math.ceil(310 / blockSize);
+  const height = Math.round(width * asset.naturalHeight / asset.naturalWidth);
+  if (!force && pixels.width === width && pixels.height === height) return;
+  pixels.width = width;
+  pixels.height = height;
+  pixelContext.drawImage(asset, 0, 0, width, height);
 }
 
 function nextCard(now) {
@@ -74,21 +95,25 @@ function nextCard(now) {
   phaseStart = now;
   pausedAt = null;
   pausedDuration = 0;
+  attempts = 0;
+  $('continue').hidden = true;
+  $('points-popup').hidden = true;
+  $('answer-form').hidden = false;
   $('paused').hidden = true;
   $('timer').disabled = true;
   $('timer').setAttribute('aria-pressed', 'false');
   $('timer').setAttribute('aria-label', 'Metti in pausa il timer');
   enableAnswers(false);
   $('answer').value = '';
-  $('message').textContent = 'Riconosci il Pokémon prima che scada il tempo!';
+  $('message').textContent = '';
   $('round').textContent = `Carta ${index + 1} / 6`;
   $('seconds').textContent = '30s';
   $('card').className = 'card reset';
-  $('card').style.setProperty('--blur', '50px');
   $('pokemon').src = cards[index].image;
   $('pokemon').alt = 'Pokémon da indovinare';
   const asset = cards[index].asset;
   $('card').style.aspectRatio = `${asset.naturalWidth} / ${asset.naturalHeight}`;
+  renderPixels(duration, true);
 }
 
 function finishRound(result, now) {
@@ -103,8 +128,15 @@ function finishRound(result, now) {
   enableAnswers(false);
   $('card').classList.add('revealed');
   $('pokemon').alt = cards[index].name;
+  $('answer-form').hidden = true;
+  $('continue').hidden = false;
+  if (points > 0) {
+    $('points-popup').textContent = `+${points}`;
+    $('points-popup').hidden = false;
+  }
   $('message').textContent = result === 'correct' ? `Hai vinto ${points} punti!` :
     `${result === 'wrong' ? 'Peccato, hai sbagliato' : 'Tempo scaduto!'} · ${cards[index].name}`;
+  $('continue').focus({ preventScroll: true });
 }
 
 // One animation loop drives every phase; elapsed time never depends on frame count.
@@ -122,9 +154,6 @@ function tick(now) {
     $('answer').focus({ preventScroll: true });
   } else if (phase === 'active' && pausedAt === null) {
     if (renderTime(now) <= 0) finishRound('timeout', now);
-  } else if (phase === 'result' && now - phaseStart >= 1500) {
-    index++;
-    nextCard(now);
   }
   if (phase !== 'finished') requestAnimationFrame(tick);
 }
@@ -157,7 +186,22 @@ $('answer-form').addEventListener('submit', event => {
   if (remaining(now) <= 0) { finishRound('timeout', now); return; }
   const name = resolveName($('answer').value);
   if (!name) { $('message').textContent = 'Nome errato, riprova'; return; }
-  finishRound(name === normalize(cards[index].name) ? 'correct' : 'wrong', now);
+  if (name === normalize(cards[index].name)) {
+    finishRound('correct', now);
+  } else if (++attempts === 3) {
+    finishRound('wrong', now);
+  } else {
+    const left = 3 - attempts;
+    $('message').textContent = `Non è questo Pokémon! ${left === 1 ? 'Resta 1 tentativo.' : 'Restano 2 tentativi.'}`;
+    $('answer').value = '';
+    $('answer').focus({ preventScroll: true });
+  }
+});
+
+$('continue').addEventListener('click', () => {
+  if (phase !== 'result') return;
+  index++;
+  nextCard(performance.now());
 });
 
 function startGame() {

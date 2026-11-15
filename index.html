@@ -9,8 +9,9 @@
   <script src="game.js" defer></script>
 </head>
 <body>
+  <label class="audio-control" for="volume">Volume <input id="volume" type="range" min="0" max="100" value="70" aria-label="Volume della musica"></label>
   <main>
-    <header><h1>Provaquiz</h1><p>Un Pokémon nascosto. Trenta secondi. Lo riconosci?</p></header>
+    <header><h1>Provaquiz</h1><p>Indovina la carta nascosta. Rispondi subito per ottenere più punti dei tuoi rivali.</p></header>
     <div class="scoreboard"><span id="round">6 carte · 30 secondi</span><span>Punti <strong id="score">0</strong></span></div>
     <section id="play-area" aria-label="Quiz Pokémon">
       <div class="timer-row">
@@ -20,16 +21,18 @@
       <div class="scene">
         <div id="card" class="card">
           <div class="face back"><img src="da modificare.webp" alt="Dorso della carta Pokémon"></div>
-          <div class="face front"><img id="pokemon" alt="Pokémon da indovinare"></div>
+          <div class="face front"><img id="pokemon" alt="Pokémon da indovinare"><canvas id="pixels" role="img" aria-label="Carta Pokémon pixelata"></canvas></div>
         </div>
         <div id="start-panel" class="start-panel"><p>Chi è quel Pokémon?</p><button id="start" disabled>Caricamento…</button></div>
+        <span id="points-popup" aria-hidden="true" hidden></span>
       </div>
       <form id="answer-form" autocomplete="off">
         <img src="pokeball.webp" alt="">
-        <input id="answer" aria-label="Nome del Pokémon" placeholder="Indovina il Pokémon" spellcheck="false" disabled>
+        <input id="answer" aria-label="Nome del Pokémon" aria-describedby="message" placeholder="Indovina il Pokémon" spellcheck="false" disabled>
         <button id="submit" disabled>Invia</button>
       </form>
-      <p id="message" role="status" aria-live="polite">Premi Gioca e metti alla prova il tuo Pokédex.</p>
+      <p id="message" role="status" aria-live="polite"></p>
+      <button id="continue" hidden>Continua</button>
     </section>
     <section id="final" class="final" hidden>
       <img src="pokeball.webp" alt="">
