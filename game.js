@@ -106,6 +106,7 @@ function nextCard(now) {
   enableAnswers(false);
   $('answer').value = '';
   $('message').textContent = '';
+  $('message').classList.remove('won');
   $('round').textContent = `Carta ${index + 1} / 6`;
   $('seconds').textContent = '30s';
   $('card').className = 'card reset';
@@ -134,8 +135,9 @@ function finishRound(result, now) {
     $('points-popup').textContent = `+${points}`;
     $('points-popup').hidden = false;
   }
+  if (result === 'correct') $('message').classList.add('won');
   $('message').textContent = result === 'correct' ? `Hai vinto ${points} punti!` :
-    `${result === 'wrong' ? 'Peccato, hai sbagliato' : 'Tempo scaduto!'} · ${cards[index].name}`;
+    (result === 'wrong' ? 'Peccato, hai sbagliato' : 'Tempo scaduto!');
   $('continue').focus({ preventScroll: true });
 }
 

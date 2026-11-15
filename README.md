@@ -1,4 +1,4 @@
-# Provaquiz
+# Pixelcard
 
 [Apri il gioco](https://provaquiz-pokemon-antonio.tangyember2.chatgpt.site)
 

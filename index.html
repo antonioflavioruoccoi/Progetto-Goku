@@ -4,15 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#164b70">
-  <title>Provaquiz</title>
+  <title>Pixelcard</title>
   <link rel="stylesheet" href="style.css">
   <script src="game.js" defer></script>
 </head>
 <body>
   <label class="audio-control" for="volume">Volume <input id="volume" type="range" min="0" max="100" value="70" aria-label="Volume della musica"></label>
   <main>
-    <header><h1>Provaquiz</h1><p>Indovina la carta nascosta. Rispondi subito per ottenere più punti dei tuoi rivali.</p></header>
-    <div class="scoreboard"><span id="round">6 carte · 30 secondi</span><span>Punti <strong id="score">0</strong></span></div>
+    <header><h1 aria-label="Pixelcard"><span aria-hidden="true">P</span><span aria-hidden="true">i</span><span aria-hidden="true">x</span><span aria-hidden="true">e</span><span aria-hidden="true">l</span><span aria-hidden="true">c</span><span aria-hidden="true">a</span><span aria-hidden="true">r</span><span aria-hidden="true">d</span></h1><p>Indovina la carta nascosta. Rispondi subito per ottenere più punti dei tuoi rivali.</p></header>
+    <div class="scoreboard"><span id="round">6 carte · 30 secondi</span><span class="score-total">Punti <strong id="score">0</strong><span id="points-popup" aria-hidden="true" hidden></span></span></div>
     <section id="play-area" aria-label="Quiz Pokémon">
       <div class="timer-row">
         <button id="timer" disabled aria-label="Metti in pausa il timer" aria-pressed="false"><img src="timerball.png" alt=""><span id="seconds">30s</span></button>
@@ -24,7 +24,6 @@
           <div class="face front"><img id="pokemon" alt="Pokémon da indovinare"><canvas id="pixels" role="img" aria-label="Carta Pokémon pixelata"></canvas></div>
         </div>
         <div id="start-panel" class="start-panel"><p>Chi è quel Pokémon?</p><button id="start" disabled>Caricamento…</button></div>
-        <span id="points-popup" aria-hidden="true" hidden></span>
       </div>
       <form id="answer-form" autocomplete="off">
         <img src="pokeball.webp" alt="">
