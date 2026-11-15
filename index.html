@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#164b70">
+  <title>Provaquiz</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="game.js" defer></script>
+</head>
+<body>
+  <main>
+    <header><h1>Provaquiz</h1><p>Un Pokémon nascosto. Trenta secondi. Lo riconosci?</p></header>
+    <div class="scoreboard"><span id="round">6 carte · 30 secondi</span><span>Punti <strong id="score">0</strong></span></div>
+    <section id="play-area" aria-label="Quiz Pokémon">
+      <div class="timer-row">
+        <button id="timer" disabled aria-label="Metti in pausa il timer" aria-pressed="false"><img src="timerball.png" alt=""><span id="seconds">30s</span></button>
+        <span id="paused" hidden>IN PAUSA</span>
+      </div>
+      <div class="scene">
+        <div id="card" class="card">
+          <div class="face back"><img src="da modificare.webp" alt="Dorso della carta Pokémon"></div>
+          <div class="face front"><img id="pokemon" alt="Pokémon da indovinare"></div>
+        </div>
+        <div id="start-panel" class="start-panel"><p>Chi è quel Pokémon?</p><button id="start" disabled>Caricamento…</button></div>
+      </div>
+      <form id="answer-form" autocomplete="off">
+        <img src="pokeball.webp" alt="">
+        <input id="answer" aria-label="Nome del Pokémon" placeholder="Indovina il Pokémon" spellcheck="false" disabled>
+        <button id="submit" disabled>Invia</button>
+      </form>
+      <p id="message" role="status" aria-live="polite">Premi Gioca e metti alla prova il tuo Pokédex.</p>
+    </section>
+    <section id="final" class="final" hidden>
+      <img src="pokeball.webp" alt="">
+      <h2>Quiz completato!</h2><p>Il tuo punteggio totale</p>
+      <p class="final-score"><strong id="final-score">0</strong> / 1800</p>
+      <button id="replay">Rigioca</button>
+    </section>
+  </main>
+  <audio id="music" src="Pokemon FireRedLeafGreen- Pallet Town.mp3" preload="auto" loop></audio>
+</body>
+</html>
