@@ -1,108 +1,104 @@
-# Progetto-Goku · Pixelcard Live
+# Dr. Goku · Cloudflare Free
 
-HTML, CSS e JavaScript senza framework. Il quiz originale resta su `/`: asset, animazioni, musica e `game.js` sono invariati. Il collegamento in home apre il multiplayer. Le nuove pagine sono `/play/`, `/host/`, `/admin/`, `/invite/`; gli hosting statici normalmente reindirizzano le varianti senza slash alle rispettive directory.
+Quiz originale su `/`, multiplayer su `/play/`, gestione su `/host/`, amministrazione su `/admin/`, inviti su `/invite/`. Il quiz originale, la grafica, le animazioni, la musica e gli asset sono conservati. Non servono Supabase, email, OTP, account Host, SMTP o database esterni.
 
-**Stato:** codice e migrazioni pronti; serve un progetto Supabase configurato prima dell'uso pubblico. Non sono stati configurati né testati un progetto Supabase remoto, l'invio email OTP o il trasporto Realtime ospitato. Il sito Sites preesistente non viene modificato da questa repository.
+## Configurazione per principianti
 
-## Architettura
+### 1. Creare l’account Cloudflare Free
 
-- Supabase Auth: OTP email per Admin/Host; sessione anonima persistente nel browser per i giocatori. Il nickname si sceglie entrando nella stanza.
-- Supabase PostgreSQL: RPC `public.goku(action, payload)` con transazioni, `SECURITY DEFINER`, `search_path` vuoto e autorizzazione dell'utente su ogni operazione. Nessuna Edge Function è necessaria: i controlli atomici sono funzioni PostgreSQL server.
-- RLS su tutte le tabelle. Il browser può leggere solo stanze proprie o a cui partecipa; non può scrivere direttamente stanze, punteggi o permessi. `goku_private` non è esposto nelle API e contiene Admin, licenze, hash inviti, ordine delle domande, risposte e Pokédex.
-- Realtime pubblica solo modifiche a `goku_rooms`, senza soluzioni. L'evento richiede un nuovo snapshot autorizzato. Un controllo ogni 5 secondi recupera disconnessioni e aggiorna la presenza; alla scadenza del timer si richiede subito lo stato. La presenza diventa “disconnesso” dopo 20 secondi senza heartbeat.
-- Il timer usa timestamp del server e un offset stimato dal client solo per disegnarlo. Validità di inviti, licenze, risposte e punteggi usa sempre l'orologio PostgreSQL.
-- Sei carte mescolate per stanza, 30 secondi, pixelatura con la formula originale, tre tentativi su nomi Pokémon validi. Un nome non riconosciuto non consuma tentativi; la correzione conserva la distanza di Levenshtein e le soglie originali. Risposta corretta: `ceil(secondi rimasti) * 10`. Feedback personale immediato come nell'originale; la classifica generale si aggiorna alla rivelazione. Pari merito con rango condiviso.
-- Il client dei giocatori non riceve soluzioni, sequenza o URL della carta. Solo l'Host autorizzato riceve un percorso immagine opaco; la home originale conserva necessariamente il proprio catalogo statico, ma non rivela l'ordine casuale di una partita live.
+1. Vai su https://dash.cloudflare.com/sign-up e crea un account; verifica l’indirizzo richiesto da Cloudflare per **il tuo account Cloudflare**, non per giocare.
+2. Apri **Workers & Pages** (può trovarsi sotto **Compute & AI**), scegli il piano Workers **Free**. Non attivare Workers Paid. Non occorre acquistare un dominio: riceverai un indirizzo `dr-goku.<tuo-sottodominio>.workers.dev`.
+3. Se richiesto, scegli il sottodominio Workers dell’account.
 
-## 1. Configurare Supabase
+### 2. Collegare GitHub
 
-1. Crea un progetto Supabase. Non servono servizi ulteriori o abbonamenti implementati da questa applicazione.
-2. Nel SQL Editor esegui in ordine `supabase/migrations/202611160001_goku.sql` e `supabase/seed.sql`. In alternativa collega la CLI (`supabase link --project-ref …`) ed esegui `supabase db push`, poi applica il seed dal SQL Editor. Per lo stack locale: `supabase start` e `supabase db reset` usano config e seed inclusi. Non rieseguire la migrazione già applicata; per cambi futuri aggiungi una nuova migrazione.
-3. Authentication → Providers: abilita Email e **Anonymous Sign-Ins**. Mantieni la verifica email abilitata. Imposta Site URL all'URL pubblico dell'applicazione.
-4. Authentication → Email Templates: usa il contenuto di `supabase/templates/otp.html` sia per **Confirm signup** sia per **Magic Link**. Deve contenere `{{ .Token }}`: l'interfaccia richiede un codice, non una password o il clic su un magic link. Consigliati sei cifre e scadenza 10 minuti.
-5. Verifica l'invio email. Il mittente predefinito Supabase ha restrizioni sui destinatari e limiti di invio: per invitare indirizzi esterni può essere indispensabile configurare il proprio SMTP in Supabase. Non è stato configurato SMTP in questo lavoro e nessun servizio email aggiuntivo è incluso.
-6. Realtime → Publications: la migrazione aggiunge `public.goku_rooms` a `supabase_realtime` se la publication esiste (normalmente è già presente). Se non esisteva durante la migrazione, abilita quella tabella dal pannello. **Non aggiungere le tabelle private.** Non aggiungere `goku_private` agli schemi esposti dalle API.
+1. In Workers & Pages scegli **Create application → Import a repository / Connect Git** e GitHub. Usa **Workers**, non il flusso Pages.
+2. Autorizza l’app GitHub di Cloudflare ad accedere alla repository `antonioflavioruoccoi/Progetto-Goku`.
+3. Seleziona la branch **`feat/cloudflare-simple-hosting`** come branch di produzione del nuovo Worker. Non cambiare `main` e non collegare questo deployment a `main`.
+4. Nome Worker: **`dr-goku`**, come in `wrangler.jsonc`; directory radice: `/` (radice della repository).
+5. Build command: **`npm run build`**. Deploy command: **`npx wrangler deploy`**. Cloudflare installa le dipendenze dal lockfile. Usa Node **22 o successivo** (variabile build `NODE_VERSION=22` se necessario).
+6. `wrangler.jsonc` contiene già pubblicazione di `dist/`, binding `GOKU` e migrazione SQLite `v1`. La configurazione `build.command` rende sicuro anche il deploy da terminale; nel flusso Builds il build può essere ripetuto, senza modificare i dati.
 
-## 2. Configurare e pubblicare il frontend
+### 3. Impostare il Secret
 
-Richiede Node.js 22+.
+Nel Worker apri **Settings → Variables and Secrets → Add**:
+
+- tipo **Secret**;
+- nome esatto **`ADMIN_PASSWORD`**;
+- valore: una password lunga, unica, scelta da te e conservata in un password manager.
+
+Salva e distribuisci la modifica. Se il wizard non permette di aggiungere il secret prima del primo deploy, termina il primo deploy e aggiungilo subito dopo: finché manca, l’accesso Admin è disabilitato. Non inserirlo nel codice, in GitHub, nel comando di build o in una variabile frontend. Non serve `SESSION_SECRET`: le sessioni usano token casuali e solo i loro hash sono persistiti.
+
+### 4. Pubblicare il sito
+
+Premi **Deploy** nel wizard (oppure **Retry deployment** dopo la configurazione). Il deploy crea automaticamente il Durable Object SQLite; le tabelle vengono inizializzate dal codice al primo utilizzo. **Nessuna query SQL manuale.** Apri l’URL HTTPS `workers.dev` mostrato nel pannello. I successivi push sulla branch collegata avviano Workers Builds.
+
+Se il nome Worker è già occupato nel tuo account, scegli un altro nome sia nel pannello sia in `wrangler.jsonc`. Non eliminare il binding, il nome della classe o la migrazione esistente dopo aver iniziato a usare le partite: identificano i dati persistenti.
+
+Alternativa da terminale, dalla stessa branch:
 
 ```sh
 npm ci
-cp .env.example .env
-# Compila SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY
-npm run build
-python -m http.server 8000 --directory dist
+npx wrangler login
+npx wrangler secret put ADMIN_PASSWORD
+npm run deploy
 ```
 
-Apri `http://localhost:8000/`. Pubblica **solo `dist/`** su un hosting statico HTTPS che serva gli `index.html` nelle directory. Build command: `npm ci && npm run build`; output: `dist`. Non serve una riscrittura SPA. Funziona anche sotto un prefisso di percorso, purché l'hosting normalizzi le directory con slash finale. Non pubblicare sorgenti SQL, `.env` o la cartella della repository al posto di `dist`.
+Il comando secret chiede il valore senza salvarlo nella repository. Se il Worker non esiste ancora, accetta la sua creazione oppure esegui prima `npm run deploy` e poi imposta il secret.
 
-Variabili:
+### 5. Fare una partita di prova
 
-| Variabile | Uso | Pubblica? |
-| --- | --- | --- |
-| `SUPABASE_URL` | URL progetto, necessario al build | Sì |
-| `SUPABASE_PUBLISHABLE_KEY` | Publishable key `sb_publishable_…` oppure legacy anon JWT, necessario al build | Sì |
-| `SUPABASE_DB_URL` | Connessione PostgreSQL diretta/session pooler, solo script di bootstrap Admin | **No** |
-| `ADMIN_EMAIL` | Email verificata dell'Admin, solo bootstrap | No |
-| `TEST_DATABASE_URL` | PostgreSQL locale dedicato ai test | No |
+1. Apri `/admin/` e inserisci la password. Premi **Crea stanza**: compare la lobby con PIN e QR.
+2. Su due telefoni o in due profili browser diversi apri `/play/`, inserisci PIN e nickname oppure scansiona il QR. Non usare più schede dello stesso browser per simulare persone diverse: condividono l’identità.
+3. Sullo schermo Host premi **Avvia partita**, prova pausa/ripresa, risposte, classifica e le sei carte, poi il podio. Le carte sono mostrate sullo schermo del conduttore; i telefoni ricevono il campo risposta, come nel multiplayer precedente.
+4. Ricarica un telefono durante la partita: identità, tentativi e punteggio vengono recuperati. Prova anche a disattivare e riattivare la rete.
+5. Torna alla dashboard Admin, scegli durata in ore e quota stanze e premi **Genera invito**, poi **Copia link**. Condividi manualmente su WhatsApp.
+6. Apri il link in un altro browser: viene riscattato automaticamente e porta alla dashboard Host. Un clic su **Crea stanza** basta per aprire la lobby. Lo stesso link non funziona in un secondo browser. Prova **Revoca** nell’Admin e verifica che l’Host non possa più comandare la partita.
 
-Il build include esclusivamente URL e chiave pubblica; rifiuta una `sb_secret_…` o un JWT con ruolo diverso da `anon`. Nessuna `service_role` è necessaria nel frontend. Le chiavi segrete non devono essere impostate come chiave pubblica. Senza configurazione, il build riesce ma l'app mostra esplicitamente “Supabase non configurato”; non può ospitare partite.
+I passaggi manuali inevitabili sono creazione dell’account, autorizzazione GitHub, selezione della branch, scelta del secret e primo deploy. Nessun deploy remoto è stato eseguito o verificato da questo lavoro.
 
-## 3. Assegnare il primo Admin
+## Architettura e permessi
 
-1. Apri `/host/` e verifica tramite OTP l'email del proprietario. Non avrai ancora una licenza: è normale.
-2. Su un terminale **fidato**, imposta `SUPABASE_DB_URL` e `ADMIN_EMAIL` in `.env`, quindi esegui `npm run admin:add`. Lo script cerca esattamente un account verificato e non anonimo e lo inserisce in `goku_private.admins`.
-3. Riapri `/admin/`. Il controllo del ruolo avviene nel database, non mediante email o flag JavaScript.
+Un Worker serve asset statici e API same-origin. Un Durable Object SQLite unico (`GOKU`, istanza `goku`) contiene licenze, hash di sessione e partite. È una scelta semplice per piccoli eventi: riscatto, consumo quota, revoca e comandi condividono la stessa autorità. Ogni mutazione usa una transazione SQLite sincrona, quindi richieste concorrenti non possono consumare oltre la quota o riscattare due volte un invito. Non esistono API SQL pubbliche.
 
-In alternativa, dal SQL Editor Supabase del proprietario:
+- **Admin:** password verificata sul server; cinque errori per IP bloccano i tentativi per 15 minuti. Può creare stanze senza quota applicativa, vedere e controllare tutte le partite, generare e revocare licenze.
+- **Host:** link con 256 bit casuali, conservato solo come SHA-256. Il frammento URL viene rimosso dalla barra, custodito temporaneamente in sessionStorage e inviato soltanto al riscatto. La prima apertura lo consuma; non inoltrare il link dopo averlo aperto tu. La quota conta tutte le stanze create, anche se concluse. Scadenza: niente nuove stanze o avvio di lobby; le partite già iniziate possono concludersi. Revoca: tutti i privilegi vengono bloccati immediatamente, anche nelle partite iniziate. L’Admin può proseguirle o terminarle.
+- **Giocatore:** sessione anonima e nickname; nessuna registrazione. Cookie persistente nello stesso browser, senza segreti in localStorage. Per recuperare una stanza usa il suo URL `?room=…` o reinserisci il PIN nello stesso browser. Cancellare i cookie o cambiare browser perde l’identità.
+- **Sessioni:** token opachi casuali, solo hash nel database, cookie `__Host-goku`, `HttpOnly`, `Secure`, `SameSite=Strict`, durata massima un anno; logout invalida il token sul server. La durata del cookie non estende la licenza. La rotazione della password non revoca automaticamente le sessioni Admin già emesse.
+- **CSRF:** API POST JSON e WebSocket richiedono un Origin esattamente uguale a quello del sito; niente CORS aperto. Ruoli e licenze vengono verificati nuovamente sul server a ogni operazione sensibile. Una sessione giocatore non può promuoversi manipolando HTTP.
 
-```sql
-insert into goku_private.admins(user_id)
-select id from auth.users
-where lower(email) = lower('EMAIL_VERIFICATA_DEL_PROPRIETARIO')
-  and email_confirmed_at is not null and coalesce(is_anonymous,false)=false
-on conflict do nothing;
-```
+Sei carte mescolate sul server, 30 secondi effettivi per domanda dopo due secondi di preparazione. Tre tentativi; nomi inesistenti non consumano tentativi. Correzione dei refusi con le stesse soglie e distanza di Levenshtein del quiz originale. Il server calcola `ceil(secondi rimasti) × 10`; invii duplicati con lo stesso ID non duplicano punti o tentativi. I punteggi vengono consolidati una sola volta alla rivelazione o alla terminazione. Le parità condividono il rango. Pause, deadline e progressione non dipendono dall’orologio del telefono.
 
-Verifica che sia stata selezionata la persona corretta. Nessuna API frontend permette di assegnare Admin. Per rimuoverlo usa il SQL Editor con il suo UUID. `/admin/` è una shell statica: non contiene dati amministrativi; dashboard, letture e mutazioni richiedono l'autorizzazione server. Un Host non può usarne le API nemmeno modificando l'HTML.
+I giocatori non ricevono ordine delle carte, URL della carta corrente o soluzione prima della rivelazione. Il conduttore autorizzato riceve solo l’immagine corrente con nome opaco. Il quiz originale pubblico conserva necessariamente il suo catalogo e le sue immagini: non è un sistema anti-cheat contro chi studia le sei carte prima dell’evento.
 
-## 4. Uso durante gli eventi
+## WebSocket e piano Free
 
-**Admin:** accedi a `/admin/`, configura email, inizio/scadenza (ora locale del browser, salvata in UTC), quota complessiva e Pokémon. Genera e copia il link, condividendolo manualmente. Il link viene mostrato una sola volta: viene memorizzato solo SHA-256 del token. Se perdi il link, revoca la licenza e generane un'altra. Puoi vedere tutte le stanze, aprirle, interromperle e crearne senza licenza.
+I WebSocket usano `acceptWebSocket` e attachment persistenti della **Hibernation API**. Il server invia snapshot autorizzati su join, risposta, comandi, connessioni/disconnessioni e rivelazione. La riconnessione automatica ha ritardo crescente con jitter e riceve lo stato completo. Non c’è polling ogni cinque secondi, né heartbeat applicativo permanente. Il timer grafico locale non fa richieste continue.
 
-**Host:** apre il link personale, verifica esattamente l'email autorizzata e preme “Riscatta invito”. L'invito non è riutilizzabile. Il token è nel frammento URL (non inviato all'hosting o nel Referer), rimosso dalla barra e conservato in sessionStorage solo fino al riscatto. Dopo il riscatto apre `/host/`, sceglie licenza e quiz e crea la stanza. Può preparare una licenza futura riscattandola prima dell'inizio, ma non creare stanze finché non è valida.
+Un solo allarme Durable Object punta alla prima deadline di domanda attiva. Non ci sono `setInterval` sul server: lobby, pause e partite finite consentono l’ibernazione. Le deadline vengono anche controllate a ogni operazione, quindi un allarme in ritardo non permette risposte tardive. La presenza indica le connessioni WebSocket conosciute; una rete interrotta senza chiusura esplicita può richiedere il timeout del trasporto per apparire offline.
 
-La quota conta tutte le stanze create, non quelle simultanee; non si ripristina terminando una stanza. Il consumo usa un lock di riga transazionale. La scadenza blocca nuove stanze e l'avvio di lobby non ancora iniziate; una partita già iniziata può essere completata. La revoca blocca subito tutti i comandi Host anche con un JWT già valido. L'Admin conserva il controllo. La stanza revocata non viene chiusa automaticamente: l'Admin può terminarla.
+SQLite Durable Objects e Workers Static Assets sono utilizzabili sul piano Free. Le stanze Admin non hanno una quota applicativa, ma **Free non significa risorse illimitate**: restano i limiti Cloudflare di richieste, CPU, storage e operazioni SQLite. Consultare https://developers.cloudflare.com/workers/platform/limits/ e https://developers.cloudflare.com/durable-objects/platform/pricing/ prima di eventi grandi. Al raggiungimento delle quote Free il servizio può rifiutare operazioni; questo progetto non attiva un piano a pagamento.
 
-**Giocatori:** aprono `/play/`, inseriscono PIN e nickname oppure scansionano il QR. Non vedono una registrazione. Stesso browser e stessa sessione recuperano identità, tentativi e punteggio dopo refresh. Non cancellare i dati del sito durante la partita; un altro browser/dispositivo rappresenta un altro giocatore. Gli ingressi nuovi sono ammessi solo in lobby.
+Limiti applicativi: 100 giocatori per stanza e 500 WebSocket totali. L’istanza unica e gli snapshot completi privilegiano semplicità per eventi piccoli, non grandi carichi simultanei. Non è stato eseguito un benchmark di carico. Licenze e partite rimangono persistite, senza cancellazione automatica dello storico; monitorare spazio e metriche dal pannello Cloudflare. Non esiste una migrazione automatica degli account o delle partite del precedente backend Supabase.
 
-L'Host proietta la lobby, usa “Avvia partita”, “Pausa/Riprendi” e “Prossima domanda”, poi “Mostra podio”. “Termina partita” chiude anticipatamente e consolida i punti già ottenuti. Prima di un evento prova host e due telefoni sul progetto configurato.
+## Sviluppo e verifiche locali
 
-## Test e limiti di verifica
+Node.js 22+:
 
 ```sh
-# Test senza database: quiz originale + frontend; test DB segnalato SKIP.
-npm test
-# Database locale usa una nuova database temporanea per ciascuna esecuzione.
-docker run -d --name goku-postgres -e POSTGRES_PASSWORD=goku-local-tests \
-  -p 127.0.0.1:55432:5432 postgres:17
-TEST_DATABASE_URL=postgresql://postgres:goku-local-tests@127.0.0.1:55432/postgres npm test
+npm ci
+cp .dev.vars.example .dev.vars
+# Modifica ADMIN_PASSWORD in .dev.vars (file ignorato da Git).
+npm run dev
 ```
 
-I test DB richiedono una connessione **localhost** con permesso CREATE DATABASE. Creano e poi rimuovono solo un database temporaneo `goku_test_*`; preparano fixture `auth.users` e `auth.uid()` per modellare il contesto JWT. Non contattano Supabase né inviano email. Non puntarli a un database reale.
+Wrangler inizializza binding e SQLite locali in `.wrangler/`; apri `http://localhost:8787`. I browser moderni trattano localhost come origine affidabile per i cookie Secure; non usare un indirizzo HTTP LAN per simulare i telefoni, usa HTTPS. Il secret locale non viene caricato automaticamente in produzione.
 
-Copertura: anonimato e privilegi, Admin, Host valido, email non verificata/diversa, inviti scaduti/revocati/riusati, hash segreto, quota con 12 richieste concorrenti, RLS, stanza altrui, tre tentativi, invii idempotenti, punteggio/timer non modificabili, pause e timeout, riconnessione, classifica e finale, scadenza vs revoca. Il test del `game.js` originale esegue il flusso completo in DOM simulato e verifica animazione, pixelatura, tre tentativi, correzione, punteggio e finale.
-
-**Non verificati:** consegna reale OTP/SMTP, autenticazione anonima del servizio ospitato, trasporto WebSocket Realtime e comportamento visuale su telefoni reali. Richiedono un progetto Supabase configurato e la relativa prova end-to-end. Il test PostgreSQL verifica le regole effettive della migrazione, non sostituisce questo collaudo.
-
-## Manutenzione minima
-
-Le risposte memorizzano tentativi/esito/punti, non il testo digitato. Dopo gli eventi, il proprietario può eliminare stanze concluse, vecchie ricevute idempotenti e account anonimi non più necessari dal backend. Per esempio, nel SQL Editor:
-
-```sql
-delete from public.goku_rooms where phase='finished' and created_at < now()-interval '7 days';
-delete from goku_private.requests where created_at < now()-interval '7 days';
+```sh
+npm test        # frontend, quiz originale e integrazione workerd/SQLite/WebSocket
+npm run check   # build e wrangler deploy --dry-run, senza pubblicare
 ```
 
-La cancellazione delle stanze elimina partecipanti e stato tramite cascade. Le licenze conservano lo storico delle quote consumate. Nessun pagamento, abbonamento o servizio commerciale aggiunto.
+I test d’integrazione usano Miniflare/workerd, SQLite temporaneo e un vero allarme di 30 secondi: durano circa 40 secondi. Verificano autorizzazione Admin/giocatori, CSRF, rate limit, cookie, inviti invalidi/scaduti/revocati/riscattati, riscatto concorrente, quote concorrenti, isolamento stanze, timer, tre tentativi, idempotenza, pause, punti, snapshot e riconnessione WebSocket, scadenza vs revoca, persistenza dopo riavvio del runtime. Il quiz originale è testato con DOM simulato, comprese pixelatura, animazioni, refusi, punteggio e finale.
+
+La verifica locale non dimostra l’eviction/ibernazione effettiva in produzione, i limiti di carico, il comportamento su tutti i telefoni o la riuscita di Workers Builds remoto. Eseguire la partita di prova dopo il primo deploy pubblico.
