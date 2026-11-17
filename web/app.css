@@ -20,3 +20,12 @@ body.gameboy{background:#fff;color:#000;--ink:#000;--panel:#fff;--frame:#000;--p
 .gameboy #professor{object-fit:contain}.gameboy #clue-image{object-fit:contain}
 
 .gameboy #clues,.gameboy #clue-intro{display:flow-root}
+
+/* A separate bottom band reserves its own space: sprites never cover game UI. */
+#pokemon-parade{display:none}
+body.gameboy{display:flex;flex-direction:column;min-height:100svh}
+.gameboy #app{flex:0 0 auto;margin:0 auto}
+.gameboy #pokemon-parade{display:flex;flex:0 0 144px;align-items:flex-end;justify-content:center;width:100%;overflow:hidden;margin-top:auto;padding:16px 0 12px;border-bottom:4px solid #000;background:#fff;pointer-events:none;user-select:none}
+.gameboy .parade-sprites{display:flex;flex:none;align-items:flex-end;gap:0}
+.gameboy .parade-sprites img{display:block;flex:none;width:112px;height:112px;image-rendering:pixelated}
+@media(max-width:600px){.gameboy #pokemon-parade{flex-basis:88px;padding:16px 0 12px}.gameboy .parade-sprites img{width:56px;height:56px}}

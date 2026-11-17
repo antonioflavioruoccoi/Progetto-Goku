@@ -25,3 +25,24 @@ Professor Oak: [pret/pokered gfx/trainers/prof.oak.png](https://github.com/pret/
 
 ## Diritti
 Pokémon, personaggi e grafica appartengono ai rispettivi titolari (Nintendo, Creatures, GAME FREAK). La disponibilità pubblica di PokeAPI/pret non concede una licenza commerciale sui personaggi o sulle immagini. Nessuna autorizzazione commerciale è stata verificata. La licenza del font non si estende agli sprite. Prima dell'uso commerciale occorre ottenere i diritti necessari. Non si applica la precedente dichiarazione CC0 dei placeholder rimossi a questi PNG.
+
+## Fascia decorativa inferiore — 17 novembre 2026
+
+Sprite originali Pokémon Rosso/Blu, monocromatici e trasparenti, scaricati senza modifiche da PokeAPI/sprites (`generation-i/red-blue/transparent/gray`). Nessuna immagine generata. La foto fornita dall'utente è solo un riferimento compositivo e non viene ridistribuita. Immagini locali in `background/`, visualizzate a dimensione nativa (56 px) su mobile e 2× nearest-neighbor su desktop. Restano applicabili i limiti di copyright e uso commerciale indicati sopra.
+
+| Pokémon | Fonte | SHA-256 |
+|---|---|---|
+| Butterfree | [12.png](https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-i/red-blue/transparent/gray/12.png) | `e15704bc4d646a01b8f9dc968771d52db1d7f793f12c452174f1615a8751bbf9` |
+| Vileplume | [45.png](https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-i/red-blue/transparent/gray/45.png) | `55a12f8a3cd532768e5d01c6fa0d12083b3b42541e4fe2d83ce43f59a2a7eaac` |
+| Arcanine | [59.png](https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-i/red-blue/transparent/gray/59.png) | `eb173e12508c4aff2b6a5382d85067fe9a5f509a05d1a9fc85cb435754c15217` |
+| Exeggutor | [103.png](https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-i/red-blue/transparent/gray/103.png) | `b91353ddd7301d53a04059bd21e453b2832cf8c1fec725a3cef3b210bb2db16a` |
+| Pinsir | [127.png](https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-i/red-blue/transparent/gray/127.png) | `5e8480b068c474c8b64eacb883ec6e625ed8414f034342df4d9c69b55e0a23fd` |
+| Jigglypuff | [39.png](https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-i/red-blue/transparent/gray/39.png) | `55048be6efaf319a9fb1d2ce6b16c8679a8bd389c6312eaec937b5d0bbe140a2` |
+| Psyduck | [54.png](https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-i/red-blue/transparent/gray/54.png) | `4522c5d0f56f31ae6281ace9914c70d94dcae0575ee303f8d110cce300b9d98d` |
+| Pikachu | [25.png](https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-i/red-blue/transparent/gray/25.png) | `54f51c39ef28cd143918dc86fda08040826f124fe2a3efaffff00c6d05ee14c0` |
+| Gengar | [94.png](https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-i/red-blue/transparent/gray/94.png) | `fbadafae9d5cd980705578b6cb8dfde3a2ab52b229f4094989c5dde21861671d` |
+| Raichu | [26.png](https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-i/red-blue/transparent/gray/26.png) | `5df2e4e1f02bfcfd20d5ac18f2c1c6fb45247887f8e2f1feb4cc11c41e8539d7` |
+| Kangaskhan | [115.png](https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-i/red-blue/transparent/gray/115.png) | `a3651098c0b2a8bb80836ea92c758c9974d1702a7e9a2b450dd2cdcad9985707` |
+| Lapras | [131.png](https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-i/red-blue/transparent/gray/131.png) | `6c9c8ffeebf8ee3a00a8c624c20b46102c947a881426972f45e72fb4f9464c23` |
+| Dragonite | [149.png](https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-i/red-blue/transparent/gray/149.png) | `c743b7f34f72765e7a2299c207e5199f4266a3eee0d0ea5427b62dddca81448e` |
+| Beedrill | [15.png](https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-i/red-blue/transparent/gray/15.png) | `5d731cc5b59affeba6c2a76b567fe5bd178445336a58cdd495f63e01cbe5a8f2` |
