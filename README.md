@@ -102,3 +102,14 @@ npm run check   # build e wrangler deploy --dry-run, senza pubblicare
 I test d’integrazione usano Miniflare/workerd, SQLite temporaneo e un vero allarme di 30 secondi: durano circa 40 secondi. Verificano autorizzazione Admin/giocatori, CSRF, rate limit, cookie, inviti invalidi/scaduti/revocati/riscattati, riscatto concorrente, quote concorrenti, isolamento stanze, timer, tre tentativi, idempotenza, pause, punti, snapshot e riconnessione WebSocket, scadenza vs revoca, persistenza dopo riavvio del runtime. Il quiz originale è testato con DOM simulato, comprese pixelatura, animazioni, refusi, punteggio e finale.
 
 La verifica locale non dimostra l’eviction/ibernazione effettiva in produzione, i limiti di carico, il comportamento su tutti i telefoni o la riuscita di Workers Builds remoto. Eseguire la partita di prova dopo il primo deploy pubblico.
+
+
+## PokéIndizi e pubblicazione aggiornata
+
+Dopo la sesta carta Pixelcard il server consolida i punti e avvia automaticamente 5 secondi di introduzione con Oak, poi sei PokéIndizi casuali senza ripetizioni dal dataset di dodici. PIN, identità e WebSocket restano gli stessi. Gli indizi si sbloccano a 30/20/10 secondi; dopo la seconda manche il normale avanzamento mostra il podio cumulato.
+
+Nella schermata del conduttore, **Shift + N** salta le carte rimanenti, consolida una sola volta i punti del round corrente e avvia la stessa introduzione. Non funziona nei campi testo, sui telefoni giocatore o durante PokéIndizi. Il server verifica ruolo, licenza, fase e revisione.
+
+Asset locali e limiti: [ASSET_SOURCES.md](assets/pokeindizi/ASSET_SOURCES.md). Per i Pokémon recenti si usano icone dei giochi, non falsi sprite Game Boy.
+
+Sito esistente: https://dr-goku.antonioflavioruocco-i.workers.dev/play/ . La presenza di questo URL non certifica un deploy: confrontare `/version.json` con `git rev-parse HEAD` e con la versione attiva in Cloudflare. Non creare un secondo Worker, non reinserire né ruotare ADMIN_PASSWORD per aggiornare il codice.

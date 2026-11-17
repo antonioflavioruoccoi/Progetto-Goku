@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import { execFileSync } from "node:child_process";
 import { build } from "esbuild";
 import { quizData } from "./quiz-data.mjs";
 await fs.rm("dist", { recursive: true, force: true });
@@ -11,6 +12,7 @@ for (const route of ["admin", "host", "play", "invite"]) {
   await fs.copyFile("web/app.html", "dist/" + route + "/index.html");
 }
 await fs.copyFile("web/app.css", "dist/app.css");
+await fs.cp("assets/pokeindizi", "dist/assets/pokeindizi", {recursive:true});
 await fs.mkdir("worker/generated", { recursive: true });
 await fs.writeFile(
   "worker/generated/quiz.json",
@@ -26,3 +28,7 @@ await build({
 for (const c of (await quizData()).cards)
   await fs.copyFile(c.image, "dist/" + c.opaque);
 console.log("Built frontend assets and server quiz data.");
+
+const commit = execFileSync('git', ['rev-parse', 'HEAD'], {encoding:'utf8'}).trim();
+await fs.writeFile('dist/version.json', JSON.stringify({commit}));
+await fs.writeFile('dist/_headers', '/*\n  Cache-Control: no-cache\n/version.json\n  Cache-Control: no-store\n');

@@ -16,3 +16,26 @@ test('player reconnect renders server identity; WebSocket snapshot and answer us
  const before=h.calls.filter(x=>x.action==='state').length;await h.notify();assert.equal(h.calls.filter(x=>x.action==='state').length,before,'WebSocket pushes state without another request');
  h.$('answer').value='Pikachu';h.$('answer-form').dispatchEvent(new h.window.Event('submit',{cancelable:true}));await new Promise(r=>setImmediate(r));const request=h.calls.find(x=>x.action==='answer').payload;assert.equal(request.room_id,'room-1');assert.equal(request.round,1);assert.ok(request.request_id);assert.equal(request.score,undefined);assert.match(h.$('feedback').textContent,/Restano 2/);await h.window.happyDOM.close();
 });
+
+test('PokéIndizi shares host/player styling and only renders server-unlocked clues, reveal and podium',async()=>{
+ for(const host of [false,true]){
+ const room={room:{id:'r',code:'123456',phase:'question',round:7,manche:'clues',starts_at:Date.now()+5000,deadline:Date.now()+35000},server_now:Date.now(),remaining_ms:30000,can_control:host,received:0,clues:[],solution:null,solution_image:null,players:[],me:host?null:{done:false,points:0}};
+ const h=await boot((host?'host':'play')+'/?room=r',{room});
+ assert.ok(h.window.document.body.classList.contains('gameboy'));assert.equal(h.$('clue-intro').hidden,false);assert.equal(h.$('card-wrap').hidden,true);assert.equal(h.$('clues').children.length,0);assert.ok(!h.calls.some(c=>c.action==='card'));
+ room.room.starts_at=Date.now()-1000;room.clues=['Primo indizio'];await h.notify();assert.equal(h.$('clue-intro').hidden,true);assert.equal(h.$('clues').children.length,1);
+ room.solution='Snorlax';room.solution_image='assets/pokeindizi/snorlax.png';if(room.me)room.me={done:true,result:'correct',points:300};await h.notify();assert.equal(h.$('clue-reveal').hidden,false);assert.match(h.$('clue-image').src,/snorlax.png$/);
+ room.room.phase='finished';room.room.round=12;await h.notify();assert.equal(h.$('results-title').textContent,'Podio finale');assert.ok(h.window.document.body.classList.contains('gameboy'));await h.window.happyDOM.close();
+ }
+});
+
+test('Shift N only on host Pixelcard and never in editable fields',async()=>{
+ for(const host of [true,false]){
+ const room={room:{id:'r',code:'123456',phase:'question',round:1,revision:1,manche:'cards',starts_at:Date.now()-1000,deadline:Date.now()+30000},can_control:host,players:[],me:null,received:0};
+ const h=await boot((host?'host':'play')+'/?room=r',{room});
+ const press=async(target=h.window.document)=>{target.dispatchEvent(new h.window.KeyboardEvent('keydown',{key:'N',shiftKey:true,bubbles:true}));await new Promise(r=>setImmediate(r));};
+ await press(h.$('answer'));assert.equal(h.calls.filter(c=>c.action==='command').length,0);
+ await press();assert.equal(h.calls.filter(c=>c.action==='command').length,host?1:0);
+ if(host)assert.equal(h.calls.find(c=>c.action==='command').payload.command,'skip_to_clues');
+ room.room.manche='clues';await h.notify();await press();assert.equal(h.calls.filter(c=>c.action==='command').length,host?1:0);await h.window.happyDOM.close();
+ }
+});

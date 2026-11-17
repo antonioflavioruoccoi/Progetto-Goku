@@ -1,0 +1,122 @@
+[
+  {
+    "name": "Snorlax",
+    "canonical": "Snorlax",
+    "clues": [
+      "Sono uno dei Pokémon più ingombranti di Ash...",
+      "A Kanto blocco la strada e non voglio spostarmi...",
+      "Per svegliarmi serve il Poké Flauto, non quello del Mulino Bianco!"
+    ],
+    "image": "assets/pokeindizi/snorlax.png"
+  },
+  {
+    "name": "Honchkrow",
+    "canonical": "Honchkrow",
+    "clues": [
+      "Ho un certo fascino da Befana...",
+      "Da piccolo avevo un cappello da strega e una coda da scopa...",
+      "Ora comando uno stormo di corvi oscuri!"
+    ],
+    "image": "assets/pokeindizi/honchkrow.png"
+  },
+  {
+    "name": "Torterra",
+    "canonical": "Torterra",
+    "clues": [
+      "Sono terrorizzato da Gelodenti...",
+      "Sono il più alto dei tre starter finali di Sinnoh...",
+      "E porto un albero intero sulla schiena!"
+    ],
+    "image": "assets/pokeindizi/torterra.png"
+  },
+  {
+    "name": "Kingambit",
+    "canonical": "Kingambit",
+    "clues": [
+      "Come ogni generale supremo...",
+      "...comando i miei sottoposti con lame affilate...",
+      "...ma sulla scacchiera sono io il re!"
+    ],
+    "image": "assets/pokeindizi/kingambit.png"
+  },
+  {
+    "name": "Capsakid",
+    "canonical": "Capsakid",
+    "clues": [
+      "Anche se sono una piccola pianta...",
+      "...ho un futuro decisamente infuocato...",
+      "...e sono piccante come un habanero!"
+    ],
+    "image": "assets/pokeindizi/capsakid.png"
+  },
+  {
+    "name": "Cosmoem",
+    "canonical": "Cosmoem",
+    "clues": [
+      "Prima di evolvermi pesavo appena 100 grammi...",
+      "...ora peso quasi una tonnellata...",
+      "...e sono un piccolo bozzolo di stella!"
+    ],
+    "image": "assets/pokeindizi/cosmoem.png"
+  },
+  {
+    "name": "Bibarel",
+    "canonical": "Bibarel",
+    "clues": [
+      "Forse sono lo sguardo e i dentoni...",
+      "...ma dopo l'evoluzione tutti mi trattano come uno schiavo...",
+      "...quando devono nuotare, tagliare, spostare o scalare!"
+    ],
+    "image": "assets/pokeindizi/bibarel.png"
+  },
+  {
+    "name": "Carracosta",
+    "canonical": "Carracosta",
+    "clues": [
+      "Vengo dai mari di Unima...",
+      "...eppure ho una paura quadrupla dell'erba...",
+      "...sono una tartaruga fossile evoluta da Tirtouga!"
+    ],
+    "image": "assets/pokeindizi/carracosta.png"
+  },
+  {
+    "name": "Codaurlante",
+    "canonical": "Scream Tail",
+    "clues": [
+      "Vengo da un passato davvero remoto...",
+      "...sono rosa e ricordo un Jigglypuff con i canini...",
+      "...ma la mia lunga coda fa un gran baccano!"
+    ],
+    "image": "assets/pokeindizi/codaurlante.png"
+  },
+  {
+    "name": "Dusknoir",
+    "canonical": "Dusknoir",
+    "clues": [
+      "In Mystery Dungeon mi credevano un eroe...",
+      "...forse per il sorriso che ho sulla pancia...",
+      "...ma non fidatevi di chi ha \"Noir\" nel nome!"
+    ],
+    "image": "assets/pokeindizi/dusknoir.png"
+  },
+  {
+    "name": "Elekid",
+    "canonical": "Elekid",
+    "clues": [
+      "Sono un bimbo elettrizzante...",
+      "...che ama giocare con le prese di corrente...",
+      "...forse perché la mia testa sembra una spina elettrica!"
+    ],
+    "image": "assets/pokeindizi/elekid.png"
+  },
+  {
+    "name": "Trubbish",
+    "canonical": "Trubbish",
+    "clues": [
+      "Anche se puzzo...",
+      "...e sono di tipo Veleno...",
+      "...non chiamarmi sacco della spazzatura!"
+    ],
+    "image": "assets/pokeindizi/trubbish.png"
+  }
+]

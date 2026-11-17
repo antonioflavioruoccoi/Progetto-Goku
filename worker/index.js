@@ -28,9 +28,10 @@ const normalize = (s) =>
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]/g, "");
+const canonical = name => name === "codaurlante" ? "screamtail" : name;
 function resolveName(text) {
   const input = normalize(text);
-  if (quiz.names.includes(input)) return input;
+  if (quiz.names.includes(input)) return canonical(input);
   let best = Infinity,
     matches = [];
   for (const name of quiz.names) {
@@ -55,7 +56,7 @@ function resolveName(text) {
     }
     matches.push(name);
   }
-  return matches.length === 1 ? matches[0] : null;
+  return matches.length === 1 ? canonical(matches[0]) : null;
 }
 export default {
   async fetch(request, env) {
@@ -200,7 +201,8 @@ export class Goku {
     );
   }
   publicRoom(r) {
-    const { players, answers, order, settled, ...publicData } = r;
+    const { players, answers, order, clueOrder, settled, ...publicData } = r;
+    publicData.manche ||= "cards";
     return publicData;
   }
   settle(r, force = false) {
@@ -219,8 +221,30 @@ export class Goku {
       r.settled = r.round;
       changed = true;
     }
+    if (r.manche === "clues" && r.phase === "question") {
+      const count = Date.now() < r.starts_at ? 0 : r.deadline - Date.now() > 20000 ? 1 : r.deadline - Date.now() > 10000 ? 2 : 3;
+      if (count !== (r.cluesShown || 0)) { r.cluesShown = count; changed = true; }
+    }
+    if (!force && r.manche !== "clues" && r.round === 6 && r.phase === "reveal") {
+      this.beginClues(r); changed = true;
+    }
     if (changed) this.put("room", r.id, r);
     return changed;
+  }
+  beginClues(r) {
+    r.manche = "clues";
+    r.clueOrder = quiz.clues.map((_, i) => i);
+    for (let i = r.clueOrder.length - 1; i > 0; i--) {
+      const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1);
+      [r.clueOrder[i], r.clueOrder[j]] = [r.clueOrder[j], r.clueOrder[i]];
+    }
+    r.clueOrder = r.clueOrder.slice(0, 6);
+    r.round = 7; r.settled = 6; r.answers = {}; r.cluesShown = 0;
+    r.phase = "question"; r.starts_at = Date.now() + 5000;
+    r.deadline = r.starts_at + 30000; r.remaining_ms = 30000; r.revision++;
+  }
+  question(r) {
+    return r.manche === "clues" ? quiz.clues[r.clueOrder[r.round - 7]] : quiz.cards[r.order[r.round - 1]];
   }
   snapshot(s, r) {
     if (!this.readable(s, r)) fail("Stanza non accessibile");
@@ -239,7 +263,12 @@ export class Goku {
         (p.rank =
           i && players[i - 1].score === p.score ? players[i - 1].rank : i + 1),
     );
+    const remaining = r.phase === "paused" ? r.remaining_ms : Math.max(0, Math.min(30000, r.deadline - Date.now()));
+    const revealed = ["reveal", "finished"].includes(r.phase) || (r.manche === "clues" && r.answers[s.id]?.result === "correct");
+    const question = r.round ? this.question(r) : null;
     return {
+      clues: r.manche === "clues" && Date.now() >= r.starts_at ? question.clues.slice(0, ["reveal", "finished"].includes(r.phase) ? 3 : remaining > 20000 ? 1 : remaining > 10000 ? 2 : 3) : [],
+      solution_image: revealed && r.manche === "clues" ? question.image : null,
       room: this.publicRoom(r),
       server_now: Date.now(),
       remaining_ms:
@@ -253,13 +282,14 @@ export class Goku {
             attempts: r.answers[s.id]?.attempts || 0,
             done: r.answers[s.id]?.done || false,
             result: r.answers[s.id]?.result,
+            points: r.answers[s.id]?.points || 0,
           }
         : null,
       can_control: this.control(s, r),
       received: Object.values(r.answers).filter((a) => a.done).length,
       solution:
-        ["reveal", "finished"].includes(r.phase) && r.round
-          ? quiz.cards[r.order[r.round - 1]].name
+        revealed && question
+          ? question.name
           : null,
     };
   }
@@ -282,7 +312,7 @@ export class Goku {
   async schedule() {
     const deadlines = this.all("room")
       .filter((r) => r.phase === "question")
-      .map((r) => r.deadline);
+      .map((r) => r.manche === "clues" ? [r.starts_at, r.deadline - 20000, r.deadline - 10000, r.deadline].find(time => time > Date.now()) || r.deadline : r.deadline);
     const next = deadlines.length ? Math.min(...deadlines) : null;
     if ((await this.ctx.storage.getAlarm()) !== next) {
       if (next) await this.ctx.storage.setAlarm(next);
@@ -483,6 +513,7 @@ export class Goku {
         quiz: "pokemon",
         phase: "lobby",
         round: 0,
+        manche: "cards",
         revision: 0,
         starts_at: null,
         deadline: null,
@@ -522,7 +553,7 @@ export class Goku {
     if (!this.readable(s, r)) fail("Stanza non accessibile");
     if (action === "state") return this.snapshot(s, r);
     if (action === "card") {
-      if (!this.control(s, r) || !r.round)
+      if (!this.control(s, r) || !r.round || r.manche === "clues")
         fail("Solo il conduttore può vedere la carta");
       return { asset: quiz.cards[r.order[r.round - 1]].opaque };
     }
@@ -557,7 +588,7 @@ export class Goku {
       let result;
       if (!resolved) result = { result: "invalid" };
       else {
-        if (resolved === normalize(quiz.cards[r.order[r.round - 1]].name)) {
+        if (resolved === normalize(this.question(r).canonical || this.question(r).name)) {
           answer.done = true;
           answer.points =
             Math.ceil(Math.min(30000, r.deadline - now) / 1000) * 10;
@@ -589,19 +620,23 @@ export class Goku {
         fail("Privilegi Host assenti, scaduti o revocati");
       if (p.revision !== r.revision) fail("Stato cambiato: riprova");
       const c = p.command;
-      if (
+      if (c === "skip_to_clues" && r.manche !== "clues" && r.round >= 1 && r.round <= 6 && ["question", "paused", "reveal"].includes(r.phase)) {
+        this.settle(r, true);
+        if (r.manche !== "clues") this.beginClues(r);
+      } else if (
         (c === "start" && r.phase === "lobby") ||
         (c === "next" && r.phase === "reveal")
       ) {
         if (!Object.keys(r.players).length) fail("Attendi un giocatore");
-        if (r.round === 6) r.phase = "finished";
+        if (r.round === 12) r.phase = "finished";
         else {
           r.round++;
           r.phase = "question";
-          r.starts_at = now + 2000;
-          r.deadline = now + 32000;
+          r.starts_at = now + (r.round === 7 ? 5000 : 2000);
+          r.deadline = r.starts_at + 30000;
           r.remaining_ms = 30000;
           r.answers = {};
+          r.cluesShown = 0;
         }
       } else if (
         c === "pause" &&
@@ -627,7 +662,10 @@ export class Goku {
   async alarm() {
     return this.ctx.blockConcurrencyWhile(async () => {
       for (const r of this.all("room"))
-        if (this.settle(r)) this.broadcast(r.id);
+        {
+          const changed = this.settle(r);
+          if (changed) this.broadcast(r.id);
+        }
       await this.schedule();
     });
   }
