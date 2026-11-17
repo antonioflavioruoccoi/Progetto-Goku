@@ -18,3 +18,5 @@ body.gameboy{background:#fff;color:#000;--ink:#000;--panel:#fff;--frame:#000;--p
 
 .gameboy input::placeholder{color:#000;opacity:1}.gameboy button:focus-visible,.gameboy input:focus-visible{outline-color:#000}
 .gameboy #professor{object-fit:contain}.gameboy #clue-image{object-fit:contain}
+
+.gameboy #clues,.gameboy #clue-intro{display:flow-root}
