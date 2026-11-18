@@ -68,13 +68,12 @@ export function renderPrice(state, host) {
   }
 
   const count = state.players.length;
-  const percent = count ? Math.round(price.correct * 100 / count) : 0;
   const outcome = $('price-outcome');
-  if (price.direction) {
+  if (host) outcome.textContent = '';
+  else if (price.direction) {
     const direction = price.direction.toUpperCase();
     const personal = me?.result ? `${signedPoints.format(me.points)} punti` : 'Nessuna risposta · 0 punti';
-    outcome.textContent = host ? `${direction} · ${price.correct}/${count} corrette (${percent}%)`
-      : `${direction} · ${personal}`;
+    outcome.textContent = `${direction} · ${personal}`;
   } else outcome.textContent = me?.choice ? `Registrata: ${me.choice.toUpperCase()}` : '';
   candidate.dataset.direction = price.direction || '';
   stage.dataset.result = me?.result || '';
@@ -96,4 +95,19 @@ export function tickPrice(state, ms, pre, introMs, enabled) {
   $('price-seconds').textContent = `${seconds}s`;
   $('price-timer').style.setProperty('--time', `${pre ? Math.min(1, introMs / 5000) : ms / state.duration_ms}turn`);
   $('price-higher').disabled = $('price-lower').disabled = !enabled || !!price.direction;
+}
+
+export function showPriceBackground(visible) {
+  const video = $('price-background');
+  if (visible === !video.hidden) return;
+  video.hidden = !visible;
+  if (!visible) {
+    if (video.hasAttribute('src')) video.pause();
+    return;
+  }
+  video.poster = video.dataset.poster;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  video.src = video.dataset.video;
+  video.muted = true;
+  video.play().catch(() => {});
 }

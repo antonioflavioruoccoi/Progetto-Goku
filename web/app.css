@@ -47,7 +47,16 @@ body.pokeprice {
   box-shadow: none;
   font: 500 16px/1.3 system-ui, sans-serif;
 }
-.pokeprice #app { width: min(100% - 24px, 1440px); padding: clamp(8px, 2svh, 22px) 0; }
+.pokeprice #price-background {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: .42;
+  pointer-events: none;
+}
+.pokeprice #app { position: relative; width: min(100% - 24px, 1440px); padding: clamp(8px, 2svh, 22px) 0; }
 .pokeprice h1 {
   color: var(--gold);
   font: 800 clamp(27px, 4svh, 48px)/1.05 system-ui, sans-serif;
@@ -295,3 +304,91 @@ body.pokeprice {
   to { opacity: 0; transform: scale(1.5); }
 }
 @keyframes price-combo { from { opacity: 0; transform: scale(.88); } to { opacity: 1; transform: none; } }
+
+.pokeprice .scoreboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 8px;
+}
+.pokeprice .scoreboard > :first-child { justify-self: start; }
+.pokeprice #round { font: 700 clamp(17px, 2.8svh, 29px)/1 Pokemon, monospace; }
+.pokeprice.player #round { margin-left: 0; }
+.pokeprice #fullscreen { justify-self: end; }
+.pokeprice.host .price-response { display: none; }
+.pokeprice.host .price-meta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
+}
+.pokeprice.host #price-timer { justify-self: end; }
+
+@media (min-width: 720px) {
+  .host:not(.lobby) #app { padding-block: clamp(8px, 1.4svh, 18px); }
+  .host:not(.lobby) :is(#subtitle, nav) { display: none; }
+  .host:not(.lobby, .gameboy, .pokeprice) { font-size: clamp(15px, 2.8svh, 23px); }
+  .host:not(.lobby, .gameboy, .pokeprice) h1 {
+    font-size: clamp(38px, 8.2svh, 76px);
+    -webkit-text-stroke-width: 4px;
+    letter-spacing: -.04em;
+  }
+  .host:not(.lobby, .pokeprice) .scoreboard { margin-top: 8px; padding-block: 4px; }
+  .host:not(.lobby, .pokeprice) .timer-row { min-height: 45px; }
+  .host:not(.lobby, .pokeprice) #timer { font-size: clamp(18px, 4svh, 28px); }
+  .host:not(.lobby, .pokeprice) #timer img { width: 32px; height: 32px; }
+  .host:not(.lobby, .pokeprice) .scene { width: min(310px, 34svh); margin-bottom: 8px; }
+  .host:not(.lobby, .pokeprice) #feedback:empty,
+  .host:not(.lobby) #personal:empty { display: none; }
+  .host:not(.lobby) #controls { margin: 8px 0; gap: 8px; }
+  .host:not(.lobby, .pokeprice) #controls button { padding: 5px 12px; }
+  .host:not(.lobby) #room > p { margin: 4px 0 0; font-size: clamp(12px, 2.3svh, 18px); }
+  .host:not(.lobby) #audio-control {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    margin: 0;
+    padding: 3px 10px;
+    font-size: 14px;
+  }
+  .host.reveal:not(.pokeprice) #room {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 16px;
+    align-items: start;
+  }
+  .host.reveal:not(.pokeprice) #room > :is(.scoreboard, #controls, p) { grid-column: 1 / -1; }
+  .host:not(.lobby, .pokeprice) #results {
+    max-height: 53svh;
+    overflow: auto;
+    margin: 0;
+    padding: 10px 14px;
+  }
+  .host:not(.lobby, .pokeprice) #results h2 { font-size: clamp(19px, 4svh, 35px); margin: 0; }
+  .host:not(.lobby, .pokeprice) #solution { margin-block: 6px; }
+  .host:not(.lobby, .pokeprice) #ranking { margin: 6px 0 0; }
+  .host:not(.lobby, .pokeprice) #ranking li { margin: 4px 0; padding: 5px 8px; }
+  .host.gameboy { line-height: 1.4; }
+  .host.gameboy.reveal #room { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+  .host.gameboy h1 { font-size: clamp(20px, 4.5svh, 38px); }
+  .host.gameboy #clue-stage { min-height: 0; padding: 8px; }
+  .host.gameboy :is(.clue-dialog, #clue-intro) { margin: 0 0 6px; padding: 7px; }
+  .host.gameboy #professor { width: min(68px, 11svh); height: min(85px, 15svh); margin: 0 10px 0 0; }
+  .host.gameboy #clue-reveal {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin: 6px auto;
+    padding: 3px;
+  }
+  .host.gameboy #clue-image { width: min(70px, 10svh); height: min(70px, 10svh); }
+  .host.gameboy #pokemon-parade { flex: 0 0 auto; padding: 3px 0; }
+  .host.gameboy .parade-sprites img { width: min(7svh, 90px); height: min(7svh, 90px); }
+  .pokeprice.host .price-match { --art-height: clamp(90px, calc(64svh - 110px), 550px); }
+  .pokeprice.host.price-checkpoint .price-match { --art-height: clamp(90px, calc(60svh - 120px), 510px); }
+}
+@media (min-width: 720px) and (max-height: 650px) {
+  .host:not(.lobby) #controls { margin-block: 5px; }
+  .host.reveal:not(.pokeprice) #room { row-gap: 5px; }
+  .host:not(.lobby, .pokeprice) .scene { width: min(310px, 30svh); }
+  .host.gameboy :is(.clue-dialog, #clue-intro) { padding: 4px; }
+  .host.gameboy #clue-image { width: 9svh; height: 9svh; }
+}

@@ -112,4 +112,6 @@ Nella schermata del conduttore, **Shift + N** salta le carte rimanenti, consolid
 
 Asset locali e limiti: [ASSET_SOURCES.md](assets/pokeindizi/ASSET_SOURCES.md). Per i Pokémon recenti si usano icone dei giochi, non falsi sprite Game Boy.
 
+Sfondo video di PokéPrice: [Hilda and Tepig Watching Castelia City, MoeWalls](https://moewalls.com/pixel-art/hilda-and-tepig-watching-castelia-city-pokemon-pixel-live-wallpaper/).
+
 Sito esistente: https://dr-goku.antonioflavioruocco-i.workers.dev/play/ . La presenza di questo URL non certifica un deploy: confrontare `/version.json` con `git rev-parse HEAD` e con la versione attiva in Cloudflare. Non creare un secondo Worker, non reinserire né ruotare ADMIN_PASSWORD per aggiornare il codice.

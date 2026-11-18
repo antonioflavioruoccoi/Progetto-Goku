@@ -279,6 +279,9 @@ test("Cloudflare SQLite: authentication, atomic licenses, multiplayer, alarms an
         assert.equal((await state("p2", room.id)).me.score, won.points);
         await command("admin", room.id, "end");
         assert.equal((await state("p2", room.id)).room.phase, "finished");
+        await ok("late-finished", "identity");
+        await denied("late-finished", "join", { code: room.code, nickname: "Brock" }, /terminata/);
+        assert.equal((await ok("p2", "join", { code: room.code, nickname: "Misty" })).id, room.id);
         ws.close();
       },
     );
@@ -337,7 +340,6 @@ test("Cloudflare SQLite: authentication, atomic licenses, multiplayer, alarms an
     await t.test("PokéPrice snapshots stay private across WebSocket and reconnect", async () => {
       priceRoom = await ok("admin", "create");
       await ok("p1", "join", { code: priceRoom.code, nickname: "Ash" });
-      await ok("p2", "join", { code: priceRoom.code, nickname: "Misty" });
       await denied("host", "state", { room_id: priceRoom.id }, /non accessibile/);
       await command("admin", priceRoom.id, "start");
       const ws = await socket("p1", priceRoom.id);
@@ -352,6 +354,15 @@ test("Cloudflare SQLite: authentication, atomic licenses, multiplayer, alarms an
       const answer = { room_id: priceRoom.id, round: 13, request_id: crypto.randomUUID(), answer: "higher" };
       await denied("p1", "answer", answer, /chiuse/);
       await sleep(Math.max(0, intro.room.starts_at - Date.now()) + 100);
+      await denied("p2", "join", { code: priceRoom.code, nickname: "Ash" }, /già utilizzato/);
+      assert.equal((await ok("p2", "join", { code: priceRoom.code, nickname: "Misty" })).id, priceRoom.id);
+      const late = await state("p2", priceRoom.id);
+      assert.equal(late.room.phase, "question");
+      assert.equal(late.price.round, 1);
+      assert.equal(late.price.candidate.cents, undefined);
+      assert.equal(late.me.score, 0);
+      assert.equal(late.me.streak, 0);
+      assert.deepEqual(await ok("p2", "answer", answer), { status: 200, done: true, choice: "higher" });
       const replies = await Promise.all([
         rpc("p1", "answer", answer),
         rpc("p1", "answer", { ...answer, request_id: crypto.randomUUID(), answer: "lower" }),
@@ -372,12 +383,12 @@ test("Cloudflare SQLite: authentication, atomic licenses, multiplayer, alarms an
         assert.equal(paused.me.score, 0);
         assert.equal(paused.me.streak, 0);
         assert.equal(paused.price.candidate.cents, undefined);
-        assert.equal((await state("p2", priceRoom.id)).me.choice, null);
+        assert.equal((await state("p2", priceRoom.id)).me.choice, "higher");
         await command("admin", priceRoom.id, "end");
         const final = await state("p1", priceRoom.id);
         assert.equal(final.room.phase, "finished");
         assert.equal(final.me.score, accepted.choice === final.price.direction ? 100 : -50);
-        assert.equal((await state("p2", priceRoom.id)).me.score, 0);
+        assert.equal((await state("p2", priceRoom.id)).me.score, final.price.direction === "higher" ? 100 : -50);
       } finally {
         reconnected.close();
       }

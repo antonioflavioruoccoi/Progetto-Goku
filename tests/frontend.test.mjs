@@ -58,6 +58,9 @@ test('PokéPrice renders host art and player choices, locks choices and shows th
   const h=await boot((host?'host':'play')+'/?room=r',{room});
   assert.ok(h.window.document.body.classList.contains('pokeprice'));
   assert.equal(h.$('price-intro').hidden,false);
+  assert.equal(h.$('price-background').hidden,false);
+  assert.match(h.$('price-background').poster,/castelia-poster.webp$/);
+  assert.equal(h.$('price-background').hasAttribute('src'),false);
   assert.equal(h.$('answer-form').hidden,true);
   assert.equal(h.$('price-candidate').querySelector('img').hasAttribute('src'),host);
   assert.equal(h.$('price-candidate').querySelector('strong').textContent,'??? €');
@@ -80,7 +83,8 @@ test('PokéPrice renders host art and player choices, locks choices and shows th
   if(!host)room.me={...room.me,result:'correct',points:100,score:100};
   await h.notify();
   assert.match(h.$('price-candidate').querySelector('strong').textContent,/140,00/);
-  assert.match(h.$('price-outcome').textContent,host?/1\/1 corrette \(100%\)/:/\+100 punti/);
+  if(host)assert.equal(h.$('price-outcome').textContent,'');
+  else assert.match(h.$('price-outcome').textContent,/\+100 punti/);
   assert.equal(h.$('results').hidden,true);
   room.room.round=15;room.price.round=3;
   if(!host)room.me={...room.me,bonus:20,points:120,streak:3};
@@ -90,6 +94,7 @@ test('PokéPrice renders host art and player choices, locks choices and shows th
   assert.equal(h.$('price-combo').hidden,host);
   room.room.phase='finished';await h.notify();
   assert.equal(h.$('price-stage').hidden,true);
+  assert.equal(h.$('price-background').hidden,true);
   assert.equal(h.$('results-title').textContent,'Podio finale');
   await h.window.happyDOM.close();
  }

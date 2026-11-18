@@ -556,7 +556,7 @@ export class Goku {
       const r = this.all("room").find((r) => r.code === p.code);
       if (!r) fail("Stanza inesistente", 404);
       if (r.players[s.id]) return { id: r.id };
-      if (r.phase !== "lobby") fail("Partita già iniziata");
+      if (r.phase === "finished") fail("Partita terminata");
       if (Object.keys(r.players).length >= 100) fail("Stanza piena");
       const nickname = String(p.nickname || "")
         .trim()
