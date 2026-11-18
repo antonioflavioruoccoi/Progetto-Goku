@@ -1,0 +1,446 @@
+[
+  {
+    "name": "Reshiram ex",
+    "set": "White Flare",
+    "number": "173/086",
+    "status": "saved",
+    "filename": "01-reshiram-ex-white-flare-173-086.webp",
+    "tcgdex_id": "sv10.5w-173",
+    "image_source": "https://assets.tcgdex.net/en/sv/sv10.5w/173/high.webp"
+  },
+  {
+    "name": "Zekrom ex",
+    "set": "Black Bolt",
+    "number": "172/086",
+    "status": "saved",
+    "filename": "02-zekrom-ex-black-bolt-172-086.webp",
+    "tcgdex_id": "sv10.5b-172",
+    "image_source": "https://assets.tcgdex.net/en/sv/sv10.5b/172/high.webp"
+  },
+  {
+    "name": "Victini",
+    "set": "Black Bolt",
+    "number": "171/086",
+    "status": "saved",
+    "filename": "03-victini-black-bolt-171-086.webp",
+    "tcgdex_id": "sv10.5b-171",
+    "image_source": "https://assets.tcgdex.net/en/sv/sv10.5b/171/high.webp"
+  },
+  {
+    "name": "Victini",
+    "set": "White Flare",
+    "number": "172/086",
+    "status": "saved",
+    "filename": "04-victini-white-flare-172-086.webp",
+    "tcgdex_id": "sv10.5w-172",
+    "image_source": "https://assets.tcgdex.net/en/sv/sv10.5w/172/high.webp"
+  },
+  {
+    "name": "Charizard ex",
+    "set": "151",
+    "number": "199/165",
+    "status": "saved",
+    "filename": "05-charizard-ex-151-199-165.webp",
+    "tcgdex_id": "sv03.5-199",
+    "image_source": "https://assets.tcgdex.net/en/sv/sv03.5/199/high.webp"
+  },
+  {
+    "name": "Zekrom ex",
+    "set": "Black Bolt",
+    "number": "166/086",
+    "status": "saved",
+    "filename": "06-zekrom-ex-black-bolt-166-086.webp",
+    "tcgdex_id": "sv10.5b-166",
+    "image_source": "https://assets.tcgdex.net/en/sv/sv10.5b/166/high.webp"
+  },
+  {
+    "name": "Mega Dragonite ex",
+    "set": "Ascended Heroes",
+    "number": "290/217",
+    "status": "saved",
+    "filename": "07-mega-dragonite-ex-ascended-heroes-290-217.webp",
+    "tcgdex_id": "me02.5-290",
+    "image_source": "https://assets.tcgdex.net/en/me/me02.5/290/high.webp"
+  },
+  {
+    "name": "Pikachu ex",
+    "set": "Ascended Heroes",
+    "number": "277/217",
+    "status": "saved",
+    "filename": "08-pikachu-ex-ascended-heroes-277-217.webp",
+    "tcgdex_id": "me02.5-277",
+    "image_source": "https://assets.tcgdex.net/en/me/me02.5/277/high.webp"
+  },
+  {
+    "name": "Mega Charizard X ex",
+    "set": "Phantasmal Flames",
+    "number": "130/094",
+    "status": "saved",
+    "filename": "09-mega-charizard-x-ex-phantasmal-flames-130-094.webp",
+    "tcgdex_id": "me02-130",
+    "image_source": "https://assets.tcgdex.net/en/me/me02/130/high.webp"
+  },
+  {
+    "name": "Team Rocket's Mewtwo ex",
+    "set": "Ascended Heroes",
+    "number": "281/217",
+    "status": "saved",
+    "filename": "10-team-rocket-s-mewtwo-ex-ascended-heroes-281-217.webp",
+    "tcgdex_id": "me02.5-281",
+    "image_source": "https://assets.tcgdex.net/en/me/me02.5/281/high.webp"
+  },
+  {
+    "name": "Mega Charizard Y ex",
+    "set": "Ascended Heroes",
+    "number": "294/217",
+    "status": "saved",
+    "filename": "11-mega-charizard-y-ex-ascended-heroes-294-217.webp",
+    "tcgdex_id": "me02.5-294",
+    "image_source": "https://assets.tcgdex.net/en/me/me02.5/294/high.webp"
+  },
+  {
+    "name": "Lugia",
+    "set": "30th Classic Collection",
+    "number": "029/030",
+    "status": "not_found",
+    "error": "No card image at source"
+  },
+  {
+    "name": "Lugia V",
+    "set": "Silver Tempest",
+    "number": "186/195",
+    "status": "saved",
+    "filename": "13-lugia-v-silver-tempest-186-195.webp",
+    "tcgdex_id": "swsh12-186",
+    "image_source": "https://assets.tcgdex.net/en/swsh/swsh12/186/high.webp"
+  },
+  {
+    "name": "Dragonite V",
+    "set": "Evolving Skies",
+    "number": "192/203",
+    "status": "saved",
+    "filename": "14-dragonite-v-evolving-skies-192-203.webp",
+    "tcgdex_id": "swsh7-192",
+    "image_source": "https://assets.tcgdex.net/en/swsh/swsh7/192/high.webp"
+  },
+  {
+    "name": "Umbreon V",
+    "set": "Evolving Skies",
+    "number": "189/203",
+    "status": "saved",
+    "filename": "15-umbreon-v-evolving-skies-189-203.webp",
+    "tcgdex_id": "swsh7-189",
+    "image_source": "https://assets.tcgdex.net/en/swsh/swsh7/189/high.webp"
+  },
+  {
+    "name": "Leafeon VMAX",
+    "set": "Evolving Skies",
+    "number": "205/203",
+    "status": "saved",
+    "filename": "16-leafeon-vmax-evolving-skies-205-203.webp",
+    "tcgdex_id": "swsh7-205",
+    "image_source": "https://assets.tcgdex.net/en/swsh/swsh7/205/high.webp"
+  },
+  {
+    "name": "Blaziken VMAX",
+    "set": "Chilling Reign",
+    "number": "201/198",
+    "status": "saved",
+    "filename": "17-blaziken-vmax-chilling-reign-201-198.webp",
+    "tcgdex_id": "swsh6-201",
+    "image_source": "https://assets.tcgdex.net/en/swsh/swsh6/201/high.webp"
+  },
+  {
+    "name": "Gengar & Mimikyu-GX",
+    "set": "Team Up",
+    "number": "53/181",
+    "status": "saved",
+    "filename": "18-gengar-mimikyu-gx-team-up-53-181.webp",
+    "tcgdex_id": "sm9-53",
+    "image_source": "https://assets.tcgdex.net/en/sm/sm9/53/high.webp"
+  },
+  {
+    "name": "Greninja & Zoroark-GX",
+    "set": "Unbroken Bonds",
+    "number": "201/214",
+    "status": "saved",
+    "filename": "19-greninja-zoroark-gx-unbroken-bonds-201-214.webp",
+    "tcgdex_id": "sm10-201",
+    "image_source": "https://assets.tcgdex.net/en/sm/sm10/201/high.webp"
+  },
+  {
+    "name": "Blastoise & Piplup-GX",
+    "set": "Cosmic Eclipse",
+    "number": "215/236",
+    "status": "saved",
+    "filename": "20-blastoise-piplup-gx-cosmic-eclipse-215-236.webp",
+    "tcgdex_id": "sm12-215",
+    "image_source": "https://assets.tcgdex.net/en/sm/sm12/215/high.webp"
+  },
+  {
+    "name": "Mega Lopunny & Jigglypuff-GX",
+    "set": "Cosmic Eclipse",
+    "number": "226/236",
+    "status": "saved",
+    "filename": "21-mega-lopunny-jigglypuff-gx-cosmic-eclipse-226-236.webp",
+    "tcgdex_id": "sm12-226",
+    "image_source": "https://assets.tcgdex.net/en/sm/sm12/226/high.webp"
+  },
+  {
+    "name": "Arceus & Dialga & Palkia-GX",
+    "set": "Cosmic Eclipse",
+    "number": "221/236",
+    "status": "saved",
+    "filename": "22-arceus-dialga-palkia-gx-cosmic-eclipse-221-236.webp",
+    "tcgdex_id": "sm12-221",
+    "image_source": "https://assets.tcgdex.net/en/sm/sm12/221/high.webp"
+  },
+  {
+    "name": "Mega Sableye & Tyranitar-GX",
+    "set": "Unified Minds",
+    "number": "226/236",
+    "status": "saved",
+    "filename": "23-mega-sableye-tyranitar-gx-unified-minds-226-236.webp",
+    "tcgdex_id": "sm11-226",
+    "image_source": "https://assets.tcgdex.net/en/sm/sm11/226/high.webp"
+  },
+  {
+    "name": "Gyarados-EX",
+    "set": "BREAKpoint",
+    "number": "123/122",
+    "status": "saved",
+    "filename": "24-gyarados-ex-breakpoint-123-122.webp",
+    "tcgdex_id": "xy9-123",
+    "image_source": "https://assets.tcgdex.net/en/xy/xy9/123/high.webp"
+  },
+  {
+    "name": "Mew-EX",
+    "set": "XY Black Star Promos",
+    "number": "XY126",
+    "status": "saved",
+    "filename": "25-mew-ex-xy-black-star-promos-xy126.webp",
+    "tcgdex_id": "xyp-XY126",
+    "image_source": "https://assets.tcgdex.net/en/xy/xyp/XY126/high.webp"
+  },
+  {
+    "name": "Team Magma's Groudon-EX",
+    "set": "Double Crisis",
+    "number": "15/34",
+    "status": "saved",
+    "filename": "26-team-magma-s-groudon-ex-double-crisis-15-34.webp",
+    "tcgdex_id": "dc1-15",
+    "image_source": "https://assets.tcgdex.net/en/xy/dc1/15/high.webp"
+  },
+  {
+    "name": "Team Aqua's Kyogre-EX",
+    "set": "Double Crisis",
+    "number": "6/34",
+    "status": "saved",
+    "filename": "27-team-aqua-s-kyogre-ex-double-crisis-6-34.webp",
+    "tcgdex_id": "dc1-6",
+    "image_source": "https://assets.tcgdex.net/en/xy/dc1/6/high.webp"
+  },
+  {
+    "name": "Charizard-EX",
+    "set": "Flashfire",
+    "number": "100/106",
+    "status": "saved",
+    "filename": "28-charizard-ex-flashfire-100-106.webp",
+    "tcgdex_id": "xy2-100",
+    "image_source": "https://assets.tcgdex.net/en/xy/xy2/100/high.webp"
+  },
+  {
+    "name": "Lugia-EX",
+    "set": "Ancient Origins",
+    "number": "94/98",
+    "status": "saved",
+    "filename": "29-lugia-ex-ancient-origins-94-98.webp",
+    "tcgdex_id": "xy7-94",
+    "image_source": "https://assets.tcgdex.net/en/xy/xy7/94/high.webp"
+  },
+  {
+    "name": "Primal Groudon-EX",
+    "set": "Primal Clash",
+    "number": "151/160",
+    "status": "saved",
+    "filename": "30-primal-groudon-ex-primal-clash-151-160.webp",
+    "tcgdex_id": "xy5-151",
+    "image_source": "https://assets.tcgdex.net/en/xy/xy5/151/high.webp"
+  },
+  {
+    "name": "Zekrom",
+    "set": "Legendary Treasures",
+    "number": "115/113",
+    "status": "saved",
+    "filename": "31-zekrom-legendary-treasures-115-113.webp",
+    "tcgdex_id": "bw11-115",
+    "image_source": "https://assets.tcgdex.net/en/bw/bw11/115/high.webp"
+  },
+  {
+    "name": "Reshiram",
+    "set": "Legendary Treasures",
+    "number": "RC22",
+    "status": "saved",
+    "filename": "32-reshiram-legendary-treasures-rc22.webp",
+    "tcgdex_id": "bw11-RC22",
+    "image_source": "https://assets.tcgdex.net/en/bw/bw11/RC22/high.webp"
+  },
+  {
+    "name": "Gardevoir",
+    "set": "Dark Explorers",
+    "number": "109/108",
+    "status": "saved",
+    "filename": "33-gardevoir-dark-explorers-109-108.webp",
+    "tcgdex_id": "bw5-109",
+    "image_source": "https://assets.tcgdex.net/en/bw/bw5/109/high.webp"
+  },
+  {
+    "name": "Garchomp",
+    "set": "Plasma Freeze",
+    "number": "120/116",
+    "status": "saved",
+    "filename": "34-garchomp-plasma-freeze-120-116.webp",
+    "tcgdex_id": "bw9-120",
+    "image_source": "https://assets.tcgdex.net/en/bw/bw9/120/high.webp"
+  },
+  {
+    "name": "Empoleon",
+    "set": "Plasma Freeze",
+    "number": "117/116",
+    "status": "saved",
+    "filename": "35-empoleon-plasma-freeze-117-116.webp",
+    "tcgdex_id": "bw9-117",
+    "image_source": "https://assets.tcgdex.net/en/bw/bw9/117/high.webp"
+  },
+  {
+    "name": "Lugia",
+    "set": "Call of Legends",
+    "number": "15/95",
+    "status": "saved",
+    "filename": "36-lugia-call-of-legends-15-95.webp",
+    "tcgdex_id": "col1-15",
+    "image_source": "https://assets.tcgdex.net/en/col/col1/15/high.webp"
+  },
+  {
+    "name": "Deoxys",
+    "set": "Call of Legends",
+    "number": "2/95",
+    "status": "saved",
+    "filename": "37-deoxys-call-of-legends-2-95.webp",
+    "tcgdex_id": "col1-2",
+    "image_source": "https://assets.tcgdex.net/en/col/col1/2/high.webp"
+  },
+  {
+    "name": "Dialga",
+    "set": "Call of Legends",
+    "number": "3/95",
+    "status": "saved",
+    "filename": "38-dialga-call-of-legends-3-95.webp",
+    "tcgdex_id": "col1-3",
+    "image_source": "https://assets.tcgdex.net/en/col/col1/3/high.webp"
+  },
+  {
+    "name": "Groudon",
+    "set": "Call of Legends",
+    "number": "6/95",
+    "status": "saved",
+    "filename": "39-groudon-call-of-legends-6-95.webp",
+    "tcgdex_id": "col1-6",
+    "image_source": "https://assets.tcgdex.net/en/col/col1/6/high.webp"
+  },
+  {
+    "name": "Entei",
+    "set": "Call of Legends",
+    "number": "SL3",
+    "status": "saved",
+    "filename": "40-entei-call-of-legends-sl3.webp",
+    "tcgdex_id": "col1-SL3",
+    "image_source": "https://assets.tcgdex.net/en/col/col1/SL3/high.webp"
+  },
+  {
+    "name": "Suicune",
+    "set": "Call of Legends",
+    "number": "SL11",
+    "status": "saved",
+    "filename": "41-suicune-call-of-legends-sl11.webp",
+    "tcgdex_id": "col1-SL11",
+    "image_source": "https://assets.tcgdex.net/en/col/col1/SL11/high.webp"
+  },
+  {
+    "name": "Rayquaza",
+    "set": "Call of Legends",
+    "number": "SL10",
+    "status": "saved",
+    "filename": "42-rayquaza-call-of-legends-sl10.webp",
+    "tcgdex_id": "col1-SL10",
+    "image_source": "https://assets.tcgdex.net/en/col/col1/SL10/high.webp"
+  },
+  {
+    "name": "Raikou",
+    "set": "Call of Legends",
+    "number": "SL9",
+    "status": "saved",
+    "filename": "43-raikou-call-of-legends-sl9.webp",
+    "tcgdex_id": "col1-SL9",
+    "image_source": "https://assets.tcgdex.net/en/col/col1/SL9/high.webp"
+  },
+  {
+    "name": "Celebi",
+    "set": "Triumphant",
+    "number": "92/102",
+    "status": "saved",
+    "filename": "44-celebi-triumphant-92-102.webp",
+    "tcgdex_id": "hgss4-92",
+    "image_source": "https://assets.tcgdex.net/en/hgss/hgss4/92/high.webp"
+  },
+  {
+    "name": "Mew",
+    "set": "Triumphant",
+    "number": "97/102",
+    "status": "saved",
+    "filename": "45-mew-triumphant-97-102.webp",
+    "tcgdex_id": "hgss4-97",
+    "image_source": "https://assets.tcgdex.net/en/hgss/hgss4/97/high.webp"
+  },
+  {
+    "name": "Umbreon",
+    "set": "Undaunted",
+    "number": "86/90",
+    "status": "saved",
+    "filename": "46-umbreon-undaunted-86-90.webp",
+    "tcgdex_id": "hgss3-86",
+    "image_source": "https://assets.tcgdex.net/en/hgss/hgss3/86/high.webp"
+  },
+  {
+    "name": "Absol",
+    "set": "Triumphant",
+    "number": "91/102",
+    "status": "saved",
+    "filename": "47-absol-triumphant-91-102.webp",
+    "tcgdex_id": "hgss4-91",
+    "image_source": "https://assets.tcgdex.net/en/hgss/hgss4/91/high.webp"
+  },
+  {
+    "name": "Charizard",
+    "set": "Stormfront",
+    "number": "103/100",
+    "status": "saved",
+    "filename": "48-charizard-stormfront-103-100.webp",
+    "tcgdex_id": "dp7-103",
+    "image_source": "https://assets.tcgdex.net/en/dp/dp7/103/high.webp"
+  },
+  {
+    "name": "Mewtwo LV.X",
+    "set": "Legends Awakened",
+    "number": "144/146",
+    "status": "not_found",
+    "error": "Card-name mismatch: Mewtwo"
+  },
+  {
+    "name": "Leafeon LV.X",
+    "set": "Majestic Dawn",
+    "number": "99/100",
+    "status": "not_found",
+    "error": "Card-name mismatch: Leafeon"
+  }
+]
