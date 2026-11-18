@@ -1,0 +1,42 @@
+name: Download 50 Pokemon card scans
+
+on:
+  push:
+    branches: [feat/50-pokemon-card-images]
+    paths:
+      - 'data/pokemon-cards-100-500.csv'
+      - 'scripts/download_reference_cards.py'
+      - '.github/workflows/download-reference-cards.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Fetch and check reference images
+        id: fetch
+        continue-on-error: true
+        run: python scripts/download_reference_cards.py
+      - name: Commit verified assets and report
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/pokemon-cardmarket-100-500/
+          if ! git diff --cached --quiet; then
+            git commit -m "Add downloaded Pokemon card scans and verification report"
+            git push
+          fi
+      - name: Mark incomplete set
+        if: steps.fetch.outcome != 'success'
+        run: |
+          echo "Not all requested images were verified. See assets/pokemon-cardmarket-100-500/download-report.json"
+          exit 1
