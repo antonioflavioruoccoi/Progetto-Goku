@@ -25,7 +25,7 @@ test("Cloudflare SQLite: authentication, atomic licenses, multiplayer, alarms an
   };
   let mf = new Miniflare(options);
   const users = {};
-  let room, hostRoom, license, expiryLicense, expiryRoom, lobbyRoom;
+  let room, priceRoom, hostRoom, license, expiryLicense, expiryRoom, lobbyRoom;
   async function rpc(who, action, payload = {}, extra = {}) {
     const response = await mf.dispatchFetch("https://goku.test/api/rpc", {
       method: "POST",
@@ -334,10 +334,59 @@ test("Cloudflare SQLite: authentication, atomic licenses, multiplayer, alarms an
         await command("admin", expiryRoom.id, "end");
       },
     );
+    await t.test("PokéPrice snapshots stay private across WebSocket and reconnect", async () => {
+      priceRoom = await ok("admin", "create");
+      await ok("p1", "join", { code: priceRoom.code, nickname: "Ash" });
+      await ok("p2", "join", { code: priceRoom.code, nickname: "Misty" });
+      await denied("host", "state", { room_id: priceRoom.id }, /non accessibile/);
+      await command("admin", priceRoom.id, "start");
+      const ws = await socket("p1", priceRoom.id);
+      const snapshots = [];
+      ws.addEventListener("message", event => snapshots.push(JSON.parse(event.data)));
+      await command("admin", priceRoom.id, "skip_to_clues");
+      await command("admin", priceRoom.id, "skip_to_price");
+      const intro = await state("p1", priceRoom.id);
+      assert.equal(intro.room.manche, "price");
+      assert.equal(intro.room.priceOrder, undefined);
+      assert.equal(intro.price.candidate.cents, undefined);
+      const answer = { room_id: priceRoom.id, round: 13, request_id: crypto.randomUUID(), answer: "higher" };
+      await denied("p1", "answer", answer, /chiuse/);
+      await sleep(Math.max(0, intro.room.starts_at - Date.now()) + 100);
+      const replies = await Promise.all([
+        rpc("p1", "answer", answer),
+        rpc("p1", "answer", { ...answer, request_id: crypto.randomUUID(), answer: "lower" }),
+      ]);
+      const accepted = replies.find(reply => reply.status === 200);
+      assert.equal(replies.filter(reply => reply.status === 200).length, 1);
+      if (accepted.choice === "higher") assert.deepEqual(await ok("p1", "answer", answer), accepted);
+      else await denied("p1", "answer", answer, /completato/);
+      assert.ok(snapshots.some(snapshot => snapshot.price?.round === 1));
+      assert.ok(snapshots.filter(snapshot => snapshot.price).every(snapshot => snapshot.price.candidate.cents === undefined));
+      ws.close();
+
+      await command("admin", priceRoom.id, "pause");
+      const paused = await state("p1", priceRoom.id);
+      const reconnected = await socket("p1", priceRoom.id);
+      try {
+        assert.equal(paused.me.choice, accepted.choice);
+        assert.equal(paused.me.score, 0);
+        assert.equal(paused.me.streak, 0);
+        assert.equal(paused.price.candidate.cents, undefined);
+        assert.equal((await state("p2", priceRoom.id)).me.choice, null);
+        await command("admin", priceRoom.id, "end");
+        const final = await state("p1", priceRoom.id);
+        assert.equal(final.room.phase, "finished");
+        assert.equal(final.me.score, accepted.choice === final.price.direction ? 100 : -50);
+        assert.equal((await state("p2", priceRoom.id)).me.score, 0);
+      } finally {
+        reconnected.close();
+      }
+    });
     await t.test(
       "SQLite survives runtime restart: sessions, licenses, room state and scores",
       async () => {
         const before = await state("p2", room.id);
+        const priceBefore = await state("p1", priceRoom.id);
         await mf.dispose();
         mf = new Miniflare(options);
         await mf.ready;
@@ -345,6 +394,9 @@ test("Cloudflare SQLite: authentication, atomic licenses, multiplayer, alarms an
         assert.equal(after.me.score, before.me.score);
         assert.equal(after.me.nickname, before.me.nickname);
         assert.equal(after.room.phase, "finished");
+        const priceAfter = await state("p1", priceRoom.id);
+        assert.deepEqual(priceAfter.price, priceBefore.price);
+        assert.deepEqual(priceAfter.me, priceBefore.me);
         assert.equal((await ok("admin", "dashboard")).admin, true);
         await denied("host", "create", {}, /Quota/);
         await ok("admin", "logout");

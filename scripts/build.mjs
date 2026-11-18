@@ -2,6 +2,8 @@ import fs from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { build } from "esbuild";
 import { quizData } from "./quiz-data.mjs";
+import { pokepriceData, PRICE_IMAGES } from "./pokeprice-data.mjs";
+const [quiz, priceCards] = await Promise.all([quizData(), pokepriceData()]);
 await fs.rm("dist", { recursive: true, force: true });
 await fs.mkdir("dist/live-cards", { recursive: true });
 for (const file of await fs.readdir("."))
@@ -16,7 +18,7 @@ await fs.cp("assets/pokeindizi", "dist/assets/pokeindizi", {recursive:true});
 await fs.mkdir("worker/generated", { recursive: true });
 await fs.writeFile(
   "worker/generated/quiz.json",
-  JSON.stringify(await quizData()),
+  JSON.stringify({ ...quiz, priceCards }),
 );
 await build({
   entryPoints: ["web/app.js"],
@@ -25,7 +27,10 @@ await build({
   outfile: "dist/app.js",
   minify: true,
 });
-for (const c of (await quizData()).cards)
+await fs.mkdir("dist/" + PRICE_IMAGES, { recursive: true });
+for (const card of priceCards)
+  await fs.copyFile("." + card.image, "dist" + card.image);
+for (const c of quiz.cards)
   await fs.copyFile(c.image, "dist/" + c.opaque);
 console.log("Built frontend assets and server quiz data.");
 

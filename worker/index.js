@@ -1,4 +1,9 @@
 import quiz from "./generated/quiz.json";
+import {
+  PRICE_START, PRICE_ROUNDS, PRICE_DURATION,
+  selectPriceCards, settlePrice, priceSnapshot,
+} from "./pokeprice.js";
+const roundDuration = r => r.manche === "price" ? PRICE_DURATION : 30000;
 const DAY = 86400000;
 const json = (data, status = 200, headers = {}) =>
   Response.json(data, {
@@ -201,7 +206,7 @@ export class Goku {
     );
   }
   publicRoom(r) {
-    const { players, answers, order, clueOrder, settled, ...publicData } = r;
+    const { players, answers, order, clueOrder, priceOrder, settled, ...publicData } = r;
     publicData.manche ||= "cards";
     return publicData;
   }
@@ -216,7 +221,8 @@ export class Goku {
       (force || ["reveal", "finished"].includes(r.phase)) &&
       r.settled < r.round
     ) {
-      for (const [id, a] of Object.entries(r.answers))
+      if (r.manche === "price") settlePrice(r);
+      else for (const [id, a] of Object.entries(r.answers))
         r.players[id].score += a.points || 0;
       r.settled = r.round;
       changed = true;
@@ -225,8 +231,11 @@ export class Goku {
       const count = Date.now() < r.starts_at ? 0 : r.deadline - Date.now() > 20000 ? 1 : r.deadline - Date.now() > 10000 ? 2 : 3;
       if (count !== (r.cluesShown || 0)) { r.cluesShown = count; changed = true; }
     }
-    if (!force && r.manche !== "clues" && r.round === 6 && r.phase === "reveal") {
+    if (!force && (r.manche ?? "cards") === "cards" && r.round === 6 && r.phase === "reveal") {
       this.beginClues(r); changed = true;
+    }
+    if (!force && r.manche === "clues" && r.round === PRICE_START - 1 && r.phase === "reveal") {
+      this.beginPrice(r); changed = true;
     }
     if (changed) this.put("room", r.id, r);
     return changed;
@@ -242,6 +251,18 @@ export class Goku {
     r.round = 7; r.settled = 6; r.answers = {}; r.cluesShown = 0;
     r.phase = "question"; r.starts_at = Date.now() + 5000;
     r.deadline = r.starts_at + 30000; r.remaining_ms = 30000; r.revision++;
+  }
+  beginPrice(r) {
+    r.priceOrder ??= selectPriceCards(quiz.priceCards);
+    r.manche = "price";
+    r.round = PRICE_START;
+    r.settled = PRICE_START - 1;
+    r.answers = {};
+    r.phase = "question";
+    r.starts_at = Date.now() + 5000;
+    r.remaining_ms = roundDuration(r);
+    r.deadline = r.starts_at + r.remaining_ms;
+    r.revision++;
   }
   question(r) {
     return r.manche === "clues" ? quiz.clues[r.clueOrder[r.round - 7]] : quiz.cards[r.order[r.round - 1]];
@@ -263,18 +284,17 @@ export class Goku {
         (p.rank =
           i && players[i - 1].score === p.score ? players[i - 1].rank : i + 1),
     );
-    const remaining = r.phase === "paused" ? r.remaining_ms : Math.max(0, Math.min(30000, r.deadline - Date.now()));
+    const remaining = r.phase === "paused" ? r.remaining_ms : Math.max(0, Math.min(roundDuration(r), r.deadline - Date.now()));
     const revealed = ["reveal", "finished"].includes(r.phase) || (r.manche === "clues" && r.answers[s.id]?.result === "correct");
-    const question = r.round ? this.question(r) : null;
+    const price = r.manche === "price";
+    const question = r.round && !price ? this.question(r) : null;
     return {
       clues: r.manche === "clues" && Date.now() >= r.starts_at ? question.clues.slice(0, ["reveal", "finished"].includes(r.phase) ? 3 : remaining > 20000 ? 1 : remaining > 10000 ? 2 : 3) : [],
       solution_image: revealed && r.manche === "clues" ? question.image : null,
       room: this.publicRoom(r),
       server_now: Date.now(),
-      remaining_ms:
-        r.phase === "paused"
-          ? r.remaining_ms
-          : Math.max(0, Math.min(30000, r.deadline - Date.now())),
+      remaining_ms: remaining,
+      ...(price ? { duration_ms: PRICE_DURATION, price: priceSnapshot(r, revealed) } : {}),
       players,
       me: r.players[s.id]
         ? {
@@ -283,6 +303,11 @@ export class Goku {
             done: r.answers[s.id]?.done || false,
             result: r.answers[s.id]?.result,
             points: r.answers[s.id]?.points || 0,
+            ...(price ? {
+              choice: r.answers[s.id]?.choice || null,
+              streak: r.players[s.id].streak || 0,
+              bonus: r.answers[s.id]?.bonus || 0,
+            } : {}),
           }
         : null,
       can_control: this.control(s, r),
@@ -522,6 +547,7 @@ export class Goku {
         players: {},
         answers: {},
         order,
+        priceOrder: selectPriceCards(quiz.priceCards),
       };
       this.put("room", r.id, r);
       return { id: r.id, code };
@@ -553,7 +579,7 @@ export class Goku {
     if (!this.readable(s, r)) fail("Stanza non accessibile");
     if (action === "state") return this.snapshot(s, r);
     if (action === "card") {
-      if (!this.control(s, r) || !r.round || r.manche === "clues")
+      if (!this.control(s, r) || !r.round || ["clues", "price"].includes(r.manche))
         fail("Solo il conduttore può vedere la carta");
       return { asset: quiz.cards[r.order[r.round - 1]].opaque };
     }
@@ -575,6 +601,17 @@ export class Goku {
       if (r.phase !== "question" || now < r.starts_at || now >= r.deadline)
         fail("Risposte chiuse o timer in pausa");
       if (answer.done) fail("Hai già completato questa domanda");
+      if (r.manche === "price") {
+        if (!["higher", "lower"].includes(p.answer)) fail("Scegli HIGHER o LOWER");
+        const result = { done: true, choice: p.answer };
+        r.answers[s.id] = {
+          ...result, requests: { [p.request_id]: result },
+        };
+        r.revision++;
+        this.put("room", r.id, r);
+        this.changed.add(r.id);
+        return result;
+      }
       if (
         typeof p.answer !== "string" ||
         p.answer.length < 1 ||
@@ -620,21 +657,26 @@ export class Goku {
         fail("Privilegi Host assenti, scaduti o revocati");
       if (p.revision !== r.revision) fail("Stato cambiato: riprova");
       const c = p.command;
-      if (c === "skip_to_clues" && r.manche !== "clues" && r.round >= 1 && r.round <= 6 && ["question", "paused", "reveal"].includes(r.phase)) {
+      if (
+        ["question", "paused", "reveal"].includes(r.phase) &&
+        ((c === "skip_to_clues" && r.round >= 1 && r.round < 7)
+          || (c === "skip_to_price" && r.manche === "clues"))
+      ) {
         this.settle(r, true);
-        if (r.manche !== "clues") this.beginClues(r);
+        if (c === "skip_to_clues") this.beginClues(r);
+        else this.beginPrice(r);
       } else if (
         (c === "start" && r.phase === "lobby") ||
         (c === "next" && r.phase === "reveal")
       ) {
         if (!Object.keys(r.players).length) fail("Attendi un giocatore");
-        if (r.round === 12) r.phase = "finished";
+        if (r.round === PRICE_START + PRICE_ROUNDS - 1) r.phase = "finished";
         else {
           r.round++;
           r.phase = "question";
-          r.starts_at = now + (r.round === 7 ? 5000 : 2000);
-          r.deadline = r.starts_at + 30000;
-          r.remaining_ms = 30000;
+          r.starts_at = now + (r.manche === "price" ? 0 : 2000);
+          r.remaining_ms = roundDuration(r);
+          r.deadline = r.starts_at + r.remaining_ms;
           r.answers = {};
           r.cluesShown = 0;
         }
