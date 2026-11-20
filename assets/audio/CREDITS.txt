@@ -1,0 +1,20 @@
+Dr. Goku — Original minigame music
+
+Oak's Notebook (oak-notebook.m4a): 112 BPM, warm minor-key chiptune for
+PokéIndizi's Professor Oak dialogue, clue reveals and Game Boy aesthetic.
+Castelia Card Market (castelia-card-market.m4a): 132 BPM, bright syncopated
+chiptune for PokéPrice's city backdrop and fast higher/lower comparisons.
+
+Composed and synthesized for Dr. Goku with Codex, November 2026.
+These original compositions use no samples, recordings or melodies from
+Pokémon games. The franchise is an aesthetic reference only.
+Both new tracks and scripts/music.py are dedicated to the public domain
+under CC0 1.0: https://creativecommons.org/publicdomain/zero/1.0/
+Use, modification and redistribution in this repository and on the website
+are permitted without attribution. Existing music is outside this dedication.
+
+Regenerate the PCM WAV loops: python3 scripts/music.py
+Source: mono, 22050 Hz, signed 16-bit PCM. Distribution: AAC, 64 kbit/s.
+Convert WAV output using macOS afconvert (repeat for each file):
+afconvert -f m4af -d aac -b 64000 assets/audio/oak-notebook.wav assets/audio/oak-notebook.m4a
+The website loads only local M4A files; no remote audio service is used.

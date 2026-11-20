@@ -6,6 +6,48 @@ const { outputFiles } = await build({entryPoints:['worker/index.js'],bundle:true
 const { Goku } = await import('data:text/javascript;base64,'+Buffer.from(outputFiles[0].text).toString('base64'));
 const quiz = JSON.parse(await fs.readFile('worker/generated/quiz.json','utf8'));
 
+test('last answer before the deadline reveals once; a missing or late answer waits for expiry', t => {
+ t.mock.timers.enable({apis:['Date'],now:1700000000000});
+ for(const manche of ['cards','clues','price'])for(const early of [true,false]){
+  const game=Object.create(Goku.prototype),records=new Map();game.changed=new Set();
+  game.get=(k,id)=>structuredClone(records.get(k+id));game.put=(k,id,v)=>records.set(k+id,structuredClone(v));
+  game.all=k=>[...records].filter(([id])=>id.startsWith(k)).map(([,v])=>structuredClone(v));game.ctx={getWebSockets:()=>[]};
+  for(const [id,role] of [['a','admin'],['p1','player'],['p2','player']])game.put('session',id,{id,role,expires:Date.now()+86400000});
+  const rpc=(id,action,payload={})=>game.dispatch(action,payload,{session:id});
+  const room=rpc('a','create');for(const id of ['p1','p2'])rpc(id,'join',{code:room.code,nickname:id});
+  const command=command=>rpc('a','command',{room_id:room.id,revision:game.get('room',room.id).revision,command});
+  command('start');if(manche!=='cards')command('skip_to_clues');if(manche==='price')command('skip_to_price');
+  let r=game.get('room',room.id);t.mock.timers.tick(r.starts_at-Date.now());
+  const answer=manche==='price'?'higher':game.question(r).name;
+  const send=(id,request_id=crypto.randomUUID())=>rpc(id,'answer',{room_id:r.id,round:r.round,answer,request_id});
+  send('p1');assert.equal(game.get('room',r.id).phase,'question');
+  t.mock.timers.tick(r.deadline-Date.now()-1);
+  const request=crypto.randomUUID();if(early)send('p2',request);
+  r=game.get('room',r.id);assert.equal(r.phase,early?'reveal':'question');
+  const scores=Object.values(r.players).map(p=>p.score),revision=r.revision;
+  t.mock.timers.tick(1);assert.equal(game.settle(r),!early);
+  assert.equal(r.phase,'reveal');assert.equal(game.settle(r),false);
+  if(early){assert.equal(r.revision,revision);assert.deepEqual(Object.values(r.players).map(p=>p.score),scores);send('p2',request);}
+  else assert.throws(()=>send('p2'),/chiuse/);
+  for(const id of ['a','p1','p2'])assert.equal(rpc(id,'state',{room_id:r.id}).room.phase,'reveal');
+ }
+});
+
+test('license names are validated, trimmed and compatible with unnamed stored licenses',()=>{
+ const game=Object.create(Goku.prototype),records=new Map();
+ game.get=(k,id)=>structuredClone(records.get(k+id));game.put=(k,id,v)=>records.set(k+id,structuredClone(v));
+ game.all=k=>[...records].filter(([id])=>id.startsWith(k)).map(([,v])=>structuredClone(v));
+ game.put('session','a',{id:'a',role:'admin',expires:Date.now()+86400000});
+ const rpc=(action,payload={})=>game.dispatch(action,payload,{session:'a',inviteHash:'hash'});
+ for(const name of [null,{},[],80,'x'.repeat(81)])assert.throws(()=>rpc('license_create',{name,hours:1,max_rooms:1}),/Nome della licenza/);
+ const named=rpc('license_create',{name:'  Serata Pokémon  ',hours:1,max_rooms:1});
+ const old=rpc('license_create',{hours:1,max_rooms:1});
+ const legacy=game.get('license',old.id);delete legacy.name;game.put('license',old.id,legacy);
+ const dashboard=rpc('dashboard');
+ assert.equal(dashboard.licenses.find(l=>l.id===named.id).name,'Serata Pokémon');
+ assert.equal(dashboard.licenses.find(l=>l.id===old.id).name,'');
+});
+
 test('server game logic: Pixelcard and PokéIndizi feed the 12 PokéPrice comparisons and cumulative podium', t => {
  t.mock.timers.enable({apis:['Date'],now:1700000000000});
  // Exercise production game methods with a deterministic clock. Persistence and
@@ -38,17 +80,22 @@ test('server game logic: Pixelcard and PokéIndizi feed the 12 PokéPrice compar
    assert.deepEqual(rpc('p1','state',{room_id:room.id}).clues,question.clues.slice(0,1));
    assert.throws(()=>rpc('admin','card',{room_id:room.id}),/conduttore/);
   }
+  if(round>6){
+   command('pause');t.mock.timers.tick(45000);
+   assert.equal(rpc('p1','state',{room_id:room.id}).remaining_ms,30000);
+   command('resume');
+  }
   for(const id of ['p1','p2']){
    const result=rpc(id,'answer',{room_id:room.id,round,request_id:crypto.randomUUID(),answer:correct==='Codaurlante'?(id==='p1'?'Codaurlant':'Scream Tail'):correct==='Poliwhirl'?'Poliwhrl':correct});
    assert.equal(result.result,'correct');assert.equal(result.points,300);
+   if(id==='p1'){
+    assert.equal(rpc('admin','state',{room_id:room.id}).room.phase,'question');
+    assert.equal(rpc('admin','state',{room_id:room.id}).solution,null);
+    if(round>6)assert.equal(rpc('p1','state',{room_id:room.id}).solution,correct);
+   }
   }
-  if(round>6){
-   const personal=rpc('p1','state',{room_id:room.id});assert.equal(personal.solution,correct);assert.equal(personal.solution_image,question.image);assert.equal(personal.me.points,300);
-   assert.equal(rpc('admin','state',{room_id:room.id}).solution,null);
-   t.mock.timers.tick(10000);assert.equal(rpc('p1','state',{room_id:room.id}).clues.length,2);
-   command('pause');t.mock.timers.tick(45000);assert.equal(rpc('p1','state',{room_id:room.id}).clues.length,2);assert.equal(rpc('p1','state',{room_id:room.id}).remaining_ms,20000);
-   command('resume');t.mock.timers.tick(10000);assert.equal(rpc('p1','state',{room_id:room.id}).clues.length,3);t.mock.timers.tick(10000);
-  }else t.mock.timers.tick(30000);r=game.get('room',room.id);game.settle(r);if(round===6||round===12){
+  r=game.get('room',room.id);
+  if(round===6||round===12){
    assert.equal(r.round,round+1);assert.equal(r.manche,round===6?'clues':'price');
    assert.deepEqual(Object.values(r.players).map(p=>p.score),[round*300,round*300]);continue;
   }
@@ -107,7 +154,7 @@ test('server game logic: Pixelcard and PokéIndizi feed the 12 PokéPrice compar
   if(i!==6)answer('p2',round,i===3?wrong:correct);
   t.mock.timers.tick(i===0?12000:15000);
   assert.throws(()=>answer('p2',round,correct),/chiuse|completato/);
-  assert.equal(game.settle(game.get('room',room.id)),true);
+  assert.equal(game.settle(game.get('room',room.id)),i===6);
   assert.equal(game.settle(game.get('room',room.id)),false);
   const revealed=rpc('p1','state',{room_id:room.id});
   const peer=rpc('p2','state',{room_id:room.id});
@@ -158,7 +205,7 @@ test('clues reuse invalid-name handling, three attempts and server scoring',t=>{
  const answer=name=>game.dispatch('answer',{room_id:'r',round:7,request_id:crypto.randomUUID(),answer:name,points:9999},{session:'p'});
  assert.equal(answer('zzzzzzzzzzzzzzzzzz').result,'invalid');assert.equal(game.get('room','r').answers.p.attempts,0);
  for(let i=1;i<=3;i++){t.mock.timers.tick(250);const result=answer('Pikachu');assert.equal(result.attempts,i);assert.equal(result.done,i===3);}
- t.mock.timers.tick(250);assert.throws(()=>answer('Snorlax'),/completato/);
+ t.mock.timers.tick(250);assert.throws(()=>answer('Snorlax'),/chiuse/);
  r.answers={};game.put('room','r',r);t.mock.timers.tick(10000);const result=answer('Snorlax');assert.equal(result.result,'correct');assert.equal(result.points,190);
 });
 

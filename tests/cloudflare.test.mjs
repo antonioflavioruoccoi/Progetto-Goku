@@ -115,6 +115,7 @@ test("Cloudflare SQLite: authentication, atomic licenses, multiplayer, alarms an
       "one-use links, concurrent redemption, atomic room quotas and revocation",
       async () => {
         license = await ok("admin", "license_create", {
+          name: "  Serata Pokémon  ",
           hours: 1,
           max_rooms: 2,
         });
@@ -137,6 +138,7 @@ test("Cloudflare SQLite: authentication, atomic licenses, multiplayer, alarms an
         assert.equal(rooms.filter((x) => !x.error).length, 2);
         hostRoom = rooms.find((x) => x.id);
         const dashboard = await ok("admin", "dashboard");
+        assert.equal(dashboard.licenses.find(l => l.id === license.id).name, "Serata Pokémon");
         assert.equal(
           dashboard.licenses.find((l) => l.id === license.id).used_rooms,
           2,
@@ -264,7 +266,12 @@ test("Cloudflare SQLite: authentication, atomic licenses, multiplayer, alarms an
         updates = [];
         ws.addEventListener("message", (e) => updates.push(JSON.parse(e.data)));
         assert.equal((await state("p2", room.id)).me.done, true);
-        // A real DO alarm, with no polling and no connected host, reveals the question.
+        // Early completion is already revealed on every reconnect.
+        assert.equal((await state("p2", room.id)).room.phase, "reveal");
+        const firstScore = (await state("p2", room.id)).me.score;
+        assert.equal(firstScore, won.points);
+        await command("admin", room.id, "next");
+        // With no answers, a real DO alarm still reveals the next question.
         await sleep(
           Math.max(
             0,
@@ -273,7 +280,7 @@ test("Cloudflare SQLite: authentication, atomic licenses, multiplayer, alarms an
         );
         assert.ok(updates.some((x) => x.room.phase === "reveal"));
         const revealed = await state("p2", room.id);
-        assert.equal(revealed.solution, correct);
+        assert.ok(revealed.solution);
         assert.equal(revealed.me.score, won.points);
         assert.equal(revealed.players[0].nickname, "Misty");
         assert.equal((await state("p2", room.id)).me.score, won.points);
@@ -354,6 +361,8 @@ test("Cloudflare SQLite: authentication, atomic licenses, multiplayer, alarms an
       const answer = { room_id: priceRoom.id, round: 13, request_id: crypto.randomUUID(), answer: "higher" };
       await denied("p1", "answer", answer, /chiuse/);
       await sleep(Math.max(0, intro.room.starts_at - Date.now()) + 100);
+      await ok("p3", "identity");
+      await ok("p3", "join", { code: priceRoom.code, nickname: "Brock" });
       await denied("p2", "join", { code: priceRoom.code, nickname: "Ash" }, /già utilizzato/);
       assert.equal((await ok("p2", "join", { code: priceRoom.code, nickname: "Misty" })).id, priceRoom.id);
       const late = await state("p2", priceRoom.id);
@@ -408,7 +417,9 @@ test("Cloudflare SQLite: authentication, atomic licenses, multiplayer, alarms an
         const priceAfter = await state("p1", priceRoom.id);
         assert.deepEqual(priceAfter.price, priceBefore.price);
         assert.deepEqual(priceAfter.me, priceBefore.me);
-        assert.equal((await ok("admin", "dashboard")).admin, true);
+        const dashboard = await ok("admin", "dashboard");
+        assert.equal(dashboard.admin, true);
+        assert.equal(dashboard.licenses.find(l => l.id === license.id).name, "Serata Pokémon");
         await denied("host", "create", {}, /Quota/);
         await ok("admin", "logout");
         await denied("admin", "dashboard", {}, /Autenticazione/);

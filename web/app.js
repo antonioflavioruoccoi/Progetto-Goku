@@ -17,9 +17,9 @@ async function rpc(action,payload={}){const start=Date.now();const response=awai
 
 function bind(id,handler,event='click'){$(id).addEventListener(event,async e=>{e.preventDefault();if(busy)return;busy=true;const button=e.currentTarget.tagName==='FORM'?e.currentTarget.querySelector('button'):e.currentTarget;if(button.tagName==='BUTTON')button.disabled=true;error('');try{await handler(e);}catch(e){error(e.message);}finally{busy=false;if(button.tagName==='BUTTON')button.disabled=false;tick();}});}
 async function loadDashboard(){dashboard=await rpc('dashboard');if(route==='admin'&&!dashboard.admin)throw Error('Area riservata all’amministratore.');show('dashboard',true);show('admin-tools',route==='admin'&&dashboard.admin);show('license-select-label',!dashboard.admin);show('auth',false);show('logout',true);$('licenses').replaceChildren();$('license-select').replaceChildren();
- for(const l of dashboard.licenses){const box=text('div','', 'license');box.append(text('strong',`Host ${l.id.slice(0,8)} · ${l.status}`),text('p',`${new Date(l.starts_at).toLocaleString()} → ${new Date(l.expires_at).toLocaleString()}`),text('p',`Stanze: ${l.used_rooms} / ${l.max_rooms} · Quiz: ${l.quizzes.join(', ')}`));
+ for(const l of dashboard.licenses){const box=text('div','', 'license');box.append(text('strong',`${l.name||`Host ${l.id.slice(0,8)}`} · ${l.status}`),text('p',`${new Date(l.starts_at).toLocaleString()} → ${new Date(l.expires_at).toLocaleString()}`),text('p',`Stanze: ${l.used_rooms} / ${l.max_rooms} · Quiz: ${l.quizzes.join(', ')}`));
   if(dashboard.admin&&l.status!=='revocato'){const revoke=text('button','Revoca');revoke.onclick=async()=>{revoke.disabled=true;try{await rpc('license_revoke',{license_id:l.id});await loadDashboard();}catch(e){error(e.message);revoke.disabled=false;}};box.append(revoke);}
-  $('licenses').append(box);if(l.status==='attivo'&&l.used_rooms<l.max_rooms){const option=text('option',`Host ${l.id.slice(0,8)} · ${l.max_rooms-l.used_rooms} stanze · scade ${new Date(l.expires_at).toLocaleString()}`);option.value=l.id;$('license-select').append(option);}}
+  $('licenses').append(box);if(l.status==='attivo'&&l.used_rooms<l.max_rooms){const option=text('option',`${l.name||`Host ${l.id.slice(0,8)}`} · ${l.max_rooms-l.used_rooms} stanze · scade ${new Date(l.expires_at).toLocaleString()}`);option.value=l.id;$('license-select').append(option);}}
  if(!dashboard.licenses.length)$('licenses').append(text('p',dashboard.admin?'Nessuna licenza generata.':'Nessuna licenza associata. Apri il tuo invito personale e riscattalo.'));
  $('create-room').disabled=!dashboard.admin&&!$('license-select').options.length;
  $('rooms').replaceChildren();for(const r of dashboard.rooms){const box=text('div','', 'room-item');box.append(text('strong',`PIN ${r.code} · ${r.quiz}`),text('p',`Stato: ${r.phase} · ${r.manche==='price'?'PokéPrice '+(r.round-12)+'/12':r.manche==='clues'?'Indizio '+(r.round-6)+'/6':'Carta '+r.round+'/6'}`));const open=text('button','Apri stanza');open.onclick=()=>{location.href=`?room=${r.id}`;};box.append(open);
@@ -37,7 +37,7 @@ bind('password-form',async()=>{await rpc('login',{password:$('password').value})
 bind('logout',async()=>{await rpc('logout');sessionStorage.removeItem('goku-invite');location.href=base.href+route+'/';});
 async function redeem(){if(!inviteToken)throw Error('Invito mancante.');await rpc('redeem',{token:inviteToken});sessionStorage.removeItem('goku-invite');inviteToken=null;location.replace(base.href+'host/');}
 bind('redeem',redeem);
-bind('license-form',async e=>{const f=new FormData(e.currentTarget);const result=await rpc('license_create',{hours:Number(f.get('hours')),max_rooms:Number(f.get('max_rooms'))});$('invite-link').value=base.href+'invite/#token='+result.token;show('invite-result',true);await loadDashboard();},'submit');
+bind('license-form',async e=>{const f=new FormData(e.currentTarget);const result=await rpc('license_create',{name:f.get('name'),hours:Number(f.get('hours')),max_rooms:Number(f.get('max_rooms'))});$('invite-link').value=base.href+'invite/#token='+result.token;show('invite-result',true);await loadDashboard();},'submit');
 bind('copy-invite',async()=>{try{await navigator.clipboard.writeText($('invite-link').value);notice('Link copiato.');}catch{$('invite-link').select();notice('Selezionato: copia il link manualmente.');}});
 bind('create-form',async()=>{const r=await rpc('create',{quiz:$('quiz').value,license_id:$('license-select').value||null});location.href=`?room=${r.id}`;},'submit');
 bind('join-form',async()=>{const r=await rpc('join',{code:$('code').value.trim(),nickname:$('nickname').value});roomId=r.id;history.replaceState(null,'',`?room=${roomId}`);await openRoom();},'submit');
@@ -59,6 +59,17 @@ for(const choice of ['higher','lower']) bind('price-'+choice,async()=>{
  }finally{await refresh();renderRoom();}
 });
 $('music').volume=.7;$('volume').oninput=()=>{$('music').volume=Number($('volume').value)/100;};
+function syncMusic(){
+ const music=$('music'),r=state.room;
+ const tracks={cards:'Pokemon FireRedLeafGreen- Pallet Town.mp3',clues:'assets/audio/oak-notebook.m4a',price:'assets/audio/castelia-card-market.m4a'};
+ const src=new URL(tracks[r.manche||'cards'],base).href;
+ if(music.src!==src){music.pause();music.src=src;music.load();}
+ if(!state.can_control||['lobby','paused','finished'].includes(r.phase)){music.pause();show('enable-audio',false);return;}
+ if(music.paused)music.play().then(()=>show('enable-audio',false)).catch(()=>show('enable-audio',true));
+}
+bind('enable-audio',async()=>{await $('music').play();show('enable-audio',false);});
+$('volume').addEventListener('input',()=>{if(state)syncMusic();});
+window.addEventListener('pagehide',()=>$('music').pause());
 async function openRoom(){show('dashboard',false);show('join-panel',false);show('room',true);$('back').href=route==='play'?base.href+'play/':base.href+route+'/';$('back').textContent=route==='play'?'Entra in un’altra stanza':'Torna alla dashboard';
  await refresh();connectSocket();}
 function connectSocket(){clearTimeout(reconnectTimer);if(channel){channel.onclose=null;channel.close();}const url=new URL('/api/socket',location.origin);url.protocol=location.protocol==='https:'?'wss:':'ws:';url.searchParams.set('room',roomId);channel=new WebSocket(url);
@@ -73,7 +84,7 @@ function left(){return !state?0:state.room.phase==='paused'?state.remaining_ms:M
 function renderRoom(){const r=state.room,host=state.can_control,active=['question','paused'].includes(r.phase),lobby=r.phase==='lobby',final=r.phase==='finished',clues=r.manche==='clues',price=state.price,checkpoint=price&&r.phase==='reveal'&&price.round%3===0;document.body.className=(host?'host':'player')+' '+r.phase+(clues?' gameboy':'')+(price?' pokeprice':'')+(checkpoint?' price-checkpoint':'');
  document.querySelector('h1').textContent=price?'PokéPrice':clues?'PokéIndizi':'Pixelcard';
  show('clue-stage',clues&&!final);show('question-prompt',!host&&!clues&&!price);show('clue-reveal',clues&&!!state.solution_image);
- if(clues){$('music').pause();const unlocked=state.clues||[];if(JSON.stringify(unlocked)!==$('clues').dataset.content){$('clues').dataset.content=JSON.stringify(unlocked);$('clues').replaceChildren(...unlocked.map((c,i)=>text('p',`${i+1}. ${c}`,'clue-dialog')));}
+ if(clues){const unlocked=state.clues||[];if(JSON.stringify(unlocked)!==$('clues').dataset.content){$('clues').dataset.content=JSON.stringify(unlocked);$('clues').replaceChildren(...unlocked.map((c,i)=>text('p',`${i+1}. ${c}`,'clue-dialog')));}
  if(state.solution_image){$('clue-image').src=base.href+state.solution_image;$('clue-image').alt='Sprite di '+state.solution;$('clue-caption').textContent=`${state.solution}${state.me?' · '+(state.me.points||0)+' punti':''}`;}
  if(state.me?.result==='correct')$('feedback').textContent=`Hai vinto ${state.me.points} punti!`;}
  show('skip-hint',host&&!clues&&!price&&!lobby&&!final);
@@ -82,7 +93,7 @@ function renderRoom(){const r=state.room,host=state.can_control,active=['questio
  show('question',!price&&(active||((host||clues)&&r.phase==='reveal')||(clues&&final&&!!state.solution_image)));
  show('price-stage',!!price&&!final);
  showPriceBackground(!!price&&!final);
- show('results',final||(!price&&r.phase==='reveal')||!!checkpoint);show('controls',host&&!final);show('fullscreen',host);show('audio-control',host&&!clues&&!price);show('revoked',route!=='play'&&!host);show('card-wrap',host&&!clues&&!price);show('answer-form',!!state.me&&active&&!price);show('paused',r.phase==='paused');$('room-code').textContent=r.code;$('round').textContent=lobby?'Lobby':price?`Round ${price.round}/${price.total}`:clues?`PokéIndizi ${r.round-6}/6`:`Carta ${r.round}/6`;$('received').textContent=`${state.received}/${state.players.length} completate`;
+ show('results',final||(!price&&r.phase==='reveal')||!!checkpoint);show('controls',host&&!final);show('fullscreen',host);show('audio-control',host&&!lobby&&!final);show('revoked',route!=='play'&&!host);show('card-wrap',host&&!clues&&!price);show('answer-form',!!state.me&&active&&!price);show('paused',r.phase==='paused');$('room-code').textContent=r.code;$('round').textContent=lobby?'Lobby':price?`Round ${price.round}/${price.total}`:clues?`PokéIndizi ${r.round-6}/6`:`Carta ${r.round}/6`;$('received').textContent=`${state.received}/${state.players.length} risposte inviate`;
  if(lobby){$('big-code').textContent=r.code;const url=base.href+'play/?code='+r.code;$('join-link').textContent=url;$('join-link').href=url;if(qrCode!==r.code){qrCode=r.code;QRCode.toCanvas($('qr'),url,{width:280,margin:4}).catch(e=>error(e.message));}$('lobby-players').replaceChildren(...state.players.map(p=>text('span',`${p.connected?'●':'○'} ${p.nickname}${p.connected?'':' · disconnesso'}`,'player-chip'+(p.connected?'':' offline'))));}
  if($('answer').dataset.round!==String(r.round)){deadlineRequested=false;$('answer').value='';$('answer').dataset.round=r.round;$('feedback').textContent='';answerRequest=null;}
  if(host&&!clues&&!price&&r.round>0&&cardRound!==r.round){cardRound=r.round;cardAsset=null;$('card').className='card reset';rpc('card',{room_id:roomId}).then(({asset})=>{const img=new Image();img.onload=()=>{if(cardRound!==r.round)return;cardAsset=img;$('pokemon').src=img.src;$('card').style.aspectRatio=`${img.naturalWidth}/${img.naturalHeight}`;setTimeout(()=>{
@@ -93,7 +104,8 @@ function renderRoom(){const r=state.room,host=state.can_control,active=['questio
  if(!active&&r.round>0)$('card').classList.add('revealed');
  for(const b of document.querySelectorAll('[data-command]')){const c=b.dataset.command;b.hidden=!(c==='end'||c==='start'&&lobby||c==='pause'&&r.phase==='question'||c==='resume'&&r.phase==='paused'||c==='next'&&r.phase==='reveal');if(c==='next')b.textContent=price?(price.round===price.total?'Mostra podio':'Prossimo round'):r.round===6?'Avvia PokéIndizi':'Prossima domanda';}
  if(final||(!price&&r.phase==='reveal')||checkpoint){$('results-title').textContent=final?'Podio finale':price?'Classifica intermedia':'Soluzione e classifica';$('solution').textContent=state.solution?`È ${state.solution}!`:'';const me=state.players.find(p=>p.user_id===user?.id);$('personal').textContent=me?`${me.nickname}: ${me.score} punti · posizione ${me.rank}`:'';$('ranking').replaceChildren(...state.players.map(p=>{const li=text('li','');li.append(text('span',`${p.rank}. ${p.nickname}`),text('strong',`${p.score} pt`));return li;}));$('podium').replaceChildren();if(final){$('music').pause();for(const p of state.players.filter(p=>p.rank<=3)){const box=text('div','', 'winner');box.append(text('span',p.rank===1?(state.players.filter(x=>x.rank===1).length>1?'Vincitore ex aequo':'Vincitore'):`${p.rank}° posto`),text('strong',p.nickname),text('span',`${p.score} punti`));$('podium').append(box);}}}
- if(price&&!final){$('music').pause();renderPrice(state,host);}
+ if(price&&!final)renderPrice(state,host);
+ syncMusic();
  tick();}
 function tick(){if(!state)return;const r=state.room,ms=left(),pre=r.phase==='question'&&Date.now()+offset<new Date(r.starts_at).getTime();show('clue-intro',r.manche==='clues'&&r.round===7&&pre);$('seconds').textContent=pre?'Pronti…':`${Math.ceil(ms/1000)}s`;const enabled=r.phase==='question'&&!pre&&ms>0&&!state.me?.done&&!busy;$('answer').disabled=$('submit').disabled=!enabled;
  if(state.price&&r.phase!=='finished'){

@@ -1,13 +1,18 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs/promises';import vm from 'node:vm';import crypto from 'node:crypto';import {Window} from 'happy-dom';import {build} from 'esbuild';
 const {outputFiles}=await build({entryPoints:['web/app.js'],bundle:true,write:false,format:'iife',plugins:[{name:'mock-qr',setup(b){b.onResolve({filter:/^qrcode$/},args=>({path:args.path,namespace:'mock'}));b.onLoad({filter:/.*/,namespace:'mock'},()=>({contents:"export default {toCanvas:async()=>{}}"}));}}]});
 const app=outputFiles[0].text,html=await fs.readFile('web/app.html','utf8');
-async function boot(path,{anonymous=false,admin=false,room=null}={}){
+async function boot(path,{anonymous=false,admin=false,room=null,licenses=[],blockedAudio=false}={}){
  const window=new Window({url:'https://goku.test/'+path,settings:{disableJavaScriptFileLoading:true,disableCSSFileLoading:true}});window.document.write(html);const calls=[];let callback;
- const fetch=async(url,options)=>{const {action,payload}=JSON.parse(options.body);calls.push({action,payload});return {ok:true,json:async()=>action==='identity'?{id:'user-1',role:admin?'admin':anonymous?'player':'host'}:action==='dashboard'?{admin,licenses:[],rooms:[],server_now:Date.now()}:action==='state'?room:action==='answer'?room?.price?{done:true,choice:payload.answer}:{result:'wrong',attempts:1,done:false}:{}};};
+ const fetch=async(url,options)=>{const {action,payload}=JSON.parse(options.body);calls.push({action,payload});return {ok:true,json:async()=>action==='identity'?{id:'user-1',role:admin?'admin':anonymous?'player':'host'}:action==='dashboard'?{admin,licenses,rooms:[],server_now:Date.now()}:action==='state'?room:action==='answer'?room?.price?{done:true,choice:payload.answer}:{result:'wrong',attempts:1,done:false}:{}};};
  class WebSocket {static OPEN=1;readyState=1;constructor(){callback=()=>this.onmessage?.({data:JSON.stringify(room)});}close(){}}
  window.matchMedia=()=>({matches:true});
+ const audio=window.document.getElementById('music'),audioEvents=[];let paused=true;
+ Object.defineProperty(audio,'paused',{get:()=>paused});
+ audio.play=()=>{audioEvents.push(['play',audio.src]);if(blockedAudio)return Promise.reject(Error('Autoplay blocked'));paused=false;return Promise.resolve();};
+ audio.pause=()=>{paused=true;audioEvents.push(['pause',audio.src]);};
+ audio.load=()=>audioEvents.push(['load',audio.src]);
  const context=vm.createContext({fetch,WebSocket,document:window.document,location:window.location,history:window.history,sessionStorage:window.sessionStorage,navigator:window.navigator,window,URL,URLSearchParams,FormData:window.FormData,Image:window.Image,crypto,console,setInterval:()=>0,setTimeout:fn=>queueMicrotask(fn),clearTimeout:()=>{}});
- vm.runInContext(app,context);await new Promise(r=>setImmediate(r));return {window,calls,notify:async()=>{await callback?.();await new Promise(r=>setImmediate(r));},$:id=>window.document.getElementById(id)};
+ vm.runInContext(app,context);await new Promise(r=>setImmediate(r));return {window,calls,audioEvents,notify:async()=>{await callback?.();await new Promise(r=>setImmediate(r));},$:id=>window.document.getElementById(id)};
 }
 test('non-admin sees password form without rendering dashboard',async()=>{const h=await boot('admin/');assert.equal(h.$('auth').hidden,false);assert.equal(h.$('dashboard').hidden,true);assert.equal(h.$('admin-tools').hidden,true);await h.window.happyDOM.close();});
 test('admin dashboard is rendered only after server authorization',async()=>{const h=await boot('admin/',{admin:true});assert.equal(h.$('dashboard').hidden,false);assert.equal(h.$('admin-tools').hidden,false);assert.equal(h.$('license-select-label').hidden,true);await h.window.happyDOM.close();});
@@ -96,6 +101,52 @@ test('PokéPrice renders host art and player choices, locks choices and shows th
   assert.equal(h.$('price-stage').hidden,true);
   assert.equal(h.$('price-background').hidden,true);
   assert.equal(h.$('results-title').textContent,'Podio finale');
+  await h.window.happyDOM.close();
+ }
+});
+
+
+test('host music changes once per minigame, preserves volume, pauses and stops at exit',async()=>{
+ const room={room:{id:'r',code:'123456',phase:'question',round:7,manche:'clues',starts_at:Date.now()-1000,deadline:Date.now()+30000},can_control:true,players:[],received:0,clues:[]};
+ const h=await boot('host/?room=r',{room});
+ assert.match(h.$('music').src,/oak-notebook.m4a$/);assert.equal(h.$('music').paused,false);
+ assert.equal(h.$('audio-control').hidden,false);
+ h.$('volume').value='0';h.$('volume').dispatchEvent(new h.window.Event('input'));
+ assert.equal(h.$('music').volume,0);
+ const starts=h.audioEvents.filter(e=>e[0]==='play').length;
+ await h.notify();assert.equal(h.audioEvents.filter(e=>e[0]==='play').length,starts);
+ room.room.phase='paused';await h.notify();assert.equal(h.$('music').paused,true);
+ room.room.phase='question';await h.notify();assert.equal(h.$('music').paused,false);
+ room.room.manche='price';room.room.round=13;
+ room.price={round:1,total:12,reference:{id:'a',name:'A',set:'S',number:'1',image:'/a',cents:100},candidate:{id:'b',name:'B',set:'S',number:'2',image:'/b'},direction:null};
+ await h.notify();assert.match(h.$('music').src,/castelia-card-market.m4a$/);assert.equal(h.$('music').volume,0);
+ room.room.phase='finished';await h.notify();assert.equal(h.$('music').paused,true);
+ assert.equal(h.$('audio-control').hidden,true);
+ await h.window.happyDOM.close();
+ const player=await boot('play/?room=r',{room:{...room,can_control:false}});
+ assert.equal(player.audioEvents.some(e=>e[0]==='play'),false);await player.window.happyDOM.close();
+});
+
+test('blocked autoplay has an accessible activation button',async()=>{
+ const room={room:{id:'r',code:'123456',phase:'question',round:7,manche:'clues',starts_at:Date.now()-1000,deadline:Date.now()+30000},can_control:true,players:[],received:0,clues:[]};
+ const h=await boot('host/?room=r',{room,blockedAudio:true});
+ assert.equal(h.$('enable-audio').hidden,false);assert.equal(h.$('audio-control').hidden,false);
+ await h.window.happyDOM.close();
+});
+
+test('named and legacy licenses render safely in dashboard and selector',async()=>{
+ const base={starts_at:Date.now(),expires_at:Date.now()+86400000,status:'attivo',max_rooms:2,used_rooms:0,quizzes:['pokemon']};
+ const licenses=[{...base,id:'named-123',name:'Serata <Pokémon>'},{...base,id:'legacy-123'}];
+ for(const path of ['admin/','host/']){
+  const h=await boot(path,{admin:path==='admin/',licenses});
+  assert.match(h.$('licenses').textContent,/Serata <Pokémon>/);assert.equal(h.$('licenses').querySelector('pokemon'),null);
+  assert.match(h.$('license-select').options[0].textContent,/Serata <Pokémon>/);
+  assert.match(h.$('license-select').options[1].textContent,/Host legacy-1/);
+  if(path==='admin/'){
+   h.$('license-form').querySelector('[name=name]').value='Serata Pokémon';
+   h.$('license-form').dispatchEvent(new h.window.Event('submit',{cancelable:true}));
+   await new Promise(r=>setImmediate(r));assert.equal(h.calls.find(c=>c.action==='license_create').payload.name,'Serata Pokémon');
+  }
   await h.window.happyDOM.close();
  }
 });

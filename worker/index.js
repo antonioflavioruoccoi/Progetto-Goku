@@ -212,7 +212,9 @@ export class Goku {
   }
   settle(r, force = false) {
     let changed = false;
-    if (r.phase === "question" && r.deadline <= Date.now()) {
+    if (r.phase === "question" && (r.deadline <= Date.now() ||
+      (Object.keys(r.players).length > 0 && Object.keys(r.players).every(id => r.answers[id]?.done)))) {
+      r.deadline = Math.min(r.deadline, Date.now());
       r.phase = "reveal";
       r.revision++;
       changed = true;
@@ -456,7 +458,10 @@ export class Goku {
         quota > 10000
       )
         fail("Durata o quota non valida", 400);
+      if (p.name !== undefined && (typeof p.name !== "string" || p.name.trim().length > 80))
+        fail("Nome della licenza non valido (massimo 80 caratteri)", 400);
       const l = {
+        name: (p.name || "").trim(),
         id: crypto.randomUUID(),
         token_hash: a.inviteHash,
         expires: now + hours * 3600000,
@@ -487,6 +492,7 @@ export class Goku {
           .filter((l) => admin || l.id === s.license)
           .map((l) => ({
             id: l.id,
+            name: l.name || "",
             starts_at: l.created,
             expires_at: l.expires,
             max_rooms: l.max_rooms,
@@ -608,6 +614,7 @@ export class Goku {
           ...result, requests: { [p.request_id]: result },
         };
         r.revision++;
+        this.settle(r);
         this.put("room", r.id, r);
         this.changed.add(r.id);
         return result;
@@ -648,6 +655,7 @@ export class Goku {
       answer.requests[p.request_id] = result;
       r.answers[s.id] = answer;
       r.revision++;
+      this.settle(r);
       this.put("room", r.id, r);
       this.changed.add(r.id);
       return result;
