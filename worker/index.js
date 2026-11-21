@@ -1,6 +1,7 @@
 import quiz from "./generated/quiz.json";
 import populations from "../data/population-comparisons.json";
 import legacyPopulations from "../data/population-comparisons-2019.json";
+import { CHRONOLOGY_ROUNDS, correctChronology, drawChronology } from "./chronology.js";
 import {
   PRICE_START, PRICE_ROUNDS, PRICE_DURATION,
   selectPriceCards, settlePrice, priceSnapshot,
@@ -8,10 +9,12 @@ import {
 const quizOf = r => r.quiz || "pokemon";
 const cultureStages = [
   { id: "population", count: populations.pairs.length, duration: 15000 },
-  null,
-  null,
+  { id: "chronology", count: CHRONOLOGY_ROUNDS, duration: 30000 },
 ];
 const cultureStage = r => quizOf(r) === "culture" ? cultureStages[(r.manche || 1) - 1] : null;
+const isChronology = r => cultureStage(r)?.id === "chronology";
+// The client's reconnect backoff refreshes via HTTP at least every 15.3 seconds.
+const POLL_PRESENCE_MS = 20000;
 const populationsFor = r => (r.population_year || legacyPopulations.year) === populations.year ? populations : legacyPopulations;
 const roundDuration = r => cultureStage(r)?.duration ?? (quizOf(r) === "culture" ? 0 : r.manche === "price" ? PRICE_DURATION : 30000);
 const rounds = r => quizOf(r) === "culture" ? cultureStage(r)?.count ?? 0 : PRICE_START + PRICE_ROUNDS - 1;
@@ -249,33 +252,58 @@ export class Goku {
     );
   }
   publicRoom(r) {
-    const { players, answers, order, clueOrder, priceOrder, settled, ...publicData } = r;
+    const { players, answers, order, clueOrder, priceOrder, chronologyOrder, polling, settled, ...publicData } = r;
     publicData.quiz ||= "pokemon";
     publicData.manche ||= publicData.quiz === "culture" ? 1 : "cards";
     if (publicData.quiz === "culture") publicData.manche_total = cultureStages.length;
     return publicData;
   }
   advanceRound(r, now = Date.now()) {
-    if (r.round === rounds(r)) r.phase = "finished";
-    else {
-      r.round++;
-      r.phase = "question";
-      r.starts_at = now + (r.manche === "price" ? 0 : 2000);
-      r.remaining_ms = roundDuration(r);
-      r.deadline = r.starts_at + r.remaining_ms;
-      r.answers = {};
-      r.cluesShown = 0;
+    if (r.round === rounds(r)) {
+      if (cultureStage(r)?.id !== "population") {
+        r.phase = "finished";
+        return;
+      }
+      r.manche = 2;
+      r.chronologyOrder ??= drawChronology();
+      r.round = r.settled = 0;
     }
+    r.round++;
+    r.phase = "question";
+    r.starts_at = now + (r.manche === "price" || isChronology(r) ? 0 : 2000);
+    r.remaining_ms = roundDuration(r);
+    r.deadline = r.starts_at + r.remaining_ms;
+    r.answers = {};
+    r.cluesShown = 0;
+  }
+  chronologyParticipants(r, connected = this.connectedPlayers(r)) {
+    const cutoff = Date.now() - POLL_PRESENCE_MS;
+    return Object.keys(r.players).filter(id => connected.has(id) || r.polling?.[id] > cutoff);
+  }
+  connectedPlayers(r) {
+    return new Set(this.ctx.getWebSockets(r.id)
+      .filter(ws => ws.readyState === 1)
+      .map(ws => ws.deserializeAttachment()?.user));
+  }
+  recordPoll(r, id, now) {
+    if (quizOf(r) !== "culture" || r.phase === "finished" || !r.players[id] ||
+        this.connectedPlayers(r).has(id)) return false;
+    r.polling ??= {};
+    r.polling[id] = now;
+    return true;
   }
   settle(r, force = false) {
     let changed = false;
-    if (r.phase === "question" && (r.deadline <= Date.now() ||
-      (Object.keys(r.players).length > 0 && Object.keys(r.players).every(id =>
-        r.answers[id]?.done)))) {
+    const now = Date.now();
+    const complete = () => {
+      const ids = isChronology(r) ? this.chronologyParticipants(r) : Object.keys(r.players);
+      return ids.length > 0 && ids.every(id => r.answers[id]?.done);
+    };
+    if (r.phase === "question" && (r.deadline <= now || (now >= r.starts_at && complete()))) {
       if (quizOf(r) === "culture") {
-        r.remaining_ms = 10000;
-        r.deadline = Date.now() + r.remaining_ms;
-      } else r.deadline = Math.min(r.deadline, Date.now());
+        r.remaining_ms = isChronology(r) ? 15000 : 10000;
+        r.deadline = now + r.remaining_ms;
+      } else r.deadline = Math.min(r.deadline, now);
       r.phase = "reveal";
       r.revision++;
       changed = true;
@@ -333,16 +361,13 @@ export class Goku {
     r.revision++;
   }
   question(r) {
-    if (quizOf(r) === "culture") return cultureStage(r)?.id === "population" ? populationsFor(r).pairs[r.order[r.round - 1]] : null;
+    if (isChronology(r)) return r.chronologyOrder[r.round - 1];
+    if (quizOf(r) === "culture") return populationsFor(r).pairs[r.order[r.round - 1]];
     return r.manche === "clues" ? quiz.clues[r.clueOrder[r.round - 7]] : quiz.cards[r.order[r.round - 1]];
   }
   snapshot(s, r) {
     if (!this.readable(s, r)) fail("Stanza non accessibile");
-    const connected = new Set(
-      this.ctx
-        .getWebSockets(r.id)
-        .map((ws) => ws.deserializeAttachment()?.user),
-    );
+    const connected = this.connectedPlayers(r);
     const players = Object.values(r.players)
       .map((p) => ({ ...p, connected: connected.has(p.user_id) }))
       .sort(
@@ -355,23 +380,37 @@ export class Goku {
     );
     const remaining = r.phase === "paused" ? r.remaining_ms : Math.max(0, Math.min(roundDuration(r), r.deadline - Date.now()));
     const revealed = ["reveal", "finished"].includes(r.phase) || (r.manche === "clues" && r.answers[s.id]?.result === "correct");
-    const populationRevealed = ["reveal", "finished"].includes(r.phase) || (r.phase === "paused" && r.paused_from === "reveal");
+    const cultureRevealed = ["reveal", "finished"].includes(r.phase) || (r.phase === "paused" && r.paused_from === "reveal");
     const price = r.manche === "price";
     const question = r.round && !price ? this.question(r) : null;
     const population = cultureStage(r)?.id === "population" && question;
+    const chronology = isChronology(r) && question;
+    const participants = chronology && new Set([
+      ...this.chronologyParticipants(r, connected),
+      ...Object.keys(r.answers).filter(id => r.answers[id].done),
+    ]).size;
     return {
       clues: r.manche === "clues" && Date.now() >= r.starts_at ? question.clues.slice(0, ["reveal", "finished"].includes(r.phase) ? 3 : remaining > 20000 ? 1 : remaining > 10000 ? 2 : 3) : [],
       solution_image: revealed && r.manche === "clues" ? question.image : null,
       room: this.publicRoom(r),
       server_now: Date.now(),
       remaining_ms: remaining,
-      ...(price ? { duration_ms: PRICE_DURATION, price: priceSnapshot(r, revealed) } : population ? { duration_ms: roundDuration(r) } : {}),
+      ...(price ? { duration_ms: PRICE_DURATION, price: priceSnapshot(r, revealed) } : population || chronology ? { duration_ms: roundDuration(r) } : {}),
+      ...(chronology ? {
+        chronology: {
+          category: chronology.category,
+          total: CHRONOLOGY_ROUNDS,
+          items: cultureRevealed ? chronology.items : chronology.items.map(({ id, name }) => ({ id, name })),
+          ...(cultureRevealed ? { correct: correctChronology(chronology.items) } : {}),
+          participants,
+        },
+      } : {}),
       ...(population
         ? {
             population: {
               year: populationsFor(r).year,
               countries: question.map(({ id, iso2, name }) => ({ id, iso2, name })),
-              ...(populationRevealed
+              ...(cultureRevealed
                 ? {
                     values: question.map(({ population: value }) => value),
                     correct: question.reduce((a, b) => a.population > b.population ? a : b).id,
@@ -387,12 +426,12 @@ export class Goku {
             attempts: r.answers[s.id]?.attempts || 0,
             done: r.answers[s.id]?.done || false,
             result: r.answers[s.id]?.result,
-            points: r.answers[s.id]?.points || 0,
+            points: !chronology || cultureRevealed ? r.answers[s.id]?.points || 0 : 0,
             ...(price ? {
               choice: r.answers[s.id]?.choice || null,
               streak: r.players[s.id].streak || 0,
               bonus: r.answers[s.id]?.bonus || 0,
-            } : population ? { choice: r.answers[s.id]?.choice || null } : {}),
+            } : population || chronology ? { choice: r.answers[s.id]?.choice || null } : {}),
           }
         : null,
       can_control: this.control(s, r),
@@ -439,10 +478,14 @@ export class Goku {
           if (!this.readable(s, r)) fail("Stanza non accessibile");
           if (this.ctx.getWebSockets().length >= 500)
             fail("Troppe connessioni", 429);
-          this.settle(r);
           const pair = new WebSocketPair();
           this.ctx.acceptWebSocket(pair[1], [id]);
           pair[1].serializeAttachment({ session: key, user: s.id, room: id });
+          if (r.polling?.[s.id]) {
+            delete r.polling[s.id];
+            this.put("room", r.id, r);
+          }
+          this.settle(r);
           await this.broadcast(id);
           await this.schedule();
           return new Response(null, { status: 101, webSocket: pair[0] });
@@ -647,8 +690,8 @@ export class Goku {
         players: {},
         answers: {},
         order,
-      ...(selectedQuiz === "culture" ? { population_year: populations.year } : {}),
-      ...(selectedQuiz === "pokemon" ? { priceOrder: selectPriceCards(quiz.priceCards) } : {}),
+        ...(selectedQuiz === "culture" ? { population_year: populations.year, chronologyOrder: drawChronology() } : {}),
+        ...(selectedQuiz === "pokemon" ? { priceOrder: selectPriceCards(quiz.priceCards) } : {}),
       };
       this.put("room", r.id, r);
       return { id: r.id, code };
@@ -671,6 +714,7 @@ export class Goku {
       )
         fail("Nickname già utilizzato");
       r.players[s.id] = { user_id: s.id, nickname, score: 0 };
+      this.recordPoll(r, s.id, now);
       r.revision++;
       this.put("room", r.id, r);
       this.changed.add(r.id);
@@ -678,7 +722,10 @@ export class Goku {
     }
     const r = this.get("room", p.room_id);
     if (!this.readable(s, r)) fail("Stanza non accessibile");
-    if (action === "state") return this.snapshot(s, r);
+    if (action === "state") {
+      if (this.recordPoll(r, s.id, now)) this.put("room", r.id, r);
+      return this.snapshot(s, r);
+    }
     if (action === "card") {
       if (!this.control(s, r) || quizOf(r) !== "pokemon" || !r.round || ["clues", "price"].includes(r.manche))
         fail("Solo il conduttore può vedere la carta");
@@ -686,7 +733,7 @@ export class Goku {
     }
     if (action === "answer") {
       if (!r.players[s.id]) fail("Solo giocatori");
-      if (p.round !== r.round) fail("Domanda non più attuale");
+      if (p.round !== r.round || (isChronology(r) && p.manche !== r.manche)) fail("Domanda non più attuale");
       const answer = r.answers[s.id] || {
         attempts: 0,
         done: false,
@@ -708,6 +755,21 @@ export class Goku {
         r.answers[s.id] = {
           ...result, requests: { [p.request_id]: result },
         };
+        r.revision++;
+        this.settle(r);
+        this.put("room", r.id, r);
+        this.changed.add(r.id);
+        return result;
+      }
+      if (isChronology(r)) {
+        const items = this.question(r).items;
+        if (!Array.isArray(p.answer) || p.answer.length !== items.length ||
+            new Set(p.answer).size !== items.length ||
+            !items.every(({ id }) => p.answer.includes(id))) fail("Ordina tutti e quattro gli elementi");
+        const points = correctChronology(items).reduce((sum, id, index) => sum + (p.answer[index] === id ? 30 : 0), 0);
+        const result = { done: true, choice: p.answer };
+        r.answers[s.id] = { ...result, points, requests: { [p.request_id]: result } };
+        this.recordPoll(r, s.id, now);
         r.revision++;
         this.settle(r);
         this.put("room", r.id, r);
@@ -784,7 +846,7 @@ export class Goku {
         else this.beginPrice(r);
       } else if (
         (c === "start" && r.phase === "lobby") ||
-        (c === "next" && r.phase === "reveal")
+        (c === "next" && r.phase === "reveal" && !isChronology(r))
       ) {
         if (!Object.keys(r.players).length) fail("Attendi un giocatore");
         this.advanceRound(r, now);
@@ -825,11 +887,19 @@ export class Goku {
   async webSocketClose(ws) {
     const { room } = ws.deserializeAttachment();
     ws.close(1000);
-    await this.broadcast(room);
+    await this.handleDisconnect(room);
   }
   async webSocketError(ws) {
     const { room } = ws.deserializeAttachment();
     ws.close(1011, "Riconnetti");
-    await this.broadcast(room);
+    await this.handleDisconnect(room);
+  }
+  async handleDisconnect(room) {
+    await this.ctx.blockConcurrencyWhile(async () => {
+      const r = this.get("room", room);
+      const changed = r && isChronology(r) && this.settle(r);
+      await this.broadcast(room);
+      if (changed) await this.schedule();
+    });
   }
 }

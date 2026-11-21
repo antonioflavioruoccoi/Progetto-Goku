@@ -1,5 +1,6 @@
 import QRCode from 'qrcode';
 import {renderPrice, showPriceBackground, tickPrice} from './pokeprice.js';
+import {chronologySelection, renderChronology, tickChronology} from './chronology.js';
 const $=id=>document.getElementById(id);
 const pixelStart=40*2/3,pixelEnd=3;
 const show=(id,visible)=>$(id).hidden=!visible;
@@ -14,6 +15,7 @@ if(inviteToken){sessionStorage.setItem('goku-invite',inviteToken);history.replac
 else if(route==='invite')inviteToken=sessionStorage.getItem('goku-invite');
 const notice=s=>{$('notice').textContent=s;};
 const error=s=>{$('error').textContent=s;};
+const cultureRound=(r,total=5)=>r.manche===2?`Cronologia ${r.round}/${total}`:`Confronto ${r.round}/10 · manche ${r.manche}/${r.manche_total}`;
 async function rpc(action,payload={}){
  const start=Date.now();
  let response;
@@ -34,7 +36,7 @@ async function loadDashboard(){dashboard=await rpc('dashboard');if(route==='admi
  if(!dashboard.licenses.length)$('licenses').append(text('p',dashboard.admin?'Nessuna licenza generata.':'Nessuna licenza associata. Apri il tuo invito personale e riscattalo.'));
  const allowed=new Set(dashboard.admin?['pokemon','culture']:dashboard.licenses.flatMap(l=>l.quizzes||['pokemon']));for(const option of $('quiz').options){option.hidden=!allowed.has(option.value);option.disabled=!allowed.has(option.value);}if(!allowed.has($('quiz').value))$('quiz').value=allowed.has('culture')?'culture':'pokemon';
  $('create-room').disabled=!dashboard.admin&&!$('license-select').options.length;
- $('rooms').replaceChildren();for(const r of dashboard.rooms){const box=text('div','', 'room-item');box.append(text('strong',`PIN ${r.code} · ${r.quiz==='culture'?'Cultura generale':'Pokémon'}`),text('p',`Stato: ${r.phase} · ${r.quiz==='culture'?`Confronto ${r.round}/10 · manche 1/3`:r.manche==='price'?'PokéPrice '+(r.round-12)+'/12':r.manche==='clues'?'Indizio '+(r.round-6)+'/6':'Carta '+r.round+'/6'}`));const open=text('button','Apri stanza');open.onclick=()=>{location.href=`?room=${r.id}`;};box.append(open);
+ $('rooms').replaceChildren();for(const r of dashboard.rooms){const box=text('div','', 'room-item');box.append(text('strong',`PIN ${r.code} · ${r.quiz==='culture'?'Cultura generale':'Pokémon'}`),text('p',`Stato: ${r.phase} · ${r.quiz==='culture'?cultureRound(r):r.manche==='price'?'PokéPrice '+(r.round-12)+'/12':r.manche==='clues'?'Indizio '+(r.round-6)+'/6':'Carta '+r.round+'/6'}`));const open=text('button','Apri stanza');open.onclick=()=>{location.href=`?room=${r.id}`;};box.append(open);
   if(dashboard.admin&&r.phase!=='finished'){const end=text('button','Interrompi');end.onclick=async()=>{end.disabled=true;try{const s=await rpc('state',{room_id:r.id});await rpc('command',{room_id:r.id,revision:s.room.revision,command:'end'});await loadDashboard();}catch(e){error(e.message);end.disabled=false;}};box.append(end);}$('rooms').append(box);}
  if(!dashboard.rooms.length)$('rooms').append(text('p','Nessuna stanza.'));
 }
@@ -71,6 +73,8 @@ bind('join-form',async()=>{
  await openRoom();
 },'submit');
 bind('fullscreen',async()=>{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();});
+const labelFullscreen=()=>{$('fullscreen').textContent=!$('chronology-stage').hidden&&document.fullscreenElement?'Esci da schermo intero':'Schermo intero';};
+document.addEventListener('fullscreenchange',labelFullscreen);
 for(const button of document.querySelectorAll('[data-command]'))button.addEventListener('click',async()=>{if(busy)return;busy=true;try{error('');if(button.dataset.command==='start'&&state.room.quiz!=='culture')$('music').play().catch(()=>{});await rpc('command',{room_id:roomId,revision:state.room.revision,command:button.dataset.command});await refresh();}catch(e){error(e.message);await refresh();}finally{busy=false;}});
 bind('answer-form',async()=>{const answer=$('answer').value.trim();const request=answerRequest?.answer===answer&&answerRequest.round===state.room.round?answerRequest:{answer,round:state.room.round,request_id:crypto.randomUUID()};answerRequest=request;const result=await rpc('answer',{room_id:roomId,...request});answerRequest=null;
  $('feedback').textContent=result.result==='invalid'?'Nome errato, riprova':result.result==='correct'?`Hai vinto ${result.points} punti!`:result.done?'Peccato, hai sbagliato':`Non è questo Pokémon! Restano ${3-result.attempts} tentativi.`;
@@ -86,6 +90,22 @@ for(const choice of ['higher','lower']) bind('price-'+choice,async()=>{
   if(state.room.round===round&&state.me)Object.assign(state.me,result);
   answerRequest=null;
  }finally{await refresh();renderRoom();}
+});
+bind('chronology-send',async()=>{
+ const {id,manche,round}=state.room, answer=chronologySelection();
+ if(!state.me||state.me.done||state.room.phase!=='question'||!left()||answer.length!==4)return;
+ const request=answerRequest?.manche===manche&&answerRequest.round===round&&
+  answer.every((item,index)=>item===answerRequest.answer[index])
+  ?answerRequest:{manche,round,answer,request_id:crypto.randomUUID()};
+ answerRequest=request;
+ tick();
+ try{
+  const result=await rpc('answer',{room_id:id,...request});
+  if(state?.room.id===id&&state.room.manche===manche&&state.room.round===round){
+   Object.assign(state.me,result);
+   answerRequest=null;
+  }
+ }finally{await refresh();if(state)renderRoom();}
 });
 $('population-match').addEventListener('click',async event=>{
  const button=event.target.closest('button[data-country]');
@@ -205,33 +225,39 @@ function renderPopulation(){
  const chosen=countries.find(country=>country.id===state.me?.choice);
  $('population-feedback').textContent=state.me?.result==='correct'&&values?'Risposta esatta!':state.me?.result==='wrong'&&values?'Risposta sbagliata.':chosen?`Hai scelto ${chosen.name}. In attesa della rivelazione.`:'';
 }
-function renderRoom(){const r=state.room,host=state.can_control,active=['question','paused'].includes(r.phase),lobby=r.phase==='lobby',final=r.phase==='finished',clues=r.manche==='clues',culture=r.quiz==='culture',cultureRevealed=culture&&!!state.population?.values,price=state.price,checkpoint=price&&r.phase==='reveal'&&price.round%3===0;document.body.className=(host?'host':'player')+' '+r.phase+(clues?' gameboy':'')+(culture?' culture-quiz':'')+(price?' pokeprice':'')+(checkpoint?' price-checkpoint':'');
+function renderRoom(){const r=state.room,host=state.can_control,active=['question','paused'].includes(r.phase),lobby=r.phase==='lobby',final=r.phase==='finished',clues=r.manche==='clues',culture=r.quiz==='culture',cultureRevealed=culture&&!!state.population?.values,chronology=state.chronology&&!final,price=state.price,checkpoint=price&&r.phase==='reveal'&&price.round%3===0;document.body.className=(host?'host':'player')+' '+r.phase+(clues?' gameboy':'')+(culture?' culture-quiz':'')+(chronology?' chronology-quiz':'')+(price?' pokeprice':'')+(checkpoint?' price-checkpoint':'');
  document.querySelector('h1').textContent=price?'PokéPrice':clues?'PokéIndizi':culture?'Cultura generale':'Pixelcard';
- show('clue-stage',clues&&!final);show('question-prompt',!host&&!clues&&!price&&!culture);show('clue-reveal',clues&&!!state.solution_image);show('culture-stage',culture&&r.round>0);if(culture&&state.population){$('culture-prompt').textContent=`Higher or lower — Quale nazione ha più abitanti? · stime ${state.population.year}`;renderPopulation();}
+ show('clue-stage',clues&&!final);show('question-prompt',!host&&!clues&&!price&&!culture);show('clue-reveal',clues&&!!state.solution_image);show('culture-stage',!!state.population);if(culture&&state.population){$('culture-prompt').textContent=`Higher or lower — Quale nazione ha più abitanti? · stime ${state.population.year}`;renderPopulation();}
  if(clues){const unlocked=state.clues||[];if(JSON.stringify(unlocked)!==$('clues').dataset.content){$('clues').dataset.content=JSON.stringify(unlocked);$('clues').replaceChildren(...unlocked.map((c,i)=>text('p',`${i+1}. ${c}`,'clue-dialog')));}
  if(state.solution_image){$('clue-image').src=base.href+state.solution_image;$('clue-image').alt='Sprite di '+state.solution;$('clue-caption').textContent=`${state.solution}${state.me?' · '+(state.me.points||0)+' punti':''}`;}
  if(state.me?.result==='correct')$('feedback').textContent=`Hai vinto ${state.me.points} punti!`;}
  show('skip-hint',host&&!clues&&!culture&&!price&&!lobby&&!final);
  show('price-shortcut',host&&clues&&!final);
  show('lobby',lobby);
- show('question',!price&&(active||((host||clues||culture)&&r.phase==='reveal')||(clues&&final&&!!state.solution_image)));
+ show('question',!price&&!chronology&&(active||((host||clues||culture)&&r.phase==='reveal')||(clues&&final&&!!state.solution_image)));
  show('price-stage',!!price&&!final);
+ show('chronology-stage',!!chronology);
+ if(chronology)renderChronology(state,host);
+ labelFullscreen();
  showPriceBackground(!!price&&!final);
- show('results',culture&&r.round>0||final||(!price&&r.phase==='reveal')||!!checkpoint);show('controls',host&&!final);show('fullscreen',host);show('audio-control',host&&!lobby&&!final&&!culture);show('revoked',route!=='play'&&!host);show('card-wrap',host&&!clues&&!price&&!culture);show('answer-form',!!state.me&&active&&!price&&!culture);show('population-match',culture&&r.round>0);show('paused',r.phase==='paused');$('room-code').textContent=r.code;$('round').textContent=lobby?'Lobby':price?`Round ${price.round}/${price.total}`:clues?`PokéIndizi ${r.round-6}/6`:culture?`Confronto ${r.round}/10 · manche ${r.manche}/${r.manche_total}`:`Carta ${r.round}/6`;$('received').textContent=`${state.received}/${state.players.length} risposte inviate`;
+ show('results',!chronology&&(culture&&r.round>0||final||(!price&&r.phase==='reveal')||!!checkpoint));show('controls',host&&!final);show('fullscreen',host);show('audio-control',host&&!lobby&&!final&&!culture);show('revoked',route!=='play'&&!host);show('card-wrap',host&&!clues&&!price&&!culture);show('answer-form',!!state.me&&active&&!price&&!culture);show('population-match',!!state.population);show('paused',r.phase==='paused');$('room-code').textContent=r.code;$('round').textContent=lobby?'Lobby':price?`Round ${price.round}/${price.total}`:clues?`PokéIndizi ${r.round-6}/6`:culture?cultureRound(r,state.chronology?.total):`Carta ${r.round}/6`;$('received').textContent=`${state.received}/${chronology?.participants??state.players.length} risposte inviate`;
+ if(chronology)$('chronology-count').textContent=$('received').textContent;
  if(lobby){$('big-code').textContent=r.code;const url=base.href+'play/?code='+r.code;$('join-link').textContent=url;$('join-link').href=url;if(qrCode!==r.code){qrCode=r.code;QRCode.toCanvas($('qr'),url,{width:280,margin:4}).catch(e=>error(e.message));}$('lobby-players').replaceChildren(...state.players.map(p=>text('span',`${p.connected?'●':'○'} ${p.nickname}${p.connected?'':' · disconnesso'}`,'player-chip'+(p.connected?'':' offline'))));}
- if($('answer').dataset.round!==String(r.round)){deadlineRequested=false;$('answer').value='';$('answer').dataset.round=r.round;$('feedback').textContent='';answerRequest=null;}
+ const questionKey=`${r.id}/${r.manche}/${r.round}`;
+ if($('answer').dataset.round!==questionKey){deadlineRequested=false;$('answer').value='';$('answer').dataset.round=questionKey;$('feedback').textContent='';answerRequest=null;}
  if(host&&!clues&&!culture&&!price&&r.round>0&&cardRound!==r.round){cardRound=r.round;cardAsset=null;$('card').className='card reset';rpc('card',{room_id:roomId}).then(({asset})=>{const img=new Image();img.onload=()=>{if(cardRound!==r.round)return;cardAsset=img;$('pokemon').src=img.src;$('card').style.aspectRatio=`${img.naturalWidth}/${img.naturalHeight}`;setTimeout(()=>{
  if(state.room.round!==r.round||cardRound!==r.round)return;
  $('card').className=['question','paused'].includes(state.room.phase)?'card flipped':'card flipped revealed';
  tick();
  },250);};img.onerror=()=>{cardRound=0;error('Impossibile caricare la carta.');};img.src=base.href+asset;}).catch(e=>{cardRound=0;error(e.message);});}
  if(!active&&r.round>0&&!culture)$('card').classList.add('revealed');
- for(const b of document.querySelectorAll('[data-command]')){const c=b.dataset.command;b.hidden=!(c==='end'||c==='start'&&lobby||c==='pause'&&(r.phase==='question'||(culture&&r.phase==='reveal'))||c==='resume'&&r.phase==='paused'||c==='next'&&r.phase==='reveal');if(c==='next')b.textContent=price?(price.round===price.total?'Mostra podio':'Prossimo round'):culture?(r.round===10?'Mostra podio':'Prossimo confronto'):r.round===6?'Avvia PokéIndizi':'Prossima domanda';}
- if(culture&&r.round>0||final||(!price&&r.phase==='reveal')||checkpoint){$('results-title').textContent=final?'Podio finale':culture&&!cultureRevealed?'Classifica attuale':price?'Classifica intermedia':'Soluzione e classifica';$('solution').textContent=culture&&state.population?.values?`${state.population.countries[state.population.values[1]>state.population.values[0]?1:0].name} ha più abitanti (${new Intl.NumberFormat('it-IT').format(Math.max(...state.population.values))}, stima ${state.population.year}).`:state.solution?`È ${state.solution}!`:'';const me=state.players.find(p=>p.user_id===user?.id);$('personal').textContent=me?`${me.nickname}: ${me.score} punti · posizione ${me.rank}`:'';if(culture&&previousRankRoom!==r.id){previousRanks.clear();previousRankRoom=r.id;}$('ranking').replaceChildren(...state.players.map(p=>{const movement=culture?(previousRanks.get(p.user_id)||p.rank)-p.rank:0,li=text('li','',movement>0?'rank-up':movement<0?'rank-down':'');li.append(text('span',`${p.rank}. ${p.nickname}${movement>0?' ▲':movement<0?' ▼':''}`),text('strong',`${p.score} pt`));return li;}));previousRanks=new Map(state.players.map(p=>[p.user_id,p.rank]));$('podium').replaceChildren();if(final){$('music').pause();for(const p of state.players.filter(p=>p.rank<=3)){const box=text('div','', 'winner');box.append(text('span',p.rank===1?(state.players.filter(x=>x.rank===1).length>1?'Vincitore ex aequo':'Vincitore'):`${p.rank}° posto`),text('strong',p.nickname),text('span',`${p.score} punti`));$('podium').append(box);}}}
+ for(const b of document.querySelectorAll('[data-command]')){const c=b.dataset.command;b.hidden=!(c==='end'||c==='start'&&lobby||c==='pause'&&(r.phase==='question'||(culture&&r.phase==='reveal'))||c==='resume'&&r.phase==='paused'||c==='next'&&r.phase==='reveal'&&!chronology);if(c==='next')b.textContent=price?(price.round===price.total?'Mostra podio':'Prossimo round'):culture?(r.round===10?'Avvia Cronologia':'Prossimo confronto'):r.round===6?'Avvia PokéIndizi':'Prossima domanda';}
+ if(!chronology&&(culture&&r.round>0||final||(!price&&r.phase==='reveal')||checkpoint)){$('results-title').textContent=final?'Podio finale':culture&&!cultureRevealed?'Classifica attuale':price?'Classifica intermedia':'Soluzione e classifica';$('solution').textContent=culture&&state.population?.values?`${state.population.countries[state.population.values[1]>state.population.values[0]?1:0].name} ha più abitanti (${new Intl.NumberFormat('it-IT').format(Math.max(...state.population.values))}, stima ${state.population.year}).`:state.solution?`È ${state.solution}!`:'';const me=state.players.find(p=>p.user_id===user?.id);$('personal').textContent=me?`${me.nickname}: ${me.score} punti · posizione ${me.rank}`:'';if(culture&&previousRankRoom!==r.id){previousRanks.clear();previousRankRoom=r.id;}$('ranking').replaceChildren(...state.players.map(p=>{const movement=culture?(previousRanks.get(p.user_id)||p.rank)-p.rank:0,li=text('li','',movement>0?'rank-up':movement<0?'rank-down':'');li.append(text('span',`${p.rank}. ${p.nickname}${movement>0?' ▲':movement<0?' ▼':''}`),text('strong',`${p.score} pt`));return li;}));previousRanks=new Map(state.players.map(p=>[p.user_id,p.rank]));$('podium').replaceChildren();if(final){$('music').pause();for(const p of state.players.filter(p=>p.rank<=3)){const box=text('div','', 'winner');box.append(text('span',p.rank===1?(state.players.filter(x=>x.rank===1).length>1?'Vincitore ex aequo':'Vincitore'):`${p.rank}° posto`),text('strong',p.nickname),text('span',`${p.score} punti`));$('podium').append(box);}}}
  if(price&&!final)renderPrice(state,host);
  syncMusic();
  tick();}
 function tick(){if(!state)return;const r=state.room,ms=left(),pre=r.phase==='question'&&Date.now()+offset<new Date(r.starts_at).getTime();show('clue-intro',r.manche==='clues'&&r.round===7&&pre);$('seconds').textContent=pre&&r.quiz==='culture'?`Partenza ${Math.ceil((new Date(r.starts_at).getTime()-Date.now()-offset)/1000)}s`:r.quiz==='culture'&&r.phase==='reveal'?`${r.round===10?'Podio':'Prossimo confronto'} tra ${Math.ceil(ms/1000)}s`:pre?'Pronti…':`${Math.ceil(ms/1000)}s`;const enabled=r.phase==='question'&&!pre&&ms>0&&!state.me?.done&&!busy;$('answer').disabled=$('submit').disabled=!enabled;for(const button of $('population-match').querySelectorAll('button'))button.disabled=!enabled||state.can_control||!!state.me?.done;
+ if(state.chronology&&r.phase!=='finished')tickChronology(state,ms,enabled);
  if(state.price&&r.phase!=='finished'){
   const introMs=pre?new Date(r.starts_at).getTime()-Date.now()-offset:0;
   tickPrice(state,ms,pre,introMs,enabled&&!!state.me&&!state.can_control);

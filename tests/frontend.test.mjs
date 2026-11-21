@@ -3,7 +3,7 @@ const {outputFiles}=await build({entryPoints:['web/app.js'],bundle:true,write:fa
 const app=outputFiles[0].text,html=await fs.readFile('web/app.html','utf8');
 async function boot(path,{anonymous=false,admin=false,room=null,licenses=[],blockedAudio=false,userId='user-1'}={}){
  const window=new Window({url:'https://goku.test/'+path,settings:{disableJavaScriptFileLoading:true,disableCSSFileLoading:true}});window.document.write(html);const calls=[];let socket;
- const fetch=async(url,options)=>{const {action,payload}=JSON.parse(options.body);calls.push({action,payload});return {ok:true,json:async()=>action==='identity'?{id:userId,role:admin?'admin':anonymous?'player':'host'}:action==='dashboard'?{admin,licenses,rooms:[],server_now:Date.now()}:action==='state'?room:action==='answer'?room?.price?{done:true,choice:payload.answer}:room?.population?(Object.assign(room.me,{done:true,choice:payload.answer,result:'wrong',points:0}),{done:true,choice:payload.answer,result:'wrong',points:0}):{result:'wrong',attempts:1,done:false}:{}};};
+ const fetch=async(url,options)=>{const {action,payload}=JSON.parse(options.body);calls.push({action,payload});return {ok:true,json:async()=>action==='identity'?{id:userId,role:admin?'admin':anonymous?'player':'host'}:action==='dashboard'?{admin,licenses,rooms:[],server_now:Date.now()}:action==='state'?room:action==='answer'?room?.chronology?Object.assign(room.me,{done:true,choice:payload.answer}):room?.price?{done:true,choice:payload.answer}:room?.population?(Object.assign(room.me,{done:true,choice:payload.answer,result:'wrong',points:0}),{done:true,choice:payload.answer,result:'wrong',points:0}):{result:'wrong',attempts:1,done:false}:{}};};
  class WebSocket {static OPEN=1;readyState=1;constructor(){socket=this;}close(){this.readyState=3;this.onclose?.();}}
  window.matchMedia=()=>({matches:true});
  const audio=window.document.getElementById('music'),audioEvents=[];let paused=true;
@@ -191,4 +191,57 @@ test('host only sees the licensed quiz choices and no Pokémon audio for Cultura
  const pausedReveal={room:{id:'culture-room',code:'123456',quiz:'culture',manche:1,manche_total:3,phase:'paused',paused_from:'reveal',round:1,revision:3,starts_at:new Date(now-15000).toISOString(),deadline:new Date(now+6000).toISOString(),remaining_ms:6000},server_now:now,duration_ms:15000,remaining_ms:6000,can_control:true,received:1,players:[{user_id:'p1',nickname:'Ash',score:100,rank:1}],population:{year:2025,countries:[{id:'ITA',iso2:'IT',name:'Italia'},{id:'TZA',iso2:'TZ',name:'Tanzania'}],values:[60924851,69145464],correct:'TZA'},me:null};
  const pausedHost=await boot('host/?room=culture-room',{room:pausedReveal});
  assert.equal(pausedHost.$('culture-stage').hidden,false);assert.equal(pausedHost.$('results').hidden,false);assert.equal(pausedHost.$('results-title').textContent,'Soluzione e classifica');assert.equal(pausedHost.$('population-b').querySelector('.population-flag').src,'https://goku.test/assets/flags/tz.svg');assert.equal(pausedHost.$('population-a').querySelector('.population-name').textContent,'Italia');assert.equal(pausedHost.$('population-b').querySelector('.population-value').textContent,'69.145.464 abitanti');assert.equal(pausedHost.$('solution').textContent,'Tanzania ha più abitanti (69.145.464, stima 2025).');assert.equal(pausedHost.$('population-b').disabled,true);assert.equal(pausedHost.$('paused').hidden,false);assert.equal(pausedHost.window.document.querySelector('[data-command=resume]').hidden,false);assert.equal(pausedHost.window.document.querySelector('[data-command=end]').hidden,false);await pausedHost.window.happyDOM.close();
+});
+
+test('Cronologia toggles and resets ranks, submits once, and reveals the player order',async()=>{
+ const now=Date.now(),items=[
+  {id:0,name:'Interstellar - Christopher Nolan'},
+  {id:1,name:'Avatar - James Cameron'},
+  {id:2,name:'Spider-Man - Sam Raimi'},
+  {id:3,name:'Ratatouille - Brad Bird'},
+ ];
+ const room={
+  room:{id:'chronology-room',code:'123456',quiz:'culture',manche:2,round:5,revision:1,
+   phase:'question',starts_at:now-1000,deadline:now+29000},
+  chronology:{category:'Film',total:5,participants:1,items},
+  server_now:now,duration_ms:30000,remaining_ms:29000,can_control:false,received:0,
+  players:[],me:{done:false,points:0},
+ };
+ const h=await boot('play/?room=chronology-room',{anonymous:true,room});
+ const send=h.$('chronology-send'),reset=h.$('chronology-reset'),list=h.$('chronology-items');
+ const cards=[...list.children];
+ const ranks=()=>cards.map(card=>card.querySelector('.chronology-position').textContent);
+ assert.deepEqual(cards.map(card=>card.querySelector('.chronology-name').textContent),['Interstellar','Avatar','Spider-Man','Ratatouille']);
+ assert.equal(send.disabled,true);
+ cards.forEach(card=>card.click());
+ cards[1].click();
+ assert.deepEqual(ranks(),['1','','2','3']);
+ assert.equal(send.disabled,true);
+ reset.click();
+ assert.deepEqual(ranks(),['','','','']);
+ for(const id of [2,1,3,0])cards[id].click();
+ room.room.phase='paused';room.room.revision++;
+ await h.notify();
+ assert.equal(send.disabled,true);assert.equal(reset.disabled,true);
+ assert.ok(cards.every(card=>card.disabled));
+ assert.equal(h.$('chronology-phase').textContent,'In pausa');
+ room.room.phase='question';room.room.revision++;
+ await h.notify();
+ send.click();send.click();
+ await new Promise(resolve=>setImmediate(resolve));
+ const answers=h.calls.filter(call=>call.action==='answer');
+ assert.equal(answers.length,1);
+ assert.deepEqual(answers[0].payload.answer,[2,1,3,0]);
+ assert.equal(answers[0].payload.manche,2);
+ assert.equal(send.hidden,true);assert.match(h.$('chronology-status').textContent,/In attesa/);
+ room.room.phase='reveal';room.room.revision++;
+ room.chronology.correct=[2,3,1,0];
+ items.forEach((item,i)=>{item.year=[2014,2009,2002,2007][i];});
+ room.me.points=60;
+ await h.notify();
+ assert.deepEqual([...list.children].map(card=>[card.dataset.item,card.dataset.result]),
+  [['2','correct'],['1','wrong'],['3','wrong'],['0','correct']]);
+ assert.match(h.$('chronology-status').textContent,/60 punti/);
+ assert.equal(h.$('chronology-solution').querySelector('li strong').textContent,'2002');
+ await h.window.happyDOM.close();
 });

@@ -451,3 +451,236 @@ body.pokeprice {
 @media(max-width:600px){.culture-quiz #population-match{gap:8px}.culture-quiz .population-country{min-height:110px;padding:10px}.culture-quiz .population-flag{width:32px;height:22px}.culture-quiz .population-name{font-size:16px}.culture-quiz #population-match button{min-height:64px;padding:8px;font-size:16px}}
 
 .culture-quiz #ranking li.rank-up{animation:culture-rank-up .65s ease}.culture-quiz #ranking li.rank-down{animation:culture-rank-down .65s ease}@keyframes culture-rank-up{50%{transform:translateY(-5px);background:#d7f6e3}}@keyframes culture-rank-down{50%{transform:translateY(5px);background:#ffe2d9}}
+
+.chronology-quiz {
+  --stage: #173f58;
+  --muted: #c6e5f0;
+  --yellow: #ffcc00;
+  --motion: cubic-bezier(.2, .72, .3, 1);
+  background: var(--stage);
+  color: var(--panel);
+  font: 500 1rem/1.25 system-ui, sans-serif;
+}
+.chronology-quiz #app {
+  width: min(100%, 1600px);
+  height: 100svh;
+  padding: max(10px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right))
+    max(10px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+}
+.chronology-quiz #app > :is(header, nav),
+.chronology-quiz #room > p:has(#back),
+.chronology-quiz #pokemon-parade { display: none; }
+.chronology-quiz #app > :is(#error, #notice), .chronology-quiz #revoked {
+  position: fixed;
+  z-index: 3;
+  inset: auto 12px max(68px, calc(env(safe-area-inset-bottom) + 68px));
+  width: fit-content;
+  max-width: calc(100% - 24px);
+  margin: auto;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #0e2c40;
+}
+.chronology-quiz #notice { top: 0; bottom: auto; }
+.chronology-quiz.host #app { padding-inline: clamp(24px, 5vw, 76px); }
+.chronology-quiz:is(.host, .player) #room {
+  display: grid;
+  height: 100%;
+  grid-template: "score" auto "stage" minmax(0, 1fr) "controls" auto / minmax(0, 1fr);
+  gap: clamp(8px, 1.4svh, 18px);
+}
+.chronology-quiz .scoreboard {
+  grid-area: score;
+  justify-content: space-between;
+  margin: 0;
+  padding: 6px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  box-shadow: none;
+  font-size: .875rem;
+}
+.chronology-quiz .scoreboard strong { color: white; font: inherit; margin-left: 3px; }
+.chronology-quiz #room #controls {
+  grid-area: controls;
+  justify-content: space-between;
+  margin: 0;
+}
+.chronology-quiz :is(#fullscreen, #controls button, #chronology-reset, #chronology-send) {
+  min-height: 44px;
+  padding: 6px 14px;
+  border: 1px solid var(--frame);
+  border-radius: 8px;
+  background: #214f6a;
+  color: white;
+  box-shadow: none;
+  font: 650 .875rem/1.2 system-ui, sans-serif;
+  touch-action: manipulation;
+}
+.chronology-quiz :is(#fullscreen, #controls button, #chronology-reset):hover:enabled { background: #2b6381; }
+.chronology-quiz :is(#chronology-send, #controls [data-command="resume"]) { background: var(--yellow); color: #142f42; border-color: var(--yellow); }
+.chronology-quiz #chronology-send:hover:enabled { background: #ffe375; }
+.chronology-quiz :is(button, a):focus-visible { outline-color: var(--yellow); outline-offset: 3px; }
+
+#chronology-stage {
+  grid-area: stage;
+  display: grid;
+  grid-template-areas: "meta" "board" "actions" "solution";
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  min-height: 0;
+  gap: clamp(6px, 1.4svh, 14px);
+  text-align: left;
+}
+.host #chronology-stage { grid-template: "meta" auto "board" minmax(0, 1fr) / minmax(0, 1fr); }
+#chronology-meta {
+  grid-area: meta;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 6px 12px;
+  color: var(--muted);
+}
+#chronology-title {
+  color: var(--yellow);
+  font-size: clamp(12px, 2vw, 18px);
+  font-weight: 800;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+#chronology-phase { color: white; font-size: clamp(.875rem, 2vw, 1.25rem); font-weight: 700; }
+#chronology-stage[data-paused] #chronology-phase { color: var(--yellow); }
+#chronology-count { font-size: .875rem; margin-top: 2px; }
+.player #chronology-count { display: none; }
+#chronology-clock {
+  color: white;
+  font: 800 clamp(32px, 6svh, 68px)/.95 system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.06em;
+}
+#chronology-clock small { margin-left: 4px; color: var(--muted); font-size: .36em; letter-spacing: 0; }
+#chronology-seconds span { display: inline-block; animation: chronology-pop .18s var(--motion); }
+#chronology-stage[data-urgent] #chronology-clock { color: var(--yellow); }
+#chronology-stage[data-urgent] #chronology-seconds span { animation: chronology-count .38s var(--motion); }
+#chronology-progress { grid-column: 1 / -1; height: 4px; overflow: hidden; border-radius: 3px; background: #40708b; }
+#chronology-progress span {
+  display: block;
+  height: 100%;
+  background: var(--yellow);
+  transform-origin: left center;
+  transition: transform .12s linear;
+}
+.chronology-board {
+  grid-area: board;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
+  gap: clamp(6px, 1.6svh, 18px);
+}
+.chronology-board.chronology-outgoing { z-index: 1; pointer-events: none; }
+.chronology-heading h2 {
+  margin: 0;
+  color: white;
+  font-size: clamp(1.9rem, 7.6vw, 3.1rem);
+  font-weight: 850;
+  letter-spacing: -.055em;
+  line-height: 1.04;
+}
+.host .chronology-heading h2 { font-size: clamp(3rem, 8.8svh, 7rem); }
+.chronology-heading h2 span {
+  display: inline-block;
+  white-space: pre;
+  animation: chronology-enter .45s var(--motion) backwards;
+  animation-delay: calc(var(--i) * 65ms);
+}
+.chronology-heading p { margin: 3px 0 0; color: var(--muted); font-size: clamp(.875rem, 2vw, 1.25rem); }
+.host .chronology-heading { min-height: calc(clamp(3rem, 8.8svh, 7rem) * 1.04 + 1.8rem); }
+.chronology-items {
+  display: grid;
+  grid-template: repeat(4, minmax(0, 1fr)) / minmax(0, 1fr);
+  gap: clamp(6px, 1.05svh, 12px);
+}
+.host .chronology-items {
+  grid-template: repeat(2, minmax(0, 1fr)) / repeat(2, minmax(0, 1fr));
+  gap: clamp(12px, 2svh, 22px);
+}
+.chronology-card {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 5px 10px;
+  border: 2px solid var(--rim);
+  border-radius: 10px;
+  background: var(--panel);
+  color: #173f58;
+  box-shadow: none;
+  text-align: left;
+  touch-action: manipulation;
+  font: inherit;
+  transition: background-color .24s var(--motion), border-color .24s var(--motion), transform .15s var(--motion);
+  animation: chronology-enter .38s var(--motion) backwards;
+  animation-delay: calc(var(--i) * 45ms);
+}
+.host .chronology-card {
+  grid-template: minmax(0, 1fr) auto / 1.4em minmax(0, 1fr);
+  gap: 3px clamp(12px, 2vw, 30px);
+  padding: clamp(12px, 2.6svh, 30px);
+  border-radius: 15px;
+  font-size: clamp(1.9rem, 5.2svh, 4.1rem);
+}
+.chronology-name { font-weight: 750; overflow-wrap: anywhere; line-height: 1.1; }
+.host .chronology-name { text-wrap: balance; }
+.chronology-position {
+  display: grid;
+  place-items: center;
+  width: 1.85rem;
+  aspect-ratio: 1;
+  border: 1px solid #94bacd;
+  border-radius: 50%;
+  background: #e4f1f7;
+  color: #173f58;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.chronology-position span { animation: chronology-pop .23s var(--motion); }
+.host .chronology-position span { animation-delay: calc(var(--reveal) * 110ms); animation-fill-mode: backwards; }
+.chronology-card[aria-pressed="true"] .chronology-position,
+.host [data-phase="reveal"] .chronology-position { background: var(--yellow); border-color: #987a04; }
+.host .chronology-position { width: 1.35em; font-size: .78em; }
+.host .chronology-detail { grid-column: 2; min-height: 1.1em; font-size: .65em; color: #285776; }
+.chronology-detail { min-width: 0; font-weight: 800; font-variant-numeric: tabular-nums; }
+.chronology-detail:not(:empty) { animation: chronology-enter .32s var(--motion) backwards; animation-delay: calc(var(--reveal) * 110ms); }
+.player .chronology-card:disabled { opacity: 1; }
+.player .chronology-card:enabled:hover { background: #e4f1f7; }
+.player .chronology-card[aria-pressed="true"] { background: #e4f1f7; border-color: #7fc0e1; }
+.player .chronology-card[data-result="correct"] { background: #d7f6e3; border-color: #58ad80; color: #174b35; }
+.player .chronology-card[data-result="wrong"] { background: #ffe2d9; border-color: #c97568; color: #752a24; }
+#chronology-actions { grid-area: actions; display: grid; grid-template-columns: 1fr 1fr; gap: 5px 8px; }
+#chronology-status { grid-column: 1 / -1; margin: 0; font-size: .875rem; color: var(--muted); }
+[data-phase="waiting"] #chronology-status, [data-phase="reveal"] #chronology-status {
+  color: white;
+  font-weight: 750;
+  animation: chronology-enter .26s var(--motion);
+}
+#chronology-solution {
+  grid-area: solution;
+  padding: 7px 10px;
+  border-left: 3px solid var(--yellow);
+  border-radius: 0 8px 8px 0;
+  background: #214f6a;
+}
+#chronology-solution h3 { margin: 0 0 4px; font-size: .875rem; color: var(--yellow); }
+#chronology-solution ol { display: grid; gap: 3px; margin: 0; padding-left: 1.25rem; font-size: .875rem; }
+#chronology-solution li { padding-left: 3px; }
+#chronology-solution li span { display: inline-block; width: calc(100% - 3.35rem); vertical-align: top; overflow-wrap: anywhere; }
+#chronology-solution li strong { float: right; font-variant-numeric: tabular-nums; }
+@media (max-height: 590px) {
+  .player #chronology-stage { gap: 5px; }
+  .player #chronology-stage[data-phase="reveal"] .chronology-card { padding-block: 2px; font-size: .875rem; }
+  .player #chronology-stage[data-phase="reveal"] .chronology-position { width: 1.45rem; }
+}
+@keyframes chronology-enter { from { opacity: 0; transform: translateY(10px); } }
+@keyframes chronology-pop { from { opacity: .5; transform: scale(.78); } }
+@keyframes chronology-count { 30% { transform: translateY(-3px) scale(1.1); } }
