@@ -439,3 +439,8 @@ body.pokeprice {
   .pokeprice.player #price-intro { min-height: min(63svh, 600px); }
   .pokeprice.player .price-card { min-height: clamp(136px, 23svh, 218px); }
 }
+
+.culture-quiz #culture-stage{max-width:760px;margin:14px auto;text-align:center}.culture-quiz #population-match{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.culture-quiz .population-country{display:flex;flex-direction:column;justify-content:center;gap:8px;min-width:0;min-height:120px;padding:14px;border:3px solid var(--frame);border-radius:14px;background:var(--panel);cursor:pointer;transition:outline-color .2s ease,background-color .2s ease,transform .2s ease}.culture-quiz .population-country:disabled{opacity:1;cursor:default}.culture-quiz .population-selected{outline:4px solid #3172a3;transform:scale(1.02)}.culture-quiz .population-value{font-weight:700}.culture-quiz .population-country h2{font-size:clamp(17px,3vw,26px);overflow-wrap:anywhere}.culture-quiz .population-winner{outline:4px solid #27865a;background:#e1f6e8}.culture-quiz #population-match button{min-height:72px;font-size:clamp(16px,3vw,24px);touch-action:manipulation}.culture-quiz #population-feedback{min-height:1.5em}
+@media(max-width:600px){.culture-quiz #population-match{gap:8px}.culture-quiz .population-country{min-height:110px;padding:10px}.culture-quiz #population-match button{min-height:64px;padding:8px;font-size:16px}}
+
+.culture-quiz #ranking li.rank-up{animation:culture-rank-up .65s ease}.culture-quiz #ranking li.rank-down{animation:culture-rank-down .65s ease}@keyframes culture-rank-up{50%{transform:translateY(-5px);background:#d7f6e3}}@keyframes culture-rank-down{50%{transform:translateY(5px);background:#ffe2d9}}

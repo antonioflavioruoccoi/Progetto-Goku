@@ -1,9 +1,9 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs/promises';import vm from 'node:vm';import crypto from 'node:crypto';import {Window} from 'happy-dom';import {build} from 'esbuild';
 const {outputFiles}=await build({entryPoints:['web/app.js'],bundle:true,write:false,format:'iife',plugins:[{name:'mock-qr',setup(b){b.onResolve({filter:/^qrcode$/},args=>({path:args.path,namespace:'mock'}));b.onLoad({filter:/.*/,namespace:'mock'},()=>({contents:"export default {toCanvas:async()=>{}}"}));}}]});
 const app=outputFiles[0].text,html=await fs.readFile('web/app.html','utf8');
-async function boot(path,{anonymous=false,admin=false,room=null,licenses=[],blockedAudio=false}={}){
+async function boot(path,{anonymous=false,admin=false,room=null,licenses=[],blockedAudio=false,userId='user-1'}={}){
  const window=new Window({url:'https://goku.test/'+path,settings:{disableJavaScriptFileLoading:true,disableCSSFileLoading:true}});window.document.write(html);const calls=[];let callback;
- const fetch=async(url,options)=>{const {action,payload}=JSON.parse(options.body);calls.push({action,payload});return {ok:true,json:async()=>action==='identity'?{id:'user-1',role:admin?'admin':anonymous?'player':'host'}:action==='dashboard'?{admin,licenses,rooms:[],server_now:Date.now()}:action==='state'?room:action==='answer'?room?.price?{done:true,choice:payload.answer}:{result:'wrong',attempts:1,done:false}:{}};};
+ const fetch=async(url,options)=>{const {action,payload}=JSON.parse(options.body);calls.push({action,payload});return {ok:true,json:async()=>action==='identity'?{id:userId,role:admin?'admin':anonymous?'player':'host'}:action==='dashboard'?{admin,licenses,rooms:[],server_now:Date.now()}:action==='state'?room:action==='answer'?room?.price?{done:true,choice:payload.answer}:room?.population?(Object.assign(room.me,{done:true,choice:payload.answer,result:'wrong',points:0}),{done:true,choice:payload.answer,result:'wrong',points:0}):{result:'wrong',attempts:1,done:false}:{}};};
  class WebSocket {static OPEN=1;readyState=1;constructor(){callback=()=>this.onmessage?.({data:JSON.stringify(room)});}close(){}}
  window.matchMedia=()=>({matches:true});
  const audio=window.document.getElementById('music'),audioEvents=[];let paused=true;
@@ -149,4 +149,29 @@ test('named and legacy licenses render safely in dashboard and selector',async()
   }
   await h.window.happyDOM.close();
  }
+});
+
+
+test('Cultura generale keeps player choices private and restores the selected country after reload',async()=>{
+ const now=Date.now(),countries=[{id:'ITA',name:'Italia'},{id:'TZA',name:'Tanzania'}];
+ const makeRoom=(userId,me)=>({room:{id:'culture-room',code:'123456',quiz:'culture',manche:1,manche_total:3,phase:'question',round:1,revision:2,starts_at:new Date(now-1000).toISOString(),deadline:new Date(now+14000).toISOString()},server_now:now,duration_ms:15000,remaining_ms:15000,can_control:false,received:0,population:{year:2019,countries},solution:null,players:[{user_id:userId,nickname:userId,score:0,rank:1}],me});
+ const firstRoom=makeRoom('user-1',{nickname:'Ash',score:0,done:false,choice:null});
+ const first=await boot('play/?room=culture-room',{anonymous:true,userId:'user-1',room:firstRoom});
+ assert.equal(first.$('culture-stage').hidden,false);assert.equal(first.$('card-wrap').hidden,true);assert.equal(first.$('answer-form').hidden,true);assert.equal(first.$('population-match').children.length,2);assert.equal(first.$('population-a').querySelector('.population-name').textContent,'Italia');assert.equal(first.$('population-a').querySelector('.population-value').textContent,'');assert.equal(first.$('results').hidden,false);
+ first.$('population-b').dispatchEvent(new first.window.MouseEvent('click',{bubbles:true}));await new Promise(r=>setImmediate(r));
+ assert.equal(first.calls.find(call=>call.action==='answer').payload.answer,'TZA');assert.ok(first.$('population-b').classList.contains('population-selected'));assert.match(first.$('population-feedback').textContent,/Tanzania/);
+ const secondRoom=makeRoom('user-2',{nickname:'Misty',score:0,done:false,choice:null});
+ const second=await boot('play/?room=culture-room',{anonymous:true,userId:'user-2',room:secondRoom});assert.ok(!second.$('population-b').classList.contains('population-selected'));assert.equal(second.$('population-b').disabled,false);
+ const reloadRoom=makeRoom('user-1',{nickname:'Ash',score:0,done:true,choice:'TZA'});
+ const reload=await boot('play/?room=culture-room',{anonymous:true,userId:'user-1',room:reloadRoom});assert.ok(reload.$('population-b').classList.contains('population-selected'));assert.equal(reload.$('population-b').disabled,true);
+ reloadRoom.room.phase='reveal';reloadRoom.population.values=[60297396,58005463];reloadRoom.population.correct='ITA';reloadRoom.me.result='wrong';reloadRoom.me.points=0;await reload.notify();
+ assert.equal(reload.$('population-a').querySelector('.population-value').textContent,'60.297.396 abitanti');assert.equal(reload.$('population-b').querySelector('.population-value').textContent,'58.005.463 abitanti');assert.ok(reload.$('population-a').classList.contains('population-winner'));assert.match(reload.$('population-feedback').textContent,/Risposta sbagliata/);assert.match(reload.$('solution').textContent,/Italia ha più abitanti/);
+ await Promise.all([first.window.happyDOM.close(),second.window.happyDOM.close(),reload.window.happyDOM.close()]);
+});
+
+test('host only sees the licensed quiz choices and no Pokémon audio for Cultura generale',async()=>{
+ const licenses=[{id:'lic',name:'Solo Cultura',status:'attivo',starts_at:Date.now(),expires_at:Date.now()+86400000,max_rooms:1,used_rooms:0,quizzes:['culture']}];
+ const host=await boot('host/',{licenses});assert.equal(host.$('quiz').value,'culture');assert.equal(host.$('quiz').options[0].disabled,true);assert.equal(host.$('quiz').options[1].disabled,false);await host.window.happyDOM.close();
+ const room={room:{id:'r',code:'123456',quiz:'culture',manche:1,manche_total:3,phase:'lobby',round:0,revision:0},can_control:true,players:[],received:0};
+ const game=await boot('host/?room=r',{room});assert.equal(game.audioEvents.some(e=>e[0]==='play'),false);await game.window.happyDOM.close();
 });

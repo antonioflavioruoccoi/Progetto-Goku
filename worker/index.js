@@ -1,9 +1,18 @@
 import quiz from "./generated/quiz.json";
+import populations from "../data/population-comparisons.json";
 import {
   PRICE_START, PRICE_ROUNDS, PRICE_DURATION,
   selectPriceCards, settlePrice, priceSnapshot,
 } from "./pokeprice.js";
-const roundDuration = r => r.manche === "price" ? PRICE_DURATION : 30000;
+const quizOf = r => r.quiz || "pokemon";
+const cultureStages = [
+  { id: "population", count: populations.pairs.length, duration: 15000 },
+  null,
+  null,
+];
+const cultureStage = r => quizOf(r) === "culture" ? cultureStages[(r.manche || 1) - 1] : null;
+const roundDuration = r => cultureStage(r)?.duration ?? (quizOf(r) === "culture" ? 0 : r.manche === "price" ? PRICE_DURATION : 30000);
+const rounds = r => quizOf(r) === "culture" ? cultureStage(r)?.count ?? 0 : PRICE_START + PRICE_ROUNDS - 1;
 const DAY = 86400000;
 const json = (data, status = 200, headers = {}) =>
   Response.json(data, {
@@ -207,13 +216,16 @@ export class Goku {
   }
   publicRoom(r) {
     const { players, answers, order, clueOrder, priceOrder, settled, ...publicData } = r;
-    publicData.manche ||= "cards";
+    publicData.quiz ||= "pokemon";
+    publicData.manche ||= publicData.quiz === "culture" ? 1 : "cards";
+    if (publicData.quiz === "culture") publicData.manche_total = cultureStages.length;
     return publicData;
   }
   settle(r, force = false) {
     let changed = false;
     if (r.phase === "question" && (r.deadline <= Date.now() ||
-      (Object.keys(r.players).length > 0 && Object.keys(r.players).every(id => r.answers[id]?.done)))) {
+      (Object.keys(r.players).length > 0 && Object.keys(r.players).every(id =>
+        quizOf(r) === "culture" ? r.answers[id]?.result === "correct" : r.answers[id]?.done)))) {
       r.deadline = Math.min(r.deadline, Date.now());
       r.phase = "reveal";
       r.revision++;
@@ -233,10 +245,10 @@ export class Goku {
       const count = Date.now() < r.starts_at ? 0 : r.deadline - Date.now() > 20000 ? 1 : r.deadline - Date.now() > 10000 ? 2 : 3;
       if (count !== (r.cluesShown || 0)) { r.cluesShown = count; changed = true; }
     }
-    if (!force && (r.manche ?? "cards") === "cards" && r.round === 6 && r.phase === "reveal") {
+    if (!force && quizOf(r) === "pokemon" && (r.manche ?? "cards") === "cards" && r.round === 6 && r.phase === "reveal") {
       this.beginClues(r); changed = true;
     }
-    if (!force && r.manche === "clues" && r.round === PRICE_START - 1 && r.phase === "reveal") {
+    if (!force && quizOf(r) === "pokemon" && r.manche === "clues" && r.round === PRICE_START - 1 && r.phase === "reveal") {
       this.beginPrice(r); changed = true;
     }
     if (changed) this.put("room", r.id, r);
@@ -267,6 +279,7 @@ export class Goku {
     r.revision++;
   }
   question(r) {
+    if (quizOf(r) === "culture") return cultureStage(r)?.id === "population" ? populations.pairs[r.order[r.round - 1]] : null;
     return r.manche === "clues" ? quiz.clues[r.clueOrder[r.round - 7]] : quiz.cards[r.order[r.round - 1]];
   }
   snapshot(s, r) {
@@ -288,15 +301,31 @@ export class Goku {
     );
     const remaining = r.phase === "paused" ? r.remaining_ms : Math.max(0, Math.min(roundDuration(r), r.deadline - Date.now()));
     const revealed = ["reveal", "finished"].includes(r.phase) || (r.manche === "clues" && r.answers[s.id]?.result === "correct");
+    const populationRevealed = ["reveal", "finished"].includes(r.phase);
     const price = r.manche === "price";
     const question = r.round && !price ? this.question(r) : null;
+    const population = cultureStage(r)?.id === "population" && question;
     return {
       clues: r.manche === "clues" && Date.now() >= r.starts_at ? question.clues.slice(0, ["reveal", "finished"].includes(r.phase) ? 3 : remaining > 20000 ? 1 : remaining > 10000 ? 2 : 3) : [],
       solution_image: revealed && r.manche === "clues" ? question.image : null,
       room: this.publicRoom(r),
       server_now: Date.now(),
       remaining_ms: remaining,
-      ...(price ? { duration_ms: PRICE_DURATION, price: priceSnapshot(r, revealed) } : {}),
+      ...(price ? { duration_ms: PRICE_DURATION, price: priceSnapshot(r, revealed) } : population ? { duration_ms: roundDuration(r) } : {}),
+      ...(population
+        ? {
+            population: {
+              year: populations.year,
+              countries: question.map(({ id, name }) => ({ id, name })),
+              ...(populationRevealed
+                ? {
+                    values: question.map(({ population: value }) => value),
+                    correct: question.reduce((a, b) => a.population > b.population ? a : b).id,
+                  }
+                : {}),
+            },
+          }
+        : {}),
       players,
       me: r.players[s.id]
         ? {
@@ -309,13 +338,13 @@ export class Goku {
               choice: r.answers[s.id]?.choice || null,
               streak: r.players[s.id].streak || 0,
               bonus: r.answers[s.id]?.bonus || 0,
-            } : {}),
+            } : population ? { choice: r.answers[s.id]?.choice || null } : {}),
           }
         : null,
       can_control: this.control(s, r),
       received: Object.values(r.answers).filter((a) => a.done).length,
       solution:
-        revealed && question
+        revealed && question && quizOf(r) !== "culture"
           ? question.name
           : null,
     };
@@ -460,6 +489,9 @@ export class Goku {
         fail("Durata o quota non valida", 400);
       if (p.name !== undefined && (typeof p.name !== "string" || p.name.trim().length > 80))
         fail("Nome della licenza non valido (massimo 80 caratteri)", 400);
+      const quizzes = p.quizzes ?? ["pokemon"];
+      if (!Array.isArray(quizzes) || !quizzes.length || quizzes.some(q => !["pokemon", "culture"].includes(q)) || new Set(quizzes).size !== quizzes.length)
+        fail("Seleziona almeno un quiz valido", 400);
       const l = {
         name: (p.name || "").trim(),
         id: crypto.randomUUID(),
@@ -467,6 +499,7 @@ export class Goku {
         expires: now + hours * 3600000,
         created: now,
         max_rooms: quota,
+        quizzes,
         used_rooms: 0,
         revoked: false,
         redeemed: null,
@@ -497,7 +530,7 @@ export class Goku {
             expires_at: l.expires,
             max_rooms: l.max_rooms,
             used_rooms: l.used_rooms,
-            quizzes: ["pokemon"],
+            quizzes: l.quizzes || ["pokemon"],
             redeemed: !!l.redeemed,
             status: l.revoked
               ? "revocato"
@@ -513,8 +546,12 @@ export class Goku {
       };
     }
     if (action === "create") {
+      const selectedQuiz = p.quiz ?? "pokemon";
+      if (!["pokemon", "culture"].includes(selectedQuiz)) fail("Quiz non valido", 400);
+      const license = admin ? null : this.license(s);
+      if (!admin && !(license?.quizzes || ["pokemon"]).includes(selectedQuiz)) fail("Quiz non incluso nella licenza");
       if (!admin) {
-        const l = this.license(s);
+        const l = license;
         if (s.role !== "host" || !l || l.revoked || l.expires <= now)
           fail("Licenza assente, scaduta o revocata");
         if (l.used_rooms >= l.max_rooms) fail("Quota esaurita");
@@ -531,7 +568,7 @@ export class Goku {
         code = null;
       }
       if (!code) fail("PIN esauriti");
-      const order = quiz.cards.map((_, i) => i);
+      const order = (selectedQuiz === "culture" ? populations.pairs : quiz.cards).map((_, i) => i);
       for (let i = order.length - 1; i > 0; i--) {
         const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1);
         [order[i], order[j]] = [order[j], order[i]];
@@ -541,10 +578,10 @@ export class Goku {
         code,
         host_id: s.id,
         license_id: admin ? null : s.license,
-        quiz: "pokemon",
+        quiz: selectedQuiz,
         phase: "lobby",
         round: 0,
-        manche: "cards",
+        manche: selectedQuiz === "culture" ? 1 : "cards",
         revision: 0,
         starts_at: null,
         deadline: null,
@@ -553,7 +590,7 @@ export class Goku {
         players: {},
         answers: {},
         order,
-        priceOrder: selectPriceCards(quiz.priceCards),
+        ...(selectedQuiz === "pokemon" ? { priceOrder: selectPriceCards(quiz.priceCards) } : {}),
       };
       this.put("room", r.id, r);
       return { id: r.id, code };
@@ -585,7 +622,7 @@ export class Goku {
     if (!this.readable(s, r)) fail("Stanza non accessibile");
     if (action === "state") return this.snapshot(s, r);
     if (action === "card") {
-      if (!this.control(s, r) || !r.round || ["clues", "price"].includes(r.manche))
+      if (!this.control(s, r) || quizOf(r) !== "pokemon" || !r.round || ["clues", "price"].includes(r.manche))
         fail("Solo il conduttore può vedere la carta");
       return { asset: quiz.cards[r.order[r.round - 1]].opaque };
     }
@@ -613,6 +650,19 @@ export class Goku {
         r.answers[s.id] = {
           ...result, requests: { [p.request_id]: result },
         };
+        r.revision++;
+        this.settle(r);
+        this.put("room", r.id, r);
+        this.changed.add(r.id);
+        return result;
+      }
+      if (quizOf(r) === "culture") {
+        if (!cultureStage(r)) fail("Manche non disponibile");
+        const [first, second] = this.question(r);
+        const correct = second.population > first.population ? second : first;
+        if (![first.id, second.id].includes(p.answer)) fail("Scegli una nazione");
+        const result = { done: true, result: p.answer === correct.id ? "correct" : "wrong", choice: p.answer, points: p.answer === correct.id ? Math.ceil(Math.min(15000, r.deadline - now) / 1000) * 10 : 0 };
+        r.answers[s.id] = { ...result, requests: { [p.request_id]: result } };
         r.revision++;
         this.settle(r);
         this.put("room", r.id, r);
@@ -665,10 +715,11 @@ export class Goku {
         fail("Privilegi Host assenti, scaduti o revocati");
       if (p.revision !== r.revision) fail("Stato cambiato: riprova");
       const c = p.command;
+      if (["start", "next"].includes(c) && quizOf(r) === "culture" && !cultureStage(r)) fail("Manche non disponibile");
       if (
         ["question", "paused", "reveal"].includes(r.phase) &&
-        ((c === "skip_to_clues" && r.round >= 1 && r.round < 7)
-          || (c === "skip_to_price" && r.manche === "clues"))
+        (quizOf(r) === "pokemon" && ((c === "skip_to_clues" && r.round >= 1 && r.round < 7)
+          || (c === "skip_to_price" && r.manche === "clues")))
       ) {
         this.settle(r, true);
         if (c === "skip_to_clues") this.beginClues(r);
@@ -678,7 +729,7 @@ export class Goku {
         (c === "next" && r.phase === "reveal")
       ) {
         if (!Object.keys(r.players).length) fail("Attendi un giocatore");
-        if (r.round === PRICE_START + PRICE_ROUNDS - 1) r.phase = "finished";
+        if (r.round === rounds(r)) r.phase = "finished";
         else {
           r.round++;
           r.phase = "question";

@@ -5,6 +5,15 @@ import fs from 'node:fs/promises';
 const { outputFiles } = await build({entryPoints:['worker/index.js'],bundle:true,write:false,format:'esm'});
 const { Goku } = await import('data:text/javascript;base64,'+Buffer.from(outputFiles[0].text).toString('base64'));
 const quiz = JSON.parse(await fs.readFile('worker/generated/quiz.json','utf8'));
+function setupCultureGame(ids=['admin','p1','p2']) {
+ const game=Object.create(Goku.prototype),records=new Map();
+ game.get=(kind,id)=>structuredClone(records.get(kind+':'+id)||null);
+ game.put=(kind,id,value)=>records.set(kind+':'+id,structuredClone(value));
+ game.all=kind=>[...records].filter(([key])=>key.startsWith(kind+':')).map(([,value])=>structuredClone(value));
+ game.ctx={getWebSockets:()=>[]};game.changed=new Set();
+ for(const id of ids)game.put('session',id,{id,role:id==='admin'?'admin':'player',expires:Date.now()+86400000});
+ return {game,rpc:(session,action,payload={})=>game.dispatch(action,payload,{session})};
+}
 
 test('last answer before the deadline reveals once; a missing or late answer waits for expiry', t => {
  t.mock.timers.enable({apis:['Date'],now:1700000000000});
@@ -65,12 +74,13 @@ test('server game logic: Pixelcard and PokéIndizi feed the 12 PokéPrice compar
  // A room persisted before the feature has no manche field.
  const legacy=game.get('room',room.id);
  assert.equal(legacy.priceOrder.length,13);
- delete legacy.manche;delete legacy.priceOrder;game.put('room',room.id,legacy);
- assert.equal(rpc('p1','state',{room_id:room.id}).room.manche,'cards');
+ delete legacy.manche;delete legacy.priceOrder;delete legacy.quiz;game.put('room',room.id,legacy);
+ assert.equal(rpc('p1','state',{room_id:room.id}).room.manche,'cards');assert.equal(rpc('p1','state',{room_id:room.id}).room.quiz,'pokemon');
  command('start');
  for(let round=1;round<=12;round++){
   let r=game.get('room',room.id);assert.equal(r.round,round);assert.equal(r.phase,'question');
   const before=rpc('p1','state',{room_id:room.id});
+  if(round===1)assert.ok(rpc('admin','card',{room_id:room.id}).asset);
   assert.equal(before.solution,null);assert.equal(before.room.clueOrder,undefined);assert.equal(before.room.order,undefined);
   if(round===7){r.clueOrder[0]=quiz.clues.findIndex(q=>q.name==='Codaurlante');r.clueOrder=[...new Set(r.clueOrder)];for(let i=0;r.clueOrder.length<6;i++)if(!r.clueOrder.includes(i))r.clueOrder.push(i);game.put('room',room.id,r);assert.equal(r.manche,'clues');assert.equal(new Set(r.clueOrder).size,6);assert.deepEqual(before.clues,[]);assert.equal(r.starts_at-Date.now(),5000);}
   t.mock.timers.tick(round===7?5000:2000);
@@ -231,4 +241,54 @@ test('both shortcuts are host-only and settle once while keeping identity and sc
  assert.equal(game.get('room','r').players.p.score,750);
 
  }
+});
+
+test('Cultura generale reveals estimates only after unanimous answers or timeout', t => {
+ t.mock.timers.enable({apis:['Date'],now:1700000000000});
+ const {game,rpc}=setupCultureGame();
+ const room=rpc('admin','create',{quiz:'culture'});
+ for(const id of ['p1','p2'])rpc(id,'join',{code:room.code,nickname:id});
+ let r=game.get('room',room.id);
+ assert.equal(r.quiz,'culture');assert.equal(r.manche,1);assert.equal(r.order.length,10);assert.equal(r.priceOrder,undefined);
+ const command=name=>rpc('admin','command',{room_id:r.id,revision:game.get('room',r.id).revision,command:name});
+ command('start');r=game.get('room',room.id);
+ assert.equal(r.deadline-r.starts_at,15000);assert.equal(r.starts_at-Date.now(),2000);
+ let snapshot=rpc('p1','state',{room_id:r.id});
+ assert.equal(snapshot.population.values,undefined);assert.equal(snapshot.population.correct,undefined);assert.equal(snapshot.room.order,undefined);assert.equal(snapshot.room.priceOrder,undefined);
+ t.mock.timers.tick(r.starts_at-Date.now());r=game.get('room',room.id);
+ const pair=game.question(r),correct=pair[0].population>pair[1].population?pair[0]:pair[1],wrong=pair.find(country=>country.id!==correct.id);
+ const send=(id,answer)=>rpc(id,'answer',{room_id:r.id,round:r.round,answer,request_id:crypto.randomUUID()});
+ assert.deepEqual(send('p1',correct.id),{done:true,result:'correct',choice:correct.id,points:150});
+ assert.equal(game.get('room',r.id).phase,'question');
+ assert.deepEqual(send('p2',wrong.id),{done:true,result:'wrong',choice:wrong.id,points:0});
+ assert.equal(game.get('room',r.id).phase,'question');
+ snapshot=rpc('p1','state',{room_id:r.id});assert.equal(snapshot.population.values,undefined);assert.equal(snapshot.me.choice,correct.id);
+ t.mock.timers.tick(r.deadline-Date.now());game.settle(game.get('room',r.id));
+ snapshot=rpc('p1','state',{room_id:r.id});assert.equal(snapshot.room.phase,'reveal');assert.deepEqual(snapshot.population.values,pair.map(country=>country.population));assert.equal(snapshot.population.correct,correct.id);assert.equal(snapshot.me.score,150);assert.equal(rpc('p2','state',{room_id:r.id}).me.score,0);
+
+ command('next');r=game.get('room',room.id);assert.equal(r.round,2);assert.equal(r.deadline-r.starts_at,15000);
+ t.mock.timers.tick(r.starts_at-Date.now()+3000);command('pause');r=game.get('room',room.id);
+ assert.equal(r.remaining_ms,12000);t.mock.timers.tick(60000);assert.equal(game.settle(game.get('room',room.id)),false);
+ command('resume');r=game.get('room',room.id);assert.equal(r.deadline-Date.now(),12000);
+ t.mock.timers.tick(12000);assert.throws(()=>send('p1',correct.id),/Risposte chiuse/);
+ game.settle(game.get('room',room.id));r=game.get('room',room.id);assert.equal(r.phase,'reveal');
+ r.round=10;r.settled=10;r.phase='reveal';r.answers={};game.put('room',r.id,r);
+ command('next');r=game.get('room',room.id);assert.equal(r.phase,'finished');assert.equal(r.round,10);
+ assert.equal(rpc('p1','state',{room_id:r.id}).room.manche_total,3);
+});
+
+test('Cultura generale reveals early only after all answers are correct; licenses validate before quota use', t => {
+ t.mock.timers.enable({apis:['Date'],now:1700000000000});
+ const {game,rpc}=setupCultureGame(['admin']);
+ const license=game.dispatch('license_create',{hours:1,max_rooms:1,quizzes:['culture']},{session:'admin',inviteHash:'invite'});
+ game.put('session','host',{id:'host',role:'host',license:license.id,expires:Date.now()+86400000});
+ assert.throws(()=>rpc('host','create',{quiz:'pokemon'}),/Quiz non incluso/);assert.equal(game.get('license',license.id).used_rooms,0);
+ const room=rpc('host','create',{quiz:'culture'});assert.equal(game.get('license',license.id).used_rooms,1);assert.equal(game.get('room',room.id).priceOrder,undefined);
+ for(const id of ['p1','p2']){game.put('session',id,{id,role:'player',expires:Date.now()+86400000});rpc(id,'join',{code:room.code,nickname:id});}
+ const command=name=>rpc('host','command',{room_id:room.id,revision:game.get('room',room.id).revision,command:name});command('start');let r=game.get('room',room.id);t.mock.timers.tick(r.starts_at-Date.now());r=game.get('room',room.id);
+ const pair=game.question(r),correct=pair[0].population>pair[1].population?pair[0]:pair[1];
+ const send=id=>rpc(id,'answer',{room_id:r.id,round:r.round,answer:correct.id,request_id:crypto.randomUUID()});
+ send('p1');assert.equal(game.get('room',r.id).phase,'question');send('p2');r=game.get('room',r.id);
+ assert.equal(r.phase,'reveal');assert.equal(r.settled,1);assert.deepEqual(Object.values(r.players).map(player=>player.score),[150,150]);
+ assert.deepEqual(rpc('admin','dashboard').licenses.find(x=>x.id===license.id).quizzes,['culture']);
 });

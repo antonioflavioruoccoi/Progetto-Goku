@@ -1,0 +1,15 @@
+{
+  "year": 2019,
+  "pairs": [
+    [{ "id": "ITA", "name": "Italia", "population": 60297396 }, { "id": "TZA", "name": "Tanzania", "population": 58005463 }],
+    [{ "id": "JPN", "name": "Giappone", "population": 126264931 }, { "id": "MEX", "name": "Messico", "population": 127575529 }],
+    [{ "id": "IRN", "name": "Iran", "population": 82913906 }, { "id": "DEU", "name": "Germania", "population": 83132799 }],
+    [{ "id": "CAN", "name": "Canada", "population": 37589262 }, { "id": "POL", "name": "Polonia", "population": 37970874 }],
+    [{ "id": "ARG", "name": "Argentina", "population": 44938712 }, { "id": "UGA", "name": "Uganda", "population": 44269594 }],
+    [{ "id": "NGA", "name": "Nigeria", "population": 200963599 }, { "id": "BRA", "name": "Brasile", "population": 211049527 }],
+    [{ "id": "KEN", "name": "Kenya", "population": 52573973 }, { "id": "ESP", "name": "Spagna", "population": 47076781 }],
+    [{ "id": "RUS", "name": "Russia", "population": 144373535 }, { "id": "BGD", "name": "Bangladesh", "population": 163046161 }],
+    [{ "id": "CRI", "name": "Costa Rica", "population": 5047561 }, { "id": "NOR", "name": "Norvegia", "population": 5347896 }],
+    [{ "id": "SWE", "name": "Svezia", "population": 10285453 }, { "id": "HND", "name": "Honduras", "population": 9746117 }]
+  ]
+}
