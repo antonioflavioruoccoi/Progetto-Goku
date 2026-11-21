@@ -8,12 +8,23 @@ const route=location.pathname.split('/').filter(Boolean).at(-1)||'play';
 const base=new URL('../',location.href);
 const params=new URLSearchParams(location.search);
 let user,dashboard,state,roomId=params.get('room'),channel,offset=0,refreshing=false,cardRound=0,cardAsset=null,busy=false,answerRequest=null,deadlineRequested=false,qrCode='',reconnectTimer,reconnectDelay=500,previousRanks=new Map(),previousRankRoom=null;
+let roomUnavailable=false;
 let inviteToken=new URLSearchParams(location.hash.slice(1)).get('token');
 if(inviteToken){sessionStorage.setItem('goku-invite',inviteToken);history.replaceState(null,'',location.pathname+location.search);}
 else if(route==='invite')inviteToken=sessionStorage.getItem('goku-invite');
 const notice=s=>{$('notice').textContent=s;};
 const error=s=>{$('error').textContent=s;};
-async function rpc(action,payload={}){const start=Date.now();const response=await fetch('/api/rpc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,payload})});const data=await response.json();if(!response.ok||data.error)throw Error(data.error||'Errore di connessione');if(data.server_now)offset=new Date(data.server_now).getTime()-(start+Date.now())/2;return data;}
+async function rpc(action,payload={}){
+ const start=Date.now();
+ let response;
+ try{
+  response=await fetch('/api/rpc',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,payload}),signal:window.AbortSignal?.timeout?.(8000)});
+ }catch{throw Object.assign(Error('Connessione non disponibile. Riprova.'),{status:0});}
+ const data=await response.json().catch(()=>null);
+ if(!response.ok||!data||data.error)throw Object.assign(Error(data?.error||'Servizio temporaneamente non disponibile. Riprova.'),{status:response.status});
+ if(data.server_now)offset=new Date(data.server_now).getTime()-(start+Date.now())/2;
+ return data;
+}
 
 function bind(id,handler,event='click'){$(id).addEventListener(event,async e=>{e.preventDefault();if(busy)return;busy=true;const button=e.currentTarget.tagName==='FORM'?e.currentTarget.querySelector('button'):e.currentTarget;if(button.tagName==='BUTTON')button.disabled=true;error('');try{await handler(e);}catch(e){error(e.message);}finally{busy=false;if(button.tagName==='BUTTON')button.disabled=false;tick();}});}
 async function loadDashboard(){dashboard=await rpc('dashboard');if(route==='admin'&&!dashboard.admin)throw Error('Area riservata all’amministratore.');show('dashboard',true);show('admin-tools',route==='admin'&&dashboard.admin);show('license-select-label',!dashboard.admin);show('auth',false);show('logout',true);$('licenses').replaceChildren();$('license-select').replaceChildren();
@@ -27,7 +38,7 @@ async function loadDashboard(){dashboard=await rpc('dashboard');if(route==='admi
   if(dashboard.admin&&r.phase!=='finished'){const end=text('button','Interrompi');end.onclick=async()=>{end.disabled=true;try{const s=await rpc('state',{room_id:r.id});await rpc('command',{room_id:r.id,revision:s.room.revision,command:'end'});await loadDashboard();}catch(e){error(e.message);end.disabled=false;}};box.append(end);}$('rooms').append(box);}
  if(!dashboard.rooms.length)$('rooms').append(text('p','Nessuna stanza.'));
 }
-async function start(){user=await rpc('identity');
+async function start(){user=await rpc('identity');error('');
  if(route==='play'){show('join-panel',!roomId);$('code').value=params.get('code')||'';if(roomId)await openRoom();}
  else if(route==='invite'){show('invite',true);if(!inviteToken)throw Error('Link di invito mancante o non valido.');await redeem();}
  else if(route==='admin'&&user.role!=='admin'){show('auth',true);notice('Inserisci la password amministratore.');}
@@ -40,8 +51,25 @@ async function redeem(){if(!inviteToken)throw Error('Invito mancante.');await rp
 bind('redeem',redeem);
 bind('license-form',async e=>{const f=new FormData(e.currentTarget);const result=await rpc('license_create',{name:f.get('name'),hours:Number(f.get('hours')),max_rooms:Number(f.get('max_rooms')),quizzes:f.getAll('quizzes')});$('invite-link').value=base.href+'invite/#token='+result.token;show('invite-result',true);await loadDashboard();},'submit');
 bind('copy-invite',async()=>{try{await navigator.clipboard.writeText($('invite-link').value);notice('Link copiato.');}catch{$('invite-link').select();notice('Selezionato: copia il link manualmente.');}});
-bind('create-form',async()=>{const r=await rpc('create',{quiz:$('quiz').value,license_id:$('license-select').value||null});location.href=`?room=${r.id}`;},'submit');
-bind('join-form',async()=>{const r=await rpc('join',{code:$('code').value.trim(),nickname:$('nickname').value});roomId=r.id;history.replaceState(null,'',`?room=${roomId}`);await openRoom();},'submit');
+bind('create-form',async()=>{
+ try{
+  const r=await rpc('create',{quiz:$('quiz').value,license_id:$('license-select').value||null});
+  location.href=`?room=${r.id}`;
+ }catch(e){
+  if(e.status===0||e.status>=500){
+   await loadDashboard().catch(()=>{});
+   throw Error('Creazione non confermata. Controlla le stanze in dashboard prima di riprovare.');
+  }
+  throw e;
+ }
+},'submit');
+bind('join-form',async()=>{
+ if(!user)user=await rpc('identity');
+ const r=await rpc('join',{code:$('code').value.trim(),nickname:$('nickname').value});
+ roomId=r.id;
+ history.replaceState(null,'',`?room=${roomId}`);
+ await openRoom();
+},'submit');
 bind('fullscreen',async()=>{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();});
 for(const button of document.querySelectorAll('[data-command]'))button.addEventListener('click',async()=>{if(busy)return;busy=true;try{error('');if(button.dataset.command==='start'&&state.room.quiz!=='culture')$('music').play().catch(()=>{});await rpc('command',{room_id:roomId,revision:state.room.revision,command:button.dataset.command});await refresh();}catch(e){error(e.message);await refresh();}finally{busy=false;}});
 bind('answer-form',async()=>{const answer=$('answer').value.trim();const request=answerRequest?.answer===answer&&answerRequest.round===state.room.round?answerRequest:{answer,round:state.room.round,request_id:crypto.randomUUID()};answerRequest=request;const result=await rpc('answer',{room_id:roomId,...request});answerRequest=null;
@@ -90,16 +118,74 @@ function syncMusic(){
 bind('enable-audio',async()=>{await $('music').play();show('enable-audio',false);});
 $('volume').addEventListener('input',()=>{if(state)syncMusic();});
 window.addEventListener('pagehide',()=>$('music').pause());
-async function openRoom(){show('dashboard',false);show('join-panel',false);show('room',true);$('back').href=route==='play'?base.href+'play/':base.href+route+'/';$('back').textContent=route==='play'?'Entra in un’altra stanza':'Torna alla dashboard';
+async function openRoom(){roomUnavailable=false;show('dashboard',false);show('join-panel',false);show('room',true);$('back').href=route==='play'?base.href+'play/':base.href+route+'/';$('back').textContent=route==='play'?'Entra in un’altra stanza':'Torna alla dashboard';
  await refresh();connectSocket();}
-function connectSocket(){clearTimeout(reconnectTimer);if(channel){channel.onclose=null;channel.close();}const url=new URL('/api/socket',location.origin);url.protocol=location.protocol==='https:'?'wss:':'ws:';url.searchParams.set('room',roomId);channel=new WebSocket(url);
- channel.onopen=()=>{reconnectDelay=500;notice('');};
- channel.onmessage=e=>{const next=JSON.parse(e.data);if(state&&(next.room.phase!==state.room.phase||next.room.deadline!==state.room.deadline))deadlineRequested=false;state=next;offset=new Date(state.server_now).getTime()-Date.now();renderRoom();};
- channel.onclose=()=>{notice('Connessione interrotta. Riconnessione in corso…');reconnectTimer=setTimeout(connectSocket,reconnectDelay+Math.random()*300);reconnectDelay=Math.min(15000,reconnectDelay*2);};
- channel.onerror=()=>channel.close();
+function connectSocket(){
+ clearTimeout(reconnectTimer);
+ if(!roomId||roomUnavailable)return;
+ if(channel){channel.onclose=null;channel.close();}
+ const url=new URL('/api/socket',location.origin);
+ url.protocol=location.protocol==='https:'?'wss:':'ws:';
+ url.searchParams.set('room',roomId);
+ const socket=channel=new WebSocket(url);
+ socket.onmessage=e=>{
+  if(channel!==socket)return;
+  let next;
+  try{next=JSON.parse(e.data);}catch{socket.close();return;}
+  if(!next?.room){socket.close();return;}
+  applySnapshot(next,true);
+  reconnectDelay=500;
+  notice('');
+ };
+ socket.onclose=()=>{
+  if(channel!==socket)return;
+  notice('Aggiornamento in tempo reale interrotto. Riconnessione in corso…');
+  reconnectTimer=setTimeout(async()=>{await refresh();if(channel===socket)connectSocket();},reconnectDelay+Math.random()*300);
+  reconnectDelay=Math.min(15000,reconnectDelay*2);
+ };
+ socket.onerror=()=>{if(channel===socket)socket.close();};
 }
 
-async function refresh(){if(!roomId||refreshing)return;refreshing=true;try{const snapshot=await rpc('state',{room_id:roomId});if(snapshot.room.revision<state?.room.revision)return;if(state&&(snapshot.room.phase!==state.room.phase||snapshot.room.deadline!==state.room.deadline))deadlineRequested=false;state=snapshot;renderRoom();}catch(e){notice('Riconnessione: '+e.message);}finally{refreshing=false;}}
+function applySnapshot(next,fromSocket=false){
+ if(state&&(next.room.revision<state.room.revision||
+    next.room.revision===state.room.revision&&new Date(next.server_now)<new Date(state.server_now)))return;
+ if(state&&(next.room.phase!==state.room.phase||next.room.deadline!==state.room.deadline))deadlineRequested=false;
+ state=next;
+ if(fromSocket&&next.server_now)offset=new Date(next.server_now).getTime()-Date.now();
+ renderRoom();
+}
+async function refresh(){
+ if(!roomId||roomUnavailable||refreshing)return;
+ refreshing=true;
+ try{applySnapshot(await rpc('state',{room_id:roomId}));}
+ catch(e){
+  if([401,403,404].includes(e.status)){
+   roomUnavailable=true;
+   clearTimeout(reconnectTimer);
+   if(channel){channel.onclose=null;channel.close();channel=null;}
+   state=null;
+   cardRound=0;
+   cardAsset=null;
+   $('answer').dataset.round='';
+   $('music').pause();
+   show('room',false);
+   notice('');
+   if(route==='play'){
+    if(e.status===401)user=null;
+    roomId=null;
+    history.replaceState(null,'',base.href+'play/');
+    show('join-panel',true);
+    $('code').focus();
+    error(e.message+' Inserisci il PIN per entrare di nuovo.');
+   }else{
+    if(route==='admin'&&e.status===401){show('auth',true);show('logout',false);}
+    error(e.message+(e.status===401?' Accedi di nuovo.':' Apri la dashboard dal menu.'));
+   }
+  }else if(channel?.readyState!==WebSocket.OPEN){
+   notice('Riconnessione in corso. '+e.message);
+  }
+ }finally{refreshing=false;}
+}
 function left(){return !state?0:state.room.phase==='paused'?state.remaining_ms:Math.max(0,Math.min(state.duration_ms||30000,new Date(state.room.deadline).getTime()-Date.now()-offset));}
 function renderPopulation(){
  const {countries,values,correct}=state.population,format=new Intl.NumberFormat('it-IT');
@@ -154,8 +240,12 @@ function tick(){if(!state)return;const r=state.room,ms=left(),pre=r.phase==='que
  if(!state.price&&r.manche!=='clues'&&cardAsset&&['question','paused'].includes(r.phase)){const blockSize=pixelEnd+(pixelStart-pixelEnd)*ms/30000,width=Math.ceil(310/blockSize),height=Math.round(width*cardAsset.naturalHeight/cardAsset.naturalWidth),canvas=$('pixels');if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;canvas.getContext('2d').drawImage(cardAsset,0,0,width,height);}}
  if((r.phase==='question'||(r.quiz==='culture'&&r.phase==='reveal'))&&ms===0&&!deadlineRequested&&!refreshing){deadlineRequested=true;refresh();}}
 setInterval(tick,100);
-window.addEventListener('online',()=>{if(roomId)connectSocket();});
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){if(roomId){refresh();if(!channel||channel.readyState!==WebSocket.OPEN)connectSocket();}else if(dashboard)loadDashboard().catch(e=>error(e.message));}});start().catch(e=>error(e.message));
+window.addEventListener('offline',()=>{if(roomId&&!roomUnavailable)notice('Connessione assente. Riconnessione automatica al ritorno della rete.');});
+window.addEventListener('online',()=>{
+ if(user&&roomId&&!roomUnavailable){refresh();connectSocket();}
+ else if(!roomUnavailable)start().catch(e=>error(e.message));
+});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){if(roomId&&!roomUnavailable){refresh();if(channel?.readyState!==WebSocket.OPEN)connectSocket();}else if(dashboard)loadDashboard().catch(e=>error(e.message));}});start().catch(e=>error(e.message));
 
 document.addEventListener('keydown', async event => {
  if (!event.shiftKey || event.key.toLowerCase() !== 'n' || event.ctrlKey || event.altKey || event.metaKey || event.repeat || event.isComposing || busy) return;

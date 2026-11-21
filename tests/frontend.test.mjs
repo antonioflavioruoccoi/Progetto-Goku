@@ -2,9 +2,9 @@ import {test} from 'node:test';import assert from 'node:assert/strict';import fs
 const {outputFiles}=await build({entryPoints:['web/app.js'],bundle:true,write:false,format:'iife',plugins:[{name:'mock-qr',setup(b){b.onResolve({filter:/^qrcode$/},args=>({path:args.path,namespace:'mock'}));b.onLoad({filter:/.*/,namespace:'mock'},()=>({contents:"export default {toCanvas:async()=>{}}"}));}}]});
 const app=outputFiles[0].text,html=await fs.readFile('web/app.html','utf8');
 async function boot(path,{anonymous=false,admin=false,room=null,licenses=[],blockedAudio=false,userId='user-1'}={}){
- const window=new Window({url:'https://goku.test/'+path,settings:{disableJavaScriptFileLoading:true,disableCSSFileLoading:true}});window.document.write(html);const calls=[];let callback;
+ const window=new Window({url:'https://goku.test/'+path,settings:{disableJavaScriptFileLoading:true,disableCSSFileLoading:true}});window.document.write(html);const calls=[];let socket;
  const fetch=async(url,options)=>{const {action,payload}=JSON.parse(options.body);calls.push({action,payload});return {ok:true,json:async()=>action==='identity'?{id:userId,role:admin?'admin':anonymous?'player':'host'}:action==='dashboard'?{admin,licenses,rooms:[],server_now:Date.now()}:action==='state'?room:action==='answer'?room?.price?{done:true,choice:payload.answer}:room?.population?(Object.assign(room.me,{done:true,choice:payload.answer,result:'wrong',points:0}),{done:true,choice:payload.answer,result:'wrong',points:0}):{result:'wrong',attempts:1,done:false}:{}};};
- class WebSocket {static OPEN=1;readyState=1;constructor(){callback=()=>this.onmessage?.({data:JSON.stringify(room)});}close(){}}
+ class WebSocket {static OPEN=1;readyState=1;constructor(){socket=this;}close(){this.readyState=3;this.onclose?.();}}
  window.matchMedia=()=>({matches:true});
  const audio=window.document.getElementById('music'),audioEvents=[];let paused=true;
  Object.defineProperty(audio,'paused',{get:()=>paused});
@@ -12,7 +12,12 @@ async function boot(path,{anonymous=false,admin=false,room=null,licenses=[],bloc
  audio.pause=()=>{paused=true;audioEvents.push(['pause',audio.src]);};
  audio.load=()=>audioEvents.push(['load',audio.src]);
  const context=vm.createContext({fetch,WebSocket,document:window.document,location:window.location,history:window.history,sessionStorage:window.sessionStorage,navigator:window.navigator,window,URL,URLSearchParams,FormData:window.FormData,Image:window.Image,crypto,console,setInterval:()=>0,setTimeout:fn=>queueMicrotask(fn),clearTimeout:()=>{}});
- vm.runInContext(app,context);await new Promise(r=>setImmediate(r));return {window,calls,audioEvents,notify:async()=>{await callback?.();await new Promise(r=>setImmediate(r));},$:id=>window.document.getElementById(id)};
+ vm.runInContext(app,context);await new Promise(r=>setImmediate(r));return {
+  window,calls,audioEvents,
+  notify:async()=>{socket?.onmessage?.({data:JSON.stringify(room)});await new Promise(r=>setImmediate(r));},
+  disconnect:async()=>{socket.close();await new Promise(r=>setImmediate(r));},
+  $:id=>window.document.getElementById(id),
+ };
 }
 test('non-admin sees password form without rendering dashboard',async()=>{const h=await boot('admin/');assert.equal(h.$('auth').hidden,false);assert.equal(h.$('dashboard').hidden,true);assert.equal(h.$('admin-tools').hidden,true);await h.window.happyDOM.close();});
 test('admin dashboard is rendered only after server authorization',async()=>{const h=await boot('admin/',{admin:true});assert.equal(h.$('dashboard').hidden,false);assert.equal(h.$('admin-tools').hidden,false);assert.equal(h.$('license-select-label').hidden,true);await h.window.happyDOM.close();});
@@ -20,6 +25,13 @@ test('player reconnect renders server identity; WebSocket snapshot and answer us
  const room={room:{id:'room-1',code:'123456',phase:'question',round:1,revision:2,starts_at:new Date(Date.now()-1000).toISOString(),deadline:new Date(Date.now()+25000).toISOString()},server_now:new Date().toISOString(),remaining_ms:25000,can_control:false,received:0,solution:null,players:[{user_id:'user-1',nickname:'Ash',score:0,rank:1,connected:true}],me:{nickname:'Ash',score:0,done:false,attempts:0}};
  const h=await boot('play/?room=room-1',{anonymous:true,room});assert.equal(h.$('room').hidden,false);assert.equal(h.$('join-panel').hidden,true);assert.equal(h.$('controls').hidden,true);assert.equal(h.$('card-wrap').hidden,true);assert.equal(h.$('answer-form').hidden,false);
  const before=h.calls.filter(x=>x.action==='state').length;await h.notify();assert.equal(h.calls.filter(x=>x.action==='state').length,before,'WebSocket pushes state without another request');
+ room.received=1;
+ await h.disconnect();
+ assert.match(h.$('notice').textContent,/Riconnessione/);
+ assert.equal(h.calls.filter(x=>x.action==='state').length,before+1);
+ assert.equal(h.$('received').textContent,'1/1 risposte inviate');
+ await h.notify();
+ assert.equal(h.$('notice').textContent,'');
  h.$('answer').value='Pikachu';h.$('answer-form').dispatchEvent(new h.window.Event('submit',{cancelable:true}));await new Promise(r=>setImmediate(r));const request=h.calls.find(x=>x.action==='answer').payload;assert.equal(request.room_id,'room-1');assert.equal(request.round,1);assert.ok(request.request_id);assert.equal(request.score,undefined);assert.match(h.$('feedback').textContent,/Restano 2/);await h.window.happyDOM.close();
 });
 

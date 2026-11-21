@@ -16,6 +16,10 @@ const populationsFor = r => (r.population_year || legacyPopulations.year) === po
 const roundDuration = r => cultureStage(r)?.duration ?? (quizOf(r) === "culture" ? 0 : r.manche === "price" ? PRICE_DURATION : 30000);
 const rounds = r => quizOf(r) === "culture" ? cultureStage(r)?.count ?? 0 : PRICE_START + PRICE_ROUNDS - 1;
 const DAY = 86400000;
+const unavailable = () => {
+  console.warn("Goku: operazione temporaneamente non disponibile");
+  return json({ error: "Servizio temporaneamente non disponibile" }, 503);
+};
 const json = (data, status = 200, headers = {}) =>
   Response.json(data, {
     status,
@@ -97,7 +101,7 @@ export default {
       if (url.pathname === "/api/socket") {
         if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket")
           fail("WebSocket richiesto", 400);
-        return env.GOKU.getByName("goku").fetch(
+        return await env.GOKU.getByName("goku").fetch(
           new Request(
             "https://internal/socket?room=" +
               encodeURIComponent(url.searchParams.get("room") || ""),
@@ -107,7 +111,14 @@ export default {
       }
       const raw = await request.text();
       if (raw.length > 4096) fail("Richiesta troppo grande", 413);
-      const { action, payload = {} } = JSON.parse(raw);
+      let body;
+      try {
+        body = JSON.parse(raw);
+      } catch {
+        fail("Richiesta non valida", 400);
+      }
+      const { action, payload = {} } = body || {};
+      if (typeof action !== "string") fail("Richiesta non valida", 400);
       if (!payload || typeof payload !== "object" || Array.isArray(payload))
         fail("Dati non validi", 400);
       const secret = token(),
@@ -151,10 +162,7 @@ export default {
       }
       return json(data, response.status, headers);
     } catch (e) {
-      return json(
-        { error: e.status ? e.message : "Richiesta non valida" },
-        e.status || 400,
-      );
+      return e.status ? json({ error: e.message }, e.status) : unavailable();
     }
   },
 };
@@ -196,6 +204,30 @@ export class Goku {
   session(key) {
     const s = this.get("session", key);
     return s && s.expires > Date.now() ? s : null;
+  }
+  async adminSessionKey(key) {
+    if (!this.env.ADMIN_PASSWORD) return "";
+    const encoder = new TextEncoder();
+    this.adminSigningKey ??= crypto.subtle.importKey(
+      "raw", encoder.encode(this.env.ADMIN_PASSWORD), { name: "HMAC", hash: "SHA-256" }, false, ["sign"],
+    );
+    const signature = await crypto.subtle.sign("HMAC", await this.adminSigningKey, encoder.encode(key));
+    return "admin:" + [...new Uint8Array(signature)].map(n => n.toString(16).padStart(2, "0")).join("");
+  }
+  async sessionKey(key) {
+    if (!key) return "";
+    const s = this.session(key);
+    return s && s.role !== "admin" ? key : this.adminSessionKey(key);
+  }
+  pruneTemporaryRecords(now) {
+    if (now < this.nextPruneAt) return;
+    this.sql.exec(
+      `DELETE FROM records
+       WHERE (kind = 'rate' AND json_extract(data, '$.until') <= ?)
+          OR (kind = 'session' AND json_extract(data, '$.expires') <= ?)`,
+      now, now,
+    );
+    this.nextPruneAt = now + 3600000;
   }
   license(s) {
     return s?.license ? this.get("license", s.license) : null;
@@ -371,19 +403,18 @@ export class Goku {
           : null,
     };
   }
-  broadcast(room) {
+  async broadcast(room) {
+    const sockets = this.ctx.getWebSockets(room);
+    const keys = await Promise.all(sockets.map(ws => this.sessionKey(ws.deserializeAttachment()?.session)));
     const r = this.get("room", room);
     if (!r) return;
-    for (const ws of this.ctx.getWebSockets(room)) {
+    for (const [i, ws] of sockets.entries()) {
+      const s = this.session(keys[i]);
       try {
-        const s = this.session(ws.deserializeAttachment().session);
-        if (!s) {
-          ws.close(1008, "Sessione scaduta");
-          continue;
-        }
-        ws.send(JSON.stringify(this.snapshot(s, r)));
+        if (this.readable(s, r)) ws.send(JSON.stringify(this.snapshot(s, r)));
+        else ws.close(1008, "Sessione o accesso non valido");
       } catch {
-        ws.close(1008, "Accesso negato");
+        console.warn("Goku: invio WebSocket non riuscito");
       }
     }
   }
@@ -402,7 +433,7 @@ export class Goku {
       try {
         if (new URL(request.url).pathname === "/socket") {
           const key = request.headers.get("X-Session"),
-            s = this.session(key),
+            s = this.session(await this.sessionKey(key)),
             id = new URL(request.url).searchParams.get("room"),
             r = this.get("room", id);
           if (!this.readable(s, r)) fail("Stanza non accessibile");
@@ -412,11 +443,14 @@ export class Goku {
           const pair = new WebSocketPair();
           this.ctx.acceptWebSocket(pair[1], [id]);
           pair[1].serializeAttachment({ session: key, user: s.id, room: id });
-          this.broadcast(id);
+          await this.broadcast(id);
           await this.schedule();
           return new Response(null, { status: 101, webSocket: pair[0] });
         }
         const { action, payload, auth } = await request.json();
+        this.pruneTemporaryRecords(Date.now());
+        auth.session = await this.sessionKey(auth.session);
+        if (action === "login" && auth.passwordOK) auth.newHash = await this.adminSessionKey(auth.newHash);
         this.changed = new Set();
         // Expired questions settle before authorization/commands, even after alarm delay.
         for (const r of this.all("room"))
@@ -428,14 +462,15 @@ export class Goku {
             this.dispatch(action, payload, auth),
           );
         } catch (e) {
+          if (!e.status) return unavailable();
           data = { error: e.message };
-          status = e.status || 400;
+          status = e.status;
         }
-        for (const id of this.changed) this.broadcast(id);
+        for (const id of this.changed) await this.broadcast(id);
         await this.schedule();
         return json(data, status);
       } catch (e) {
-        return json({ error: e.message }, e.status || 400);
+        return e.status ? json({ error: e.message }, e.status) : unavailable();
       }
     });
   }
@@ -779,7 +814,7 @@ export class Goku {
     return this.ctx.blockConcurrencyWhile(async () => {
       for (const r of this.all("room")) {
         const changed = this.settle(r);
-        if (changed) this.broadcast(r.id);
+        if (changed) await this.broadcast(r.id);
       }
       await this.schedule();
     });
@@ -787,14 +822,14 @@ export class Goku {
   webSocketMessage(ws) {
     ws.close(1008, "Usa le API per le operazioni");
   }
-  webSocketClose(ws, code) {
+  async webSocketClose(ws) {
     const { room } = ws.deserializeAttachment();
     ws.close(1000);
-    this.broadcast(room);
+    await this.broadcast(room);
   }
-  webSocketError(ws) {
+  async webSocketError(ws) {
     const { room } = ws.deserializeAttachment();
     ws.close(1011, "Riconnetti");
-    this.broadcast(room);
+    await this.broadcast(room);
   }
 }

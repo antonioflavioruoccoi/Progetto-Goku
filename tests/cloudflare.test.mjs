@@ -408,8 +408,15 @@ test("Cloudflare SQLite: authentication, atomic licenses, multiplayer, alarms an
         const before = await state("p2", room.id);
         const priceBefore = await state("p1", priceRoom.id);
         await mf.dispose();
-        mf = new Miniflare(options);
+        mf = new Miniflare({ ...options, bindings: { ADMIN_PASSWORD: "rotated-test-password" } });
         await mf.ready;
+        await denied("admin", "dashboard", {}, /Autenticazione/);
+        const socketAfterRotation = await mf.dispatchFetch("https://goku.test/api/socket?room=" + room.id, {
+          headers: { Origin: "https://goku.test", Cookie: users.admin, Upgrade: "websocket" },
+        });
+        assert.equal(socketAfterRotation.status, 403);
+        await denied("admin", "login", { password: "test-password-only" }, /Password errata/);
+        await ok("admin", "login", { password: "rotated-test-password" });
         const after = await state("p2", room.id);
         assert.equal(after.me.score, before.me.score);
         assert.equal(after.me.nickname, before.me.nickname);

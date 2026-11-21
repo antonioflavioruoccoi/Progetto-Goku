@@ -440,6 +440,13 @@ body.pokeprice {
   .pokeprice.player .price-card { min-height: clamp(136px, 23svh, 218px); }
 }
 
+@media (max-width: 600px) {
+  #ranking li { gap: 8px; }
+  .player-chip, #personal, #ranking li span, #podium .winner { min-width: 0; overflow-wrap: anywhere; }
+  #ranking li strong { flex-shrink: 0; }
+  #podium .winner { max-width: 100%; }
+}
+
 .culture-quiz #culture-stage{max-width:760px;margin:14px auto;text-align:center}.culture-quiz #population-match{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.culture-quiz .population-country{display:flex;flex-direction:column;justify-content:center;gap:8px;min-width:0;min-height:120px;padding:14px;border:3px solid var(--frame);border-radius:14px;background:var(--panel);cursor:pointer;transition:outline-color .2s ease,background-color .2s ease,transform .2s ease}.culture-quiz .population-country:disabled{opacity:1;cursor:default}.culture-quiz .population-selected{outline:4px solid #3172a3;transform:scale(1.02)}.culture-quiz .population-label{display:flex;align-items:center;justify-content:center;gap:9px}.culture-quiz .population-flag{display:block;width:36px;height:24px;flex:none;object-fit:contain;border:1px solid #536879;border-radius:2px;background:#fff}.culture-quiz .population-name{font-size:clamp(17px,3vw,26px);overflow-wrap:anywhere}.culture-quiz .population-value{font-weight:700}.culture-quiz .population-winner{outline:4px solid #27865a;background:#e1f6e8}.culture-quiz #population-match button{min-height:72px;font-size:clamp(16px,3vw,24px);touch-action:manipulation}.culture-quiz #population-feedback{min-height:1.5em}
 @media(max-width:600px){.culture-quiz #population-match{gap:8px}.culture-quiz .population-country{min-height:110px;padding:10px}.culture-quiz .population-flag{width:32px;height:22px}.culture-quiz .population-name{font-size:16px}.culture-quiz #population-match button{min-height:64px;padding:8px;font-size:16px}}
 

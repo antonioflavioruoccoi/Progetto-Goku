@@ -1,19 +1,6 @@
 # Dr. Goku
 
-Repository: `antonioflavioruoccoi/Progetto-Goku`.
-Production branch: `feat/cloudflare-simple-hosting`; `feat/pokeprice` contains
-the same multiplayer application. `main` is an older standalone quiz.
-
-The user requires direct publication after changes and checks. Complete the
-authorized work, run `npm test` and `npm run check`, publish through the existing
-Cloudflare Git integration, and verify the live `/version.json` and affected
-flows. Do not stop at a local build or ask again for permission to publish.
-If authentication or deployment fails, report the specific blocker accurately.
-
-Production: https://dr-goku.antonioflavioruocco-i.workers.dev/
-Keep the existing Worker name, GOKU binding and SQLite migration identifiers:
-changing those can disconnect the application from its saved data.
-
-Frontend: `web/`; server authority: `worker/index.js`; build: `scripts/build.mjs`.
-Keep answer timing, scoring, license permissions and persistence on the server.
-For browser checks use Agent Browser with isolated host/player sessions.
+- Repository `antonioflavioruoccoi/Progetto-Goku`. Produzione su `feat/cloudflare-simple-hosting`, Worker `dr-goku`. Vedi [stato operativo](docs/STATUS.md).
+- Mantieni nome Worker, binding `GOKU`, migrazione SQLite `v1`, segreti e dati di partite e licenze. Il codice applicativo in `worker/index.js` è l’autorità per permessi, timer, punteggi e persistenza.
+- Interfaccia multiplayer in `web/`, quiz originale in `game.js`. Parti da `rg` e leggi solo i file necessari. Usa Graphify se hai già un grafo utile. Per verifiche mirate nel browser usa Agent Browser con sessioni Host e giocatore distinte.
+- Esegui una build e avvia direttamente i test esistenti pertinenti con `node --test` (comandi nel [README](README.md)). Se pubblichi, usa la branch di produzione collegata al Worker e confronta `/version.json` con lo SHA pubblicato.
