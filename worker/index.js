@@ -16,6 +16,7 @@ const isChronology = r => cultureStage(r)?.id === "chronology";
 const CHRONOLOGY_POINTS = 50;
 const CHRONOLOGY_CARD_INTERVAL = 2000;
 const CHRONOLOGY_INTRO = 3000 + 3 * CHRONOLOGY_CARD_INTERVAL;
+const CHRONOLOGY_REVEAL = 15000;
 const chronologyPoints = r => r.chronology_points ?? 30;
 // The client's reconnect backoff refreshes via HTTP at least every 15.3 seconds.
 const POLL_PRESENCE_MS = 20000;
@@ -310,7 +311,7 @@ export class Goku {
     };
     if (r.phase === "question" && (r.deadline <= now || (now >= r.starts_at && complete()))) {
       if (quizOf(r) === "culture") {
-        r.remaining_ms = isChronology(r) ? 15000 : 10000;
+        r.remaining_ms = isChronology(r) ? CHRONOLOGY_REVEAL : 10000;
         r.deadline = now + r.remaining_ms;
       } else r.deadline = Math.min(r.deadline, now);
       r.phase = "reveal";
@@ -377,8 +378,14 @@ export class Goku {
   snapshot(s, r) {
     if (!this.readable(s, r)) fail("Stanza non accessibile");
     const connected = this.connectedPlayers(r);
+    const cultureRevealed = ["reveal", "finished"].includes(r.phase) || (r.phase === "paused" && r.paused_from === "reveal");
+    const chronologyRevealed = isChronology(r) && cultureRevealed;
     const players = Object.values(r.players)
-      .map((p) => ({ ...p, connected: connected.has(p.user_id) }))
+      .map((p) => ({
+        ...p,
+        connected: connected.has(p.user_id),
+        ...(chronologyRevealed ? { round_points: r.answers[p.user_id]?.points || 0 } : {}),
+      }))
       .sort(
         (a, b) => b.score - a.score || a.nickname.localeCompare(b.nickname),
       );
@@ -389,7 +396,6 @@ export class Goku {
     );
     const remaining = r.phase === "paused" ? r.remaining_ms : Math.max(0, Math.min(roundDuration(r), r.deadline - Date.now()));
     const revealed = ["reveal", "finished"].includes(r.phase) || (r.manche === "clues" && r.answers[s.id]?.result === "correct");
-    const cultureRevealed = ["reveal", "finished"].includes(r.phase) || (r.phase === "paused" && r.paused_from === "reveal");
     const price = r.manche === "price";
     const question = r.round && !price ? this.question(r) : null;
     const population = cultureStage(r)?.id === "population" && question;
@@ -412,7 +418,7 @@ export class Goku {
           card_interval_ms: CHRONOLOGY_CARD_INTERVAL,
           points_per_match: chronologyPoints(r),
           items: cultureRevealed ? chronology.items : chronology.items.map(({ id, name }) => ({ id, name })),
-          ...(cultureRevealed ? { correct: correctChronology(chronology.items) } : {}),
+          ...(cultureRevealed ? { correct: correctChronology(chronology.items), reveal_ms: CHRONOLOGY_REVEAL } : {}),
           participants,
         },
       } : {}),

@@ -352,6 +352,7 @@ test('Cronologia keeps its server draw, scores by position and advances after ti
  assert.equal(first.room.chronologyOrder,undefined);
  assert.equal(first.room.polling,undefined);
  assert.equal(first.chronology.participants,2);
+ assert.equal(first.players[0].round_points,undefined);
  assert.equal(first.chronology.points_per_match,50);
  assert.equal(first.chronology.card_interval_ms,2000);
  assert.equal(first.room.starts_at-Date.now(),9000);
@@ -387,6 +388,8 @@ test('Cronologia keeps its server draw, scores by position and advances after ti
  assert.deepEqual(revealed.chronology.correct,order(0));
  assert.equal(revealed.me.points,100);
  assert.equal(revealed.me.score,150);
+ assert.equal(revealed.chronology.reveal_ms,15000);
+ assert.deepEqual(revealed.players.map(p=>[p.user_id,p.round_points]),[['p2',200],['p1',100],['offline',0]]);
  assert.equal(state('p2').me.points,200);
  assert.deepEqual(send('p1',partial,request),{done:true,choice:partial});
  assert.equal(state('p1').me.score,150);

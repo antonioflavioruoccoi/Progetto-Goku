@@ -246,6 +246,7 @@ test('Cronologia toggles and resets ranks, submits once, and reveals the player 
  assert.equal(send.hidden,true);assert.match(h.$('chronology-status').textContent,/In attesa/);
  room.room.phase='reveal';room.room.revision++;
  room.chronology.correct=[2,3,1,0];
+ room.chronology.reveal_ms=15000;
  items.forEach((item,i)=>{item.year=[2014,2009,2002,2007][i];});
  room.me.points=100;
  await h.notify();
@@ -254,5 +255,38 @@ test('Cronologia toggles and resets ranks, submits once, and reveals the player 
  assert.deepEqual([...list.children].map(card=>card.querySelector('.chronology-detail').textContent),['+50','0','0','+50']);
  assert.match(h.$('chronology-status').textContent,/100 punti/);
  assert.equal(h.$('chronology-solution').querySelector('li strong').textContent,'2002');
+ await h.window.happyDOM.close();
+});
+
+test('Cronologia presents previous scores, freezes the tally and reorders the standings on resume',async()=>{
+ const now=Date.now();
+ const room={
+  room:{id:'chronology-ranking-room',code:'123456',quiz:'culture',manche:2,round:1,revision:1,
+   phase:'reveal',starts_at:now-30000,deadline:now+9900},
+  chronology:{category:'Brand',total:5,participants:2,card_interval_ms:2000,points_per_match:50,
+   reveal_ms:15000,items:[{id:0,name:'LEGO',year:1932}],correct:[0]},
+  server_now:now,duration_ms:30000,remaining_ms:9900,can_control:true,received:2,me:null,
+  players:[{user_id:'p1',nickname:'Misty',score:300,round_points:200,rank:1},
+   {user_id:'p2',nickname:'Ash',score:170,round_points:0,rank:2}],
+ };
+ const h=await boot('host/?room=chronology-ranking-room',{room});
+ h.window.matchMedia=()=>({matches:false});
+ const standings=()=>[...h.$('chronology-leaderboard').querySelectorAll('li')].map(row=>
+  ['position','name','points'].map(part=>row.querySelector('.chronology-ranking-'+part).textContent));
+ const control=command=>h.window.document.querySelector(`[data-command="${command}"]`);
+ assert.equal(h.$('chronology-board').hidden,true);
+ assert.deepEqual(standings(),[['1','Ash','170 pt'],['2','Misty','100 pt']]);
+ assert.equal(control('pause').textContent,'Pausa classifica');
+ room.room.phase='paused';room.room.paused_from='reveal';room.room.revision++;
+ room.remaining_ms=8800;
+ await h.notify();
+ assert.equal(h.$('chronology-phase').textContent,'Classifica in pausa');
+ assert.equal(control('resume').textContent,'Riprendi classifica');
+ assert.deepEqual(standings(),[['1','Ash','170 pt'],['2','Misty','167 pt']]);
+ await h.notify();
+ assert.equal(standings()[1][2],'167 pt');
+ room.room.phase='reveal';room.room.revision++;room.room.deadline=Date.now()+7750;room.server_now=Date.now();
+ await h.notify();
+ assert.deepEqual(standings(),[['1','Misty','300 pt'],['2','Ash','170 pt']]);
  await h.window.happyDOM.close();
 });

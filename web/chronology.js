@@ -3,6 +3,12 @@ const stage = $('stage');
 const board = $('board');
 const entries = $('items');
 const seconds = $('seconds');
+const leaderboard = $('leaderboard');
+const rankingList = leaderboard.querySelector('ol');
+const ANSWER_REVEAL_MS = 5000;
+const RANK_COUNT_DELAY = 800;
+const RANK_COUNT_MS = 1200;
+const RANK_MOVE_MS = 650;
 const shortName = name => name.split(' - ', 1)[0];
 const setText = (node, value) => { if (node.textContent !== value) node.textContent = value; };
 const element = (tag, className, value = '') => {
@@ -13,6 +19,7 @@ const element = (tag, className, value = '') => {
 };
 
 let roundKey, previous, buttons = [], selected = [], enabled = false;
+let rankingKey, rankingRows = [], rankingAnimations = [], ranked = false;
 
 function setPosition(card, rank) {
   const badge = card.querySelector('.chronology-position');
@@ -22,7 +29,7 @@ function setPosition(card, rank) {
 
 function animateExit() {
   if (!board.animate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  const outgoing = board.cloneNode(true);
+  const outgoing = (leaderboard.hidden ? board : leaderboard).cloneNode(true);
   for (const node of [outgoing, ...outgoing.querySelectorAll('[id]')]) node.removeAttribute('id');
   outgoing.classList.add('chronology-outgoing');
   outgoing.inert = true;
@@ -31,6 +38,65 @@ function animateExit() {
   outgoing.animate([{ opacity: 0.7 }, { opacity: 0, transform: 'translateY(-14px)' }], {
     duration: 220, easing: 'ease-out',
   }).finished.then(() => outgoing.remove(), () => outgoing.remove());
+}
+
+function prepareRanking(players, me) {
+  const key = JSON.stringify([roundKey, players.map(p => [p.user_id, p.nickname, p.score, p.round_points])]);
+  if (key === rankingKey) return;
+  rankingKey = key;
+  rankingAnimations = [];
+  ranked = false;
+  rankingRows = players.map(player => {
+    const node = element('li', 'chronology-ranking-row');
+    const position = element('span', 'chronology-ranking-position');
+    const gain = player.round_points ?? 0;
+    const delta = element('span', 'chronology-ranking-delta', gain ? `+${gain}` : '');
+    const points = element('strong', 'chronology-ranking-points');
+    if (player.user_id === me?.user_id) node.setAttribute('aria-current', 'true');
+    node.append(position, element('span', 'chronology-ranking-name', player.nickname), delta, points);
+    return { player, node, position, delta, points, gain, start: player.score - gain };
+  });
+  const orderBefore = [...rankingRows].sort((a, b) => b.start - a.start || a.player.nickname.localeCompare(b.player.nickname));
+  orderBefore.forEach((row, index) => {
+    row.rankBefore = index && row.start === orderBefore[index - 1].start ? orderBefore[index - 1].rankBefore : index + 1;
+    row.position.textContent = String(row.rankBefore);
+  });
+  rankingList.replaceChildren(...orderBefore.map(row => row.node));
+  $('ranking-empty').hidden = rankingRows.length > 0;
+}
+
+function tickRanking(elapsed, paused) {
+  const countEnd = RANK_COUNT_DELAY + RANK_COUNT_MS;
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const progress = ranked ? 1 : reduced ? Number(elapsed >= countEnd) :
+    Math.max(0, Math.min(1, (elapsed - RANK_COUNT_DELAY) / RANK_COUNT_MS));
+  for (const { start, gain, delta, points } of rankingRows) {
+    setText(points, `${start + Math.round(gain * progress)} pt`);
+    delta.hidden = !gain || progress === 0;
+  }
+  if (progress === 1 && !ranked) {
+    ranked = true;
+    const animate = !reduced && !!rankingList.animate && elapsed < countEnd + RANK_MOVE_MS;
+    const before = animate ? rankingRows.map(row => row.node.getBoundingClientRect().top) : [];
+    const scroll = rankingList.scrollTop;
+    rankingList.replaceChildren(...rankingRows.map(row => row.node));
+    rankingList.scrollTop = scroll;
+    rankingRows.forEach(({ node, position, player }, i) => {
+      setText(position, String(player.rank));
+      if (!animate) return;
+      const distance = before[i] - node.getBoundingClientRect().top;
+      if (!distance) return;
+      const animation = node.animate([{ transform: `translateY(${distance}px)` }, { transform: 'none' }], {
+        duration: RANK_MOVE_MS, easing: 'cubic-bezier(.2, .72, .3, 1)',
+      });
+      animation.currentTime = elapsed - countEnd;
+      rankingAnimations.push(animation);
+    });
+  }
+  for (const animation of rankingAnimations) {
+    if (paused && animation.playState === 'running') animation.pause();
+    if (!paused && animation.playState === 'paused') animation.play();
+  }
 }
 
 function paintSelection() {
@@ -94,9 +160,8 @@ export function renderChronology(state, host) {
   stage.dataset.phase = reveal ? 'reveal' : locked ? 'waiting' : 'question';
   stage.toggleAttribute('data-paused', room.phase === 'paused');
   $('instruction').hidden = reveal;
-  $('solution').hidden = host || !reveal;
   $('reset').hidden = $('send').hidden = host || reveal || locked;
-  $('actions').hidden = host;
+  if (reveal) prepareRanking(state.players, me);
   if (reveal && (newRound || previous !== 'reveal')) {
     const byId = new Map(chronology.items.map(item => [item.id, item]));
     const order = chronology.correct;
@@ -135,16 +200,28 @@ export function renderChronology(state, host) {
 
 export function tickChronology(state, ms, canAnswer, introMs) {
   if (stage.hidden) return;
-  const { room, chronology, duration_ms: duration, me } = state;
+  const { room, chronology, duration_ms: duration, me, can_control: host } = state;
   const reveal = !!chronology.correct;
   const paused = room.phase === 'paused';
+  const revealElapsed = reveal ? chronology.reveal_ms - ms : 0;
+  const showRanking = reveal && revealElapsed >= ANSWER_REVEAL_MS;
   const untilStart = paused && !reveal ? Math.max(0, ms - duration) : introMs;
   const visible = Math.max(0, buttons.length - Math.ceil(untilStart / chronology.card_interval_ms));
   const presenting = untilStart > 0;
   stage.toggleAttribute('data-intro', presenting);
   stage.toggleAttribute('data-category-only', visible <= 0);
-  setText($('phase'), paused ? 'In pausa' : reveal ?
-    (room.round === chronology.total ? 'Risultati · al podio' : 'Risultati · prossimo round') :
+  stage.toggleAttribute('data-ranking', showRanking);
+  board.hidden = showRanking;
+  leaderboard.hidden = !showRanking;
+  $('solution').hidden = host || !reveal || showRanking;
+  $('actions').hidden = host || showRanking;
+  if (showRanking) tickRanking(revealElapsed - ANSWER_REVEAL_MS, paused);
+  if (host) {
+    setText(document.querySelector('[data-command="pause"]'), showRanking ? 'Pausa classifica' : 'Pausa');
+    setText(document.querySelector('[data-command="resume"]'), showRanking ? 'Riprendi classifica' : 'Riprendi');
+  }
+  setText($('phase'), paused ? (showRanking ? 'Classifica in pausa' : 'In pausa') : reveal ?
+    `${showRanking ? 'Classifica' : 'Risultati'} · ${room.round === chronology.total ? 'al podio' : 'prossimo round'}` :
     presenting ? 'Presentazione' : me?.done ? 'Risposta inviata' : 'Tempo per rispondere');
 
   enabled = canAnswer && !!state.me && !state.can_control;
@@ -152,7 +229,7 @@ export function tickChronology(state, ms, canAnswer, introMs) {
   const number = String(time).padStart(2, '0');
   if (seconds.textContent !== number) seconds.replaceChildren(element('span', '', number));
   stage.toggleAttribute('data-urgent', !presenting && !reveal && time <= 5 && room.phase === 'question');
-  $('progress').firstElementChild.style.transform = `scaleX(${Math.min(1, ms / (reveal ? 15000 : duration))})`;
+  $('progress').firstElementChild.style.transform = `scaleX(${Math.min(1, ms / (reveal ? chronology.reveal_ms : duration))})`;
   buttons.forEach((card,i) => card.toggleAttribute('data-present', i < visible));
   if (!state.can_control) {
     for (const button of buttons) button.disabled = !enabled;
