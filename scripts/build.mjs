@@ -17,6 +17,7 @@ await fs.copyFile("web/app.css", "dist/app.css");
 await fs.cp("assets/audio", "dist/assets/audio", {recursive:true});
 await fs.cp("assets/pokeindizi", "dist/assets/pokeindizi", {recursive:true});
 await fs.cp("assets/pokeprice", "dist/assets/pokeprice", {recursive:true});
+await fs.cp("web/assets/flags", "dist/assets/flags", {recursive:true});
 await fs.mkdir("worker/generated", { recursive: true });
 await fs.writeFile(
   "worker/generated/quiz.json",

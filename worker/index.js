@@ -1,5 +1,6 @@
 import quiz from "./generated/quiz.json";
 import populations from "../data/population-comparisons.json";
+import legacyPopulations from "../data/population-comparisons-2019.json";
 import {
   PRICE_START, PRICE_ROUNDS, PRICE_DURATION,
   selectPriceCards, settlePrice, priceSnapshot,
@@ -11,6 +12,7 @@ const cultureStages = [
   null,
 ];
 const cultureStage = r => quizOf(r) === "culture" ? cultureStages[(r.manche || 1) - 1] : null;
+const populationsFor = r => (r.population_year || legacyPopulations.year) === populations.year ? populations : legacyPopulations;
 const roundDuration = r => cultureStage(r)?.duration ?? (quizOf(r) === "culture" ? 0 : r.manche === "price" ? PRICE_DURATION : 30000);
 const rounds = r => quizOf(r) === "culture" ? cultureStage(r)?.count ?? 0 : PRICE_START + PRICE_ROUNDS - 1;
 const DAY = 86400000;
@@ -221,12 +223,27 @@ export class Goku {
     if (publicData.quiz === "culture") publicData.manche_total = cultureStages.length;
     return publicData;
   }
+  advanceRound(r, now = Date.now()) {
+    if (r.round === rounds(r)) r.phase = "finished";
+    else {
+      r.round++;
+      r.phase = "question";
+      r.starts_at = now + (r.manche === "price" ? 0 : 2000);
+      r.remaining_ms = roundDuration(r);
+      r.deadline = r.starts_at + r.remaining_ms;
+      r.answers = {};
+      r.cluesShown = 0;
+    }
+  }
   settle(r, force = false) {
     let changed = false;
     if (r.phase === "question" && (r.deadline <= Date.now() ||
       (Object.keys(r.players).length > 0 && Object.keys(r.players).every(id =>
-        quizOf(r) === "culture" ? r.answers[id]?.result === "correct" : r.answers[id]?.done)))) {
-      r.deadline = Math.min(r.deadline, Date.now());
+        r.answers[id]?.done)))) {
+      if (quizOf(r) === "culture") {
+        r.remaining_ms = 10000;
+        r.deadline = Date.now() + r.remaining_ms;
+      } else r.deadline = Math.min(r.deadline, Date.now());
       r.phase = "reveal";
       r.revision++;
       changed = true;
@@ -239,6 +256,11 @@ export class Goku {
       else for (const [id, a] of Object.entries(r.answers))
         r.players[id].score += a.points || 0;
       r.settled = r.round;
+      changed = true;
+    }
+    if (!force && quizOf(r) === "culture" && r.phase === "reveal" && r.deadline <= Date.now()) {
+      this.advanceRound(r);
+      r.revision++;
       changed = true;
     }
     if (r.manche === "clues" && r.phase === "question") {
@@ -279,7 +301,7 @@ export class Goku {
     r.revision++;
   }
   question(r) {
-    if (quizOf(r) === "culture") return cultureStage(r)?.id === "population" ? populations.pairs[r.order[r.round - 1]] : null;
+    if (quizOf(r) === "culture") return cultureStage(r)?.id === "population" ? populationsFor(r).pairs[r.order[r.round - 1]] : null;
     return r.manche === "clues" ? quiz.clues[r.clueOrder[r.round - 7]] : quiz.cards[r.order[r.round - 1]];
   }
   snapshot(s, r) {
@@ -301,7 +323,7 @@ export class Goku {
     );
     const remaining = r.phase === "paused" ? r.remaining_ms : Math.max(0, Math.min(roundDuration(r), r.deadline - Date.now()));
     const revealed = ["reveal", "finished"].includes(r.phase) || (r.manche === "clues" && r.answers[s.id]?.result === "correct");
-    const populationRevealed = ["reveal", "finished"].includes(r.phase);
+    const populationRevealed = ["reveal", "finished"].includes(r.phase) || (r.phase === "paused" && r.paused_from === "reveal");
     const price = r.manche === "price";
     const question = r.round && !price ? this.question(r) : null;
     const population = cultureStage(r)?.id === "population" && question;
@@ -315,8 +337,8 @@ export class Goku {
       ...(population
         ? {
             population: {
-              year: populations.year,
-              countries: question.map(({ id, name }) => ({ id, name })),
+              year: populationsFor(r).year,
+              countries: question.map(({ id, iso2, name }) => ({ id, iso2, name })),
               ...(populationRevealed
                 ? {
                     values: question.map(({ population: value }) => value),
@@ -367,8 +389,8 @@ export class Goku {
   }
   async schedule() {
     const deadlines = this.all("room")
-      .filter((r) => r.phase === "question")
-      .map((r) => r.manche === "clues" ? [r.starts_at, r.deadline - 20000, r.deadline - 10000, r.deadline].find(time => time > Date.now()) || r.deadline : r.deadline);
+      .filter((r) => r.phase === "question" || (quizOf(r) === "culture" && r.phase === "reveal"))
+      .map((r) => r.phase === "question" && r.manche === "clues" ? [r.starts_at, r.deadline - 20000, r.deadline - 10000, r.deadline].find(time => time > Date.now()) || r.deadline : r.deadline);
     const next = deadlines.length ? Math.min(...deadlines) : null;
     if ((await this.ctx.storage.getAlarm()) !== next) {
       if (next) await this.ctx.storage.setAlarm(next);
@@ -590,7 +612,8 @@ export class Goku {
         players: {},
         answers: {},
         order,
-        ...(selectedQuiz === "pokemon" ? { priceOrder: selectPriceCards(quiz.priceCards) } : {}),
+      ...(selectedQuiz === "culture" ? { population_year: populations.year } : {}),
+      ...(selectedQuiz === "pokemon" ? { priceOrder: selectPriceCards(quiz.priceCards) } : {}),
       };
       this.put("room", r.id, r);
       return { id: r.id, code };
@@ -729,26 +752,18 @@ export class Goku {
         (c === "next" && r.phase === "reveal")
       ) {
         if (!Object.keys(r.players).length) fail("Attendi un giocatore");
-        if (r.round === rounds(r)) r.phase = "finished";
-        else {
-          r.round++;
-          r.phase = "question";
-          r.starts_at = now + (r.manche === "price" ? 0 : 2000);
-          r.remaining_ms = roundDuration(r);
-          r.deadline = r.starts_at + r.remaining_ms;
-          r.answers = {};
-          r.cluesShown = 0;
-        }
+        this.advanceRound(r, now);
       } else if (
         c === "pause" &&
-        r.phase === "question" &&
-        now >= r.starts_at
+        ((r.phase === "question" && now >= r.starts_at) || (quizOf(r) === "culture" && r.phase === "reveal" && now < r.deadline))
       ) {
-        r.remaining_ms = r.deadline - now;
+        r.remaining_ms = Math.max(0, r.deadline - now);
+        if (quizOf(r) === "culture") r.paused_from = r.phase;
         r.phase = "paused";
       } else if (c === "resume" && r.phase === "paused") {
-        r.phase = "question";
+        r.phase = r.paused_from || "question";
         r.deadline = now + r.remaining_ms;
+        delete r.paused_from;
       } else if (c === "end" && r.phase !== "finished") {
         this.settle(r, true);
         r.phase = "finished";
@@ -762,11 +777,10 @@ export class Goku {
   }
   async alarm() {
     return this.ctx.blockConcurrencyWhile(async () => {
-      for (const r of this.all("room"))
-        {
-          const changed = this.settle(r);
-          if (changed) this.broadcast(r.id);
-        }
+      for (const r of this.all("room")) {
+        const changed = this.settle(r);
+        if (changed) this.broadcast(r.id);
+      }
       await this.schedule();
     });
   }

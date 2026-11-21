@@ -1,0 +1,5 @@
+# Flag assets
+
+The 20 local SVG flags in `web/assets/flags/` were taken from [`hampusborgos/country-flags`](https://github.com/hampusborgos/country-flags) at commit [`c09927e63705529bbf59ca6684cd9b23225dddad`](https://github.com/hampusborgos/country-flags/tree/c09927e63705529bbf59ca6684cd9b23225dddad). The repository README says the files are accurate country-flag renders sourced from Wikimedia Commons and that flags are in the public domain / not under copyright. The README also notes that a country's laws may impose restrictions on flag use; the assets are used here only to identify countries in a quiz. No remote image service or emoji font is required at runtime.
+
+Filenames use lowercase ISO 3166-1 alpha-2 / GENC-2 codes carried in each population record (`iso2`). Country names remain visible text beside the decorative images, so a missing image never leaves only a two-letter code for a player or host. Each flag image has empty alternative text because the adjacent country name supplies its accessible label.

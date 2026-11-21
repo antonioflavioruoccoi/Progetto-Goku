@@ -243,52 +243,106 @@ test('both shortcuts are host-only and settle once while keeping identity and sc
  }
 });
 
-test('Cultura generale reveals estimates only after unanimous answers or timeout', t => {
+test('Cultura generale reveals mixed answers immediately, pauses results, resumes and settles once', t => {
  t.mock.timers.enable({apis:['Date'],now:1700000000000});
- const {game,rpc}=setupCultureGame();
+ const {game,rpc}=setupCultureGame(['admin','p1','p2','p3']);
  const room=rpc('admin','create',{quiz:'culture'});
  for(const id of ['p1','p2'])rpc(id,'join',{code:room.code,nickname:id});
- let r=game.get('room',room.id);
- assert.equal(r.quiz,'culture');assert.equal(r.manche,1);assert.equal(r.order.length,10);assert.equal(r.priceOrder,undefined);
+ let r=game.get('room',room.id);r.order=Array.from({length:10},(_,i)=>i);game.put('room',r.id,r);
+ assert.equal(r.population_year,2025);assert.equal(r.order.length,10);assert.equal(r.priceOrder,undefined);
  const command=name=>rpc('admin','command',{room_id:r.id,revision:game.get('room',r.id).revision,command:name});
  command('start');r=game.get('room',room.id);
  assert.equal(r.deadline-r.starts_at,15000);assert.equal(r.starts_at-Date.now(),2000);
  let snapshot=rpc('p1','state',{room_id:r.id});
- assert.equal(snapshot.population.values,undefined);assert.equal(snapshot.population.correct,undefined);assert.equal(snapshot.room.order,undefined);assert.equal(snapshot.room.priceOrder,undefined);
+ assert.equal(snapshot.population.year,2025);assert.deepEqual(snapshot.population.countries.map(country=>country.iso2),['IT','TZ']);
+ assert.equal(snapshot.population.values,undefined);assert.equal(snapshot.population.correct,undefined);
+ assert.equal(snapshot.room.order,undefined);assert.equal(snapshot.room.priceOrder,undefined);
  t.mock.timers.tick(r.starts_at-Date.now());r=game.get('room',room.id);
- const pair=game.question(r),correct=pair[0].population>pair[1].population?pair[0]:pair[1],wrong=pair.find(country=>country.id!==correct.id);
- const send=(id,answer)=>rpc(id,'answer',{room_id:r.id,round:r.round,answer,request_id:crypto.randomUUID()});
- assert.deepEqual(send('p1',correct.id),{done:true,result:'correct',choice:correct.id,points:150});
+ const pair=game.question(r),correct=pair[1],wrong=pair[0];
+ const p1Request=crypto.randomUUID();
+ const send=(id,answer,request_id=crypto.randomUUID())=>rpc(id,'answer',{room_id:r.id,round:r.round,answer,request_id});
+ assert.deepEqual(send('p1',correct.id,p1Request),{done:true,result:'correct',choice:'TZA',points:150});
  assert.equal(game.get('room',r.id).phase,'question');
- assert.deepEqual(send('p2',wrong.id),{done:true,result:'wrong',choice:wrong.id,points:0});
- assert.equal(game.get('room',r.id).phase,'question');
- snapshot=rpc('p1','state',{room_id:r.id});assert.equal(snapshot.population.values,undefined);assert.equal(snapshot.me.choice,correct.id);
- t.mock.timers.tick(r.deadline-Date.now());game.settle(game.get('room',r.id));
- snapshot=rpc('p1','state',{room_id:r.id});assert.equal(snapshot.room.phase,'reveal');assert.deepEqual(snapshot.population.values,pair.map(country=>country.population));assert.equal(snapshot.population.correct,correct.id);assert.equal(snapshot.me.score,150);assert.equal(rpc('p2','state',{room_id:r.id}).me.score,0);
+ assert.deepEqual(send('p2',wrong.id),{done:true,result:'wrong',choice:'ITA',points:0});
+ r=game.get('room',r.id);
+ assert.equal(r.phase,'reveal');assert.equal(r.deadline-Date.now(),10000);assert.equal(r.settled,1);
+ assert.deepEqual(Object.values(r.players).map(player=>player.score),[150,0]);
+ snapshot=rpc('p1','state',{room_id:r.id});
+ assert.deepEqual(snapshot.population.values,[60924851,69145464]);assert.equal(snapshot.population.correct,'TZA');
+ assert.deepEqual(send('p1',correct.id,p1Request),{done:true,result:'correct',choice:'TZA',points:150});
+ assert.equal(game.settle(game.get('room',r.id)),false);
+ assert.deepEqual(Object.values(game.get('room',r.id).players).map(player=>player.score),[150,0]);
 
- command('next');r=game.get('room',room.id);assert.equal(r.round,2);assert.equal(r.deadline-r.starts_at,15000);
- t.mock.timers.tick(r.starts_at-Date.now()+3000);command('pause');r=game.get('room',room.id);
- assert.equal(r.remaining_ms,12000);t.mock.timers.tick(60000);assert.equal(game.settle(game.get('room',room.id)),false);
- command('resume');r=game.get('room',room.id);assert.equal(r.deadline-Date.now(),12000);
- t.mock.timers.tick(12000);assert.throws(()=>send('p1',correct.id),/Risposte chiuse/);
- game.settle(game.get('room',room.id));r=game.get('room',room.id);assert.equal(r.phase,'reveal');
- r.round=10;r.settled=10;r.phase='reveal';r.answers={};game.put('room',r.id,r);
- command('next');r=game.get('room',room.id);assert.equal(r.phase,'finished');assert.equal(r.round,10);
- assert.equal(rpc('p1','state',{room_id:r.id}).room.manche_total,3);
+ t.mock.timers.tick(4000);command('pause');r=game.get('room',room.id);
+ assert.equal(r.phase,'paused');assert.equal(r.paused_from,'reveal');assert.equal(r.remaining_ms,6000);
+ snapshot=rpc('p1','state',{room_id:r.id});assert.equal(snapshot.population.year,2025);assert.deepEqual(snapshot.population.values,[60924851,69145464]);
+ t.mock.timers.tick(30000);assert.equal(game.settle(game.get('room',r.id)),false);
+ assert.equal(rpc('p2','state',{room_id:r.id}).population.correct,'TZA');
+ command('resume');r=game.get('room',room.id);assert.equal(r.phase,'reveal');assert.equal(r.deadline-Date.now(),6000);assert.equal(r.paused_from,undefined);
+ t.mock.timers.tick(5999);assert.equal(game.settle(game.get('room',r.id)),false);
+ t.mock.timers.tick(1);assert.equal(game.settle(game.get('room',r.id)),true);
+ r=game.get('room',room.id);assert.equal(r.phase,'question');assert.equal(r.round,2);assert.equal(r.starts_at-Date.now(),2000);
+ assert.deepEqual(Object.values(r.players).map(player=>player.score),[150,0]);
 });
 
-test('Cultura generale reveals early only after all answers are correct; licenses validate before quota use', t => {
+test('Cultura generale legacy rooms keep 2019 answers while new rooms use 2025 data', t => {
+ t.mock.timers.enable({apis:['Date'],now:1700000000000});
+ const {game,rpc}=setupCultureGame(['admin','p1','p2']);
+ const room=rpc('admin','create',{quiz:'culture'});rpc('p1','join',{code:room.code,nickname:'Ash'});
+ let r=game.get('room',room.id);r.order=Array.from({length:10},(_,i)=>i);delete r.population_year;r.round=1;r.phase='question';r.starts_at=Date.now();r.deadline=Date.now()+15000;r.remaining_ms=15000;r.answers={};r.settled=0;game.put('room',r.id,r);
+ let snapshot=rpc('p1','state',{room_id:r.id});assert.equal(snapshot.population.year,2019);assert.deepEqual(snapshot.population.countries.map(country=>country.iso2),['IT','TZ']);assert.equal(snapshot.population.values,undefined);
+ const request_id=crypto.randomUUID();
+ assert.deepEqual(rpc('p1','answer',{room_id:r.id,round:1,request_id,answer:'ITA'}),{done:true,result:'correct',choice:'ITA',points:150});
+ snapshot=rpc('p1','state',{room_id:r.id});assert.deepEqual(snapshot.population.values,[60297396,58005463]);assert.equal(snapshot.population.correct,'ITA');assert.equal(snapshot.me.score,150);
+});
+
+test('Cultura generale keeps unanswered players through the question timeout and finishes the tenth reveal after 10 seconds', t => {
+ t.mock.timers.enable({apis:['Date'],now:1700000000000});
+ const {game,rpc}=setupCultureGame(['admin','p1','p2','p3']);
+ const room=rpc('admin','create',{quiz:'culture'});
+ for(const id of ['p1','p2','p3'])rpc(id,'join',{code:room.code,nickname:id});
+ let r=game.get('room',room.id);r.order=Array.from({length:10},(_,i)=>i);game.put('room',r.id,r);
+ const command=name=>rpc('admin','command',{room_id:r.id,revision:game.get('room',r.id).revision,command:name});
+ command('start');r=game.get('room',room.id);t.mock.timers.tick(r.starts_at-Date.now());r=game.get('room',room.id);
+ const [first,second]=game.question(r),correct=second.population>first.population?second:first,wrong=correct===first?second:first;
+ const send=(id,answer,round=r.round)=>rpc(id,'answer',{room_id:r.id,round,answer,request_id:crypto.randomUUID()});
+ send('p1',correct.id);send('p2',wrong.id);assert.equal(game.get('room',r.id).phase,'question');
+ const questionDeadline=game.get('room',r.id).deadline;
+ t.mock.timers.tick(questionDeadline-Date.now()-1);assert.equal(game.settle(game.get('room',r.id)),false);
+ t.mock.timers.tick(1);assert.equal(game.settle(game.get('room',r.id)),true);
+ r=game.get('room',r.id);assert.equal(r.phase,'reveal');assert.equal(r.deadline-Date.now(),10000);
+ assert.equal(r.settled,1);assert.equal(Object.values(r.players).reduce((score,player)=>score+player.score,0),150);
+ assert.throws(()=>send('p3',correct.id),/Risposte chiuse/);
+
+ r.round=10;r.order[9]=9;r.settled=9;r.phase='question';r.starts_at=Date.now();r.deadline=Date.now()+15000;r.remaining_ms=15000;r.answers={};game.put('room',r.id,r);
+ const [lastFirst,lastSecond]=game.question(r),lastCorrect=lastSecond.population>lastFirst.population?lastSecond:lastFirst;
+ send('p1',lastCorrect.id,10);r=game.get('room',r.id);assert.equal(r.phase,'question');
+ send('p2',lastCorrect.id,10);r=game.get('room',r.id);assert.equal(r.phase,'question');
+ send('p3',lastCorrect.id,10);r=game.get('room',r.id);assert.equal(r.phase,'reveal');assert.equal(r.round,10);assert.equal(r.deadline-Date.now(),10000);
+ t.mock.timers.tick(9999);assert.equal(game.settle(game.get('room',r.id)),false);
+ t.mock.timers.tick(1);assert.equal(game.settle(game.get('room',r.id)),true);
+ const final=rpc('p1','state',{room_id:r.id});assert.equal(final.room.phase,'finished');assert.equal(final.room.round,10);assert.equal(final.population.year,2025);
+});
+
+test('Cultura generale retains the host manual next control', t => {
+ t.mock.timers.enable({apis:['Date'],now:1700000000000});
+ const {game,rpc}=setupCultureGame();
+ const room=rpc('admin','create',{quiz:'culture'});rpc('p1','join',{code:room.code,nickname:'Ash'});
+ let r=game.get('room',room.id);r.order=Array.from({length:10},(_,i)=>i);game.put('room',r.id,r);
+ const command=name=>rpc('admin','command',{room_id:r.id,revision:game.get('room',r.id).revision,command:name});
+ command('start');r=game.get('room',room.id);t.mock.timers.tick(r.starts_at-Date.now());r=game.get('room',room.id);
+ const [first,second]=game.question(r),answer=second.population>first.population?second.id:first.id;
+ rpc('p1','answer',{room_id:r.id,round:r.round,request_id:crypto.randomUUID(),answer});
+ assert.equal(game.get('room',r.id).phase,'reveal');
+ command('next');r=game.get('room',room.id);assert.equal(r.round,2);assert.equal(r.phase,'question');assert.equal(r.starts_at-Date.now(),2000);assert.equal(r.settled,1);
+});
+
+test('Cultura generale validates quiz licenses before quota use', t => {
  t.mock.timers.enable({apis:['Date'],now:1700000000000});
  const {game,rpc}=setupCultureGame(['admin']);
  const license=game.dispatch('license_create',{hours:1,max_rooms:1,quizzes:['culture']},{session:'admin',inviteHash:'invite'});
  game.put('session','host',{id:'host',role:'host',license:license.id,expires:Date.now()+86400000});
  assert.throws(()=>rpc('host','create',{quiz:'pokemon'}),/Quiz non incluso/);assert.equal(game.get('license',license.id).used_rooms,0);
- const room=rpc('host','create',{quiz:'culture'});assert.equal(game.get('license',license.id).used_rooms,1);assert.equal(game.get('room',room.id).priceOrder,undefined);
- for(const id of ['p1','p2']){game.put('session',id,{id,role:'player',expires:Date.now()+86400000});rpc(id,'join',{code:room.code,nickname:id});}
- const command=name=>rpc('host','command',{room_id:room.id,revision:game.get('room',room.id).revision,command:name});command('start');let r=game.get('room',room.id);t.mock.timers.tick(r.starts_at-Date.now());r=game.get('room',room.id);
- const pair=game.question(r),correct=pair[0].population>pair[1].population?pair[0]:pair[1];
- const send=id=>rpc(id,'answer',{room_id:r.id,round:r.round,answer:correct.id,request_id:crypto.randomUUID()});
- send('p1');assert.equal(game.get('room',r.id).phase,'question');send('p2');r=game.get('room',r.id);
- assert.equal(r.phase,'reveal');assert.equal(r.settled,1);assert.deepEqual(Object.values(r.players).map(player=>player.score),[150,150]);
+ const room=rpc('host','create',{quiz:'culture'});assert.equal(game.get('license',license.id).used_rooms,1);assert.equal(game.get('room',room.id).population_year,2025);assert.equal(game.get('room',room.id).priceOrder,undefined);
  assert.deepEqual(rpc('admin','dashboard').licenses.find(x=>x.id===license.id).quizzes,['culture']);
 });

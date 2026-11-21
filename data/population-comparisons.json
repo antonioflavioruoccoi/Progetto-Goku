@@ -1,15 +1,145 @@
 {
-  "year": 2019,
+  "year": 2025,
   "pairs": [
-    [{ "id": "ITA", "name": "Italia", "population": 60297396 }, { "id": "TZA", "name": "Tanzania", "population": 58005463 }],
-    [{ "id": "JPN", "name": "Giappone", "population": 126264931 }, { "id": "MEX", "name": "Messico", "population": 127575529 }],
-    [{ "id": "IRN", "name": "Iran", "population": 82913906 }, { "id": "DEU", "name": "Germania", "population": 83132799 }],
-    [{ "id": "CAN", "name": "Canada", "population": 37589262 }, { "id": "POL", "name": "Polonia", "population": 37970874 }],
-    [{ "id": "ARG", "name": "Argentina", "population": 44938712 }, { "id": "UGA", "name": "Uganda", "population": 44269594 }],
-    [{ "id": "NGA", "name": "Nigeria", "population": 200963599 }, { "id": "BRA", "name": "Brasile", "population": 211049527 }],
-    [{ "id": "KEN", "name": "Kenya", "population": 52573973 }, { "id": "ESP", "name": "Spagna", "population": 47076781 }],
-    [{ "id": "RUS", "name": "Russia", "population": 144373535 }, { "id": "BGD", "name": "Bangladesh", "population": 163046161 }],
-    [{ "id": "CRI", "name": "Costa Rica", "population": 5047561 }, { "id": "NOR", "name": "Norvegia", "population": 5347896 }],
-    [{ "id": "SWE", "name": "Svezia", "population": 10285453 }, { "id": "HND", "name": "Honduras", "population": 9746117 }]
+    [
+      {
+        "id": "ITA",
+        "iso2": "IT",
+        "name": "Italia",
+        "population": 60924851
+      },
+      {
+        "id": "TZA",
+        "iso2": "TZ",
+        "name": "Tanzania",
+        "population": 69145464
+      }
+    ],
+    [
+      {
+        "id": "JPN",
+        "iso2": "JP",
+        "name": "Giappone",
+        "population": 122243352
+      },
+      {
+        "id": "MEX",
+        "iso2": "MX",
+        "name": "Messico",
+        "population": 131741347
+      }
+    ],
+    [
+      {
+        "id": "IRN",
+        "iso2": "IR",
+        "name": "Iran",
+        "population": 89177357
+      },
+      {
+        "id": "DEU",
+        "iso2": "DE",
+        "name": "Germania",
+        "population": 84012284
+      }
+    ],
+    [
+      {
+        "id": "CAN",
+        "iso2": "CA",
+        "name": "Canada",
+        "population": 39187155
+      },
+      {
+        "id": "POL",
+        "iso2": "PL",
+        "name": "Polonia",
+        "population": 38364679
+      }
+    ],
+    [
+      {
+        "id": "ARG",
+        "iso2": "AR",
+        "name": "Argentina",
+        "population": 45418098
+      },
+      {
+        "id": "UGA",
+        "iso2": "UG",
+        "name": "Uganda",
+        "population": 49018818
+      }
+    ],
+    [
+      {
+        "id": "NGA",
+        "iso2": "NG",
+        "name": "Nigeria",
+        "population": 244344065
+      },
+      {
+        "id": "BRA",
+        "iso2": "BR",
+        "name": "Brasile",
+        "population": 221359387
+      }
+    ],
+    [
+      {
+        "id": "KEN",
+        "iso2": "KE",
+        "name": "Kenya",
+        "population": 55751717
+      },
+      {
+        "id": "ESP",
+        "iso2": "ES",
+        "name": "Spagna",
+        "population": 47336448
+      }
+    ],
+    [
+      {
+        "id": "RUS",
+        "iso2": "RU",
+        "name": "Russia",
+        "population": 140134279
+      },
+      {
+        "id": "BGD",
+        "iso2": "BD",
+        "name": "Bangladesh",
+        "population": 174370536
+      }
+    ],
+    [
+      {
+        "id": "CRI",
+        "iso2": "CR",
+        "name": "Costa Rica",
+        "population": 5304932
+      },
+      {
+        "id": "NOR",
+        "iso2": "NO",
+        "name": "Norvegia",
+        "population": 5541823
+      }
+    ],
+    [
+      {
+        "id": "SWE",
+        "iso2": "SE",
+        "name": "Svezia",
+        "population": 10643745
+      },
+      {
+        "id": "HND",
+        "iso2": "HN",
+        "name": "Honduras",
+        "population": 9652170
+      }
+    ]
   ]
 }

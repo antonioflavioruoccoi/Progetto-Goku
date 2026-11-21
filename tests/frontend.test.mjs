@@ -153,11 +153,12 @@ test('named and legacy licenses render safely in dashboard and selector',async()
 
 
 test('Cultura generale keeps player choices private and restores the selected country after reload',async()=>{
- const now=Date.now(),countries=[{id:'ITA',name:'Italia'},{id:'TZA',name:'Tanzania'}];
+ const now=Date.now(),countries=[{id:'ITA',iso2:'IT',name:'Italia'},{id:'TZA',iso2:'TZ',name:'Tanzania'}];
  const makeRoom=(userId,me)=>({room:{id:'culture-room',code:'123456',quiz:'culture',manche:1,manche_total:3,phase:'question',round:1,revision:2,starts_at:new Date(now-1000).toISOString(),deadline:new Date(now+14000).toISOString()},server_now:now,duration_ms:15000,remaining_ms:15000,can_control:false,received:0,population:{year:2019,countries},solution:null,players:[{user_id:userId,nickname:userId,score:0,rank:1}],me});
  const firstRoom=makeRoom('user-1',{nickname:'Ash',score:0,done:false,choice:null});
  const first=await boot('play/?room=culture-room',{anonymous:true,userId:'user-1',room:firstRoom});
  assert.equal(first.$('culture-stage').hidden,false);assert.equal(first.$('card-wrap').hidden,true);assert.equal(first.$('answer-form').hidden,true);assert.equal(first.$('population-match').children.length,2);assert.equal(first.$('population-a').querySelector('.population-name').textContent,'Italia');assert.equal(first.$('population-a').querySelector('.population-value').textContent,'');assert.equal(first.$('results').hidden,false);
+ assert.equal(first.$('population-a').querySelector('.population-flag').src,'https://goku.test/assets/flags/it.svg');assert.equal(first.$('population-a').querySelector('.population-flag').alt,'');
  first.$('population-b').dispatchEvent(new first.window.MouseEvent('click',{bubbles:true}));await new Promise(r=>setImmediate(r));
  assert.equal(first.calls.find(call=>call.action==='answer').payload.answer,'TZA');assert.ok(first.$('population-b').classList.contains('population-selected'));assert.match(first.$('population-feedback').textContent,/Tanzania/);
  const secondRoom=makeRoom('user-2',{nickname:'Misty',score:0,done:false,choice:null});
@@ -174,4 +175,8 @@ test('host only sees the licensed quiz choices and no Pokémon audio for Cultura
  const host=await boot('host/',{licenses});assert.equal(host.$('quiz').value,'culture');assert.equal(host.$('quiz').options[0].disabled,true);assert.equal(host.$('quiz').options[1].disabled,false);await host.window.happyDOM.close();
  const room={room:{id:'r',code:'123456',quiz:'culture',manche:1,manche_total:3,phase:'lobby',round:0,revision:0},can_control:true,players:[],received:0};
  const game=await boot('host/?room=r',{room});assert.equal(game.audioEvents.some(e=>e[0]==='play'),false);await game.window.happyDOM.close();
+ const now=Date.now();
+ const pausedReveal={room:{id:'culture-room',code:'123456',quiz:'culture',manche:1,manche_total:3,phase:'paused',paused_from:'reveal',round:1,revision:3,starts_at:new Date(now-15000).toISOString(),deadline:new Date(now+6000).toISOString(),remaining_ms:6000},server_now:now,duration_ms:15000,remaining_ms:6000,can_control:true,received:1,players:[{user_id:'p1',nickname:'Ash',score:100,rank:1}],population:{year:2025,countries:[{id:'ITA',iso2:'IT',name:'Italia'},{id:'TZA',iso2:'TZ',name:'Tanzania'}],values:[60924851,69145464],correct:'TZA'},me:null};
+ const pausedHost=await boot('host/?room=culture-room',{room:pausedReveal});
+ assert.equal(pausedHost.$('culture-stage').hidden,false);assert.equal(pausedHost.$('results').hidden,false);assert.equal(pausedHost.$('results-title').textContent,'Soluzione e classifica');assert.equal(pausedHost.$('population-b').querySelector('.population-flag').src,'https://goku.test/assets/flags/tz.svg');assert.equal(pausedHost.$('population-a').querySelector('.population-name').textContent,'Italia');assert.equal(pausedHost.$('population-b').querySelector('.population-value').textContent,'69.145.464 abitanti');assert.equal(pausedHost.$('solution').textContent,'Tanzania ha più abitanti (69.145.464, stima 2025).');assert.equal(pausedHost.$('population-b').disabled,true);assert.equal(pausedHost.$('paused').hidden,false);assert.equal(pausedHost.window.document.querySelector('[data-command=resume]').hidden,false);assert.equal(pausedHost.window.document.querySelector('[data-command=end]').hidden,false);await pausedHost.window.happyDOM.close();
 });
