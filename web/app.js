@@ -232,8 +232,7 @@ function renderRoom(){const r=state.room,host=state.can_control,active=['questio
  if(clues){const unlocked=state.clues||[];if(JSON.stringify(unlocked)!==$('clues').dataset.content){$('clues').dataset.content=JSON.stringify(unlocked);$('clues').replaceChildren(...unlocked.map((c,i)=>text('p',`${i+1}. ${c}`,'clue-dialog')));}
  if(state.solution_image){$('clue-image').src=base.href+state.solution_image;$('clue-image').alt='Sprite di '+state.solution;$('clue-caption').textContent=`${state.solution}${state.me?' · '+(state.me.points||0)+' punti':''}`;}
  if(state.me?.result==='correct')$('feedback').textContent=`Hai vinto ${state.me.points} punti!`;}
- show('skip-hint',host&&!clues&&!culture&&!price&&!lobby&&!final);
- show('price-shortcut',host&&clues&&!final);
+ show('skip-hint',host&&!lobby&&!final);
  show('lobby',lobby);
  show('question',!price&&!chronology&&(active||((host||clues||culture)&&r.phase==='reveal')||(clues&&final&&!!state.solution_image)));
  show('price-stage',!!price&&!final);
@@ -257,10 +256,9 @@ function renderRoom(){const r=state.room,host=state.can_control,active=['questio
  if(price&&!final)renderPrice(state,host);
  syncMusic();
  tick();}
-function tick(){if(!state)return;const r=state.room,ms=left(),pre=r.phase==='question'&&Date.now()+offset<new Date(r.starts_at).getTime();show('clue-intro',r.manche==='clues'&&r.round===7&&pre);$('seconds').textContent=pre&&r.quiz==='culture'?`Partenza ${Math.ceil((new Date(r.starts_at).getTime()-Date.now()-offset)/1000)}s`:r.quiz==='culture'&&r.phase==='reveal'?`${r.round===10?'Podio':'Prossimo confronto'} tra ${Math.ceil(ms/1000)}s`:pre?'Pronti…':`${Math.ceil(ms/1000)}s`;const enabled=r.phase==='question'&&!pre&&ms>0&&!state.me?.done&&!busy;$('answer').disabled=$('submit').disabled=!enabled;for(const button of $('population-match').querySelectorAll('button'))button.disabled=!enabled||state.can_control||!!state.me?.done;
- if(state.chronology&&r.phase!=='finished')tickChronology(state,ms,enabled);
+function tick(){if(!state)return;const r=state.room,ms=left(),introMs=r.phase==='question'?Math.max(0,new Date(r.starts_at).getTime()-Date.now()-offset):0,pre=introMs>0;show('clue-intro',r.manche==='clues'&&r.round===7&&pre);$('seconds').textContent=pre&&r.quiz==='culture'?`Partenza ${Math.ceil(introMs/1000)}s`:r.quiz==='culture'&&r.phase==='reveal'?`${r.round===10?'Podio':'Prossimo confronto'} tra ${Math.ceil(ms/1000)}s`:pre?'Pronti…':`${Math.ceil(ms/1000)}s`;const enabled=r.phase==='question'&&!pre&&ms>0&&!state.me?.done&&!busy;$('answer').disabled=$('submit').disabled=!enabled;for(const button of $('population-match').querySelectorAll('button'))button.disabled=!enabled||state.can_control||!!state.me?.done;
+ if(state.chronology&&r.phase!=='finished')tickChronology(state,ms,enabled,introMs);
  if(state.price&&r.phase!=='finished'){
-  const introMs=pre?new Date(r.starts_at).getTime()-Date.now()-offset:0;
   tickPrice(state,ms,pre,introMs,enabled&&!!state.me&&!state.can_control);
   if(state.can_control)document.querySelector('[data-command="pause"]').hidden=pre||r.phase!=='question';
  }
@@ -277,8 +275,8 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 document.addEventListener('keydown', async event => {
  if (!event.shiftKey || event.key.toLowerCase() !== 'n' || event.ctrlKey || event.altKey || event.metaKey || event.repeat || event.isComposing || busy) return;
  if (event.target?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"]),[role="textbox"]')) return;
- if (route === 'play' || !state?.can_control || state.room.manche === 'price' || state.room.quiz === 'culture' || !['question','paused','reveal'].includes(state.room.phase)) return;
+ if (route === 'play' || !state?.can_control || !['question','paused','reveal'].includes(state.room.phase)) return;
  event.preventDefault(); busy = true;
- try { await rpc('command',{room_id:roomId,revision:state.room.revision,command:state.room.manche==='clues'?'skip_to_price':'skip_to_clues'}); await refresh(); }
+ try { await rpc('command',{room_id:roomId,revision:state.room.revision,command:'skip_round'}); await refresh(); }
  catch(e) { error(e.message); await refresh(); } finally { busy = false; }
 });

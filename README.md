@@ -72,9 +72,9 @@ La verifica locale non dimostra l’eviction/ibernazione effettiva in produzione
 
 Dopo la sesta carta Pixelcard il server consolida i punti e avvia automaticamente 5 secondi di introduzione con Oak, poi sei PokéIndizi casuali senza ripetizioni dal dataset di dodici. PIN, identità e WebSocket restano gli stessi. Gli indizi si sbloccano a 30/20/10 secondi; dopo la seconda manche si passa a PokéPrice. I 12 confronti di PokéPrice precedono il podio cumulato.
 
-Nella schermata del conduttore, **Shift + N** salta le carte rimanenti, consolida una sola volta i punti del round corrente e avvia la stessa introduzione. Durante PokéIndizi la stessa scorciatoia passa a PokéPrice. La scorciatoia è riservata al conduttore e ignora i campi di testo. Il server verifica ruolo, licenza, fase e revisione.
+Nella schermata del conduttore, **Shift + N** passa al round successivo in tutte le manche e consolida una sola volta i punti già ottenuti. La scorciatoia funziona anche nel quiz originale e si usa fuori dal campo di risposta. Nel multiplayer il server verifica ruolo, licenza, fase e revisione.
 
-Cultura generale è un quiz separato con 10 confronti sulla popolazione e un podio dedicato.
+Cultura generale comprende 10 confronti sulla popolazione, 5 round di Cronologia e il podio finale. In Cronologia ogni posizione corretta vale 50 punti.
 
 Asset locali e limiti: [ASSET_SOURCES.md](assets/pokeindizi/ASSET_SOURCES.md). Per i Pokémon recenti si usano icone dei giochi, non falsi sprite Game Boy.
 

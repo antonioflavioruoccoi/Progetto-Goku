@@ -46,18 +46,21 @@ test('PokéIndizi shares host/player styling and only renders server-unlocked cl
  }
 });
 
-test('Shift N advances the first two manches only for the host and outside editable fields',async()=>{
+test('Shift N skips one round in every multiplayer game, only for the host and outside editable fields',async()=>{
  for(const host of [true,false]){
  const room={room:{id:'r',code:'123456',phase:'question',round:1,revision:1,manche:'cards',starts_at:Date.now()-1000,deadline:Date.now()+30000},can_control:host,players:[],me:null,received:0};
  const h=await boot((host?'host':'play')+'/?room=r',{room});
  const press=async(target=h.window.document)=>{target.dispatchEvent(new h.window.KeyboardEvent('keydown',{key:'N',shiftKey:true,bubbles:true}));await new Promise(r=>setImmediate(r));};
  await press(h.$('answer'));assert.equal(h.calls.filter(c=>c.action==='command').length,0);
- await press();assert.equal(h.calls.filter(c=>c.action==='command').length,host?1:0);
- if(host)assert.equal(h.calls.find(c=>c.action==='command').payload.command,'skip_to_clues');
- room.room.manche='clues';await h.notify();await press();
- assert.equal(h.calls.filter(c=>c.action==='command').length,host?2:0);
- if(host)assert.equal(h.calls.filter(c=>c.action==='command').at(-1).payload.command,'skip_to_price');
- room.room.manche='price';await h.notify();await press();assert.equal(h.calls.filter(c=>c.action==='command').length,host?2:0);await h.window.happyDOM.close();
+ for(const manche of ['cards','clues','price',1,2]){
+  room.room.manche=manche;
+  room.room.quiz=typeof manche==='number'?'culture':'pokemon';
+  await h.notify();
+  await press();
+ }
+ assert.deepEqual(h.calls.filter(c=>c.action==='command').map(c=>c.payload.command),
+  host?Array(5).fill('skip_round'):[]);
+ await h.window.happyDOM.close();
  }
 });
 
@@ -202,8 +205,8 @@ test('Cronologia toggles and resets ranks, submits once, and reveals the player 
  ];
  const room={
   room:{id:'chronology-room',code:'123456',quiz:'culture',manche:2,round:5,revision:1,
-   phase:'question',starts_at:now-1000,deadline:now+29000},
-  chronology:{category:'Film',total:5,participants:1,items},
+   phase:'question',starts_at:now+9000,deadline:now+39000},
+  chronology:{category:'Film',total:5,participants:1,card_interval_ms:2000,points_per_match:50,items},
   server_now:now,duration_ms:30000,remaining_ms:29000,can_control:false,received:0,
   players:[],me:{done:false,points:0},
  };
@@ -212,6 +215,13 @@ test('Cronologia toggles and resets ranks, submits once, and reveals the player 
  const cards=[...list.children];
  const ranks=()=>cards.map(card=>card.querySelector('.chronology-position').textContent);
  assert.deepEqual(cards.map(card=>card.querySelector('.chronology-name').textContent),['Interstellar','Avatar','Spider-Man','Ratatouille']);
+ assert.equal(list.querySelectorAll('[data-present]').length,0);
+ for(const [index,elapsed] of [3050,5050,7050,9050].entries()){
+  room.server_now=now+elapsed;
+  await h.notify();
+  assert.equal(list.querySelectorAll('[data-present]').length,index+1);
+  assert.ok(cards.every(card=>card.disabled===(elapsed<9000)));
+ }
  assert.equal(send.disabled,true);
  cards.forEach(card=>card.click());
  cards[1].click();
@@ -237,11 +247,12 @@ test('Cronologia toggles and resets ranks, submits once, and reveals the player 
  room.room.phase='reveal';room.room.revision++;
  room.chronology.correct=[2,3,1,0];
  items.forEach((item,i)=>{item.year=[2014,2009,2002,2007][i];});
- room.me.points=60;
+ room.me.points=100;
  await h.notify();
  assert.deepEqual([...list.children].map(card=>[card.dataset.item,card.dataset.result]),
   [['2','correct'],['1','wrong'],['3','wrong'],['0','correct']]);
- assert.match(h.$('chronology-status').textContent,/60 punti/);
+ assert.deepEqual([...list.children].map(card=>card.querySelector('.chronology-detail').textContent),['+50','0','0','+50']);
+ assert.match(h.$('chronology-status').textContent,/100 punti/);
  assert.equal(h.$('chronology-solution').querySelector('li strong').textContent,'2002');
  await h.window.happyDOM.close();
 });

@@ -79,11 +79,10 @@ export function renderChronology(state, host) {
       return span;
     });
     $('category').replaceChildren(...words);
-    buttons = chronology.items.map(({ id, name }, index) => {
+    buttons = chronology.items.map(({ id, name }) => {
       const card = element(host ? 'div' : 'button', 'chronology-card');
       if (!host) card.type = 'button';
       card.dataset.item = id;
-      card.style.setProperty('--i', index);
       card.append(element('span', 'chronology-position'), element('span', 'chronology-name', host ? name : shortName(name)),
         element('span', 'chronology-detail'));
       return card;
@@ -93,8 +92,6 @@ export function renderChronology(state, host) {
 
   if (locked) selected = me.choice;
   stage.dataset.phase = reveal ? 'reveal' : locked ? 'waiting' : 'question';
-  setText($('phase'), room.phase === 'paused' ? 'In pausa' :
-    reveal ? (room.round === chronology.total ? 'Risultati · al podio' : 'Risultati · prossimo round') : locked ? 'Risposta inviata' : 'Tempo per rispondere');
   stage.toggleAttribute('data-paused', room.phase === 'paused');
   $('instruction').hidden = reveal;
   $('solution').hidden = host || !reveal;
@@ -110,7 +107,8 @@ export function renderChronology(state, host) {
       const correct = locked && position === rank;
       card.style.setProperty('--reveal', rank);
       setPosition(card, host ? rank + 1 : position + 1);
-      setText(card.querySelector('.chronology-detail'), host ? String(byId.get(id).year) : locked ? correct ? '+30' : '0' : '');
+      setText(card.querySelector('.chronology-detail'), host ? String(byId.get(id).year) :
+        locked ? correct ? `+${chronology.points_per_match}` : '0' : '');
       if (!host && locked) card.dataset.result = correct ? 'correct' : 'wrong';
       if (!host) card.setAttribute('aria-pressed', String(position >= 0));
     }
@@ -135,15 +133,27 @@ export function renderChronology(state, host) {
   previous = stage.dataset.phase;
 }
 
-export function tickChronology(state, ms, canAnswer) {
-  const reveal = !!state.chronology.correct;
+export function tickChronology(state, ms, canAnswer, introMs) {
   if (stage.hidden) return;
+  const { room, chronology, duration_ms: duration, me } = state;
+  const reveal = !!chronology.correct;
+  const paused = room.phase === 'paused';
+  const untilStart = paused && !reveal ? Math.max(0, ms - duration) : introMs;
+  const visible = Math.max(0, buttons.length - Math.ceil(untilStart / chronology.card_interval_ms));
+  const presenting = untilStart > 0;
+  stage.toggleAttribute('data-intro', presenting);
+  stage.toggleAttribute('data-category-only', visible <= 0);
+  setText($('phase'), paused ? 'In pausa' : reveal ?
+    (room.round === chronology.total ? 'Risultati · al podio' : 'Risultati · prossimo round') :
+    presenting ? 'Presentazione' : me?.done ? 'Risposta inviata' : 'Tempo per rispondere');
+
   enabled = canAnswer && !!state.me && !state.can_control;
-  const time = Math.ceil(ms / 1000);
+  const time = Math.ceil(Math.min(ms, duration) / 1000);
   const number = String(time).padStart(2, '0');
   if (seconds.textContent !== number) seconds.replaceChildren(element('span', '', number));
-  stage.toggleAttribute('data-urgent', !reveal && time <= 5 && state.room.phase === 'question');
-  $('progress').firstElementChild.style.transform = `scaleX(${ms / (reveal ? 15000 : state.duration_ms)})`;
+  stage.toggleAttribute('data-urgent', !presenting && !reveal && time <= 5 && room.phase === 'question');
+  $('progress').firstElementChild.style.transform = `scaleX(${Math.min(1, ms / (reveal ? 15000 : duration))})`;
+  buttons.forEach((card,i) => card.toggleAttribute('data-present', i < visible));
   if (!state.can_control) {
     for (const button of buttons) button.disabled = !enabled;
     $('reset').disabled = !enabled || !selected.length;

@@ -13,6 +13,10 @@ const cultureStages = [
 ];
 const cultureStage = r => quizOf(r) === "culture" ? cultureStages[(r.manche || 1) - 1] : null;
 const isChronology = r => cultureStage(r)?.id === "chronology";
+const CHRONOLOGY_POINTS = 50;
+const CHRONOLOGY_CARD_INTERVAL = 2000;
+const CHRONOLOGY_INTRO = 3000 + 3 * CHRONOLOGY_CARD_INTERVAL;
+const chronologyPoints = r => r.chronology_points ?? 30;
 // The client's reconnect backoff refreshes via HTTP at least every 15.3 seconds.
 const POLL_PRESENCE_MS = 20000;
 const populationsFor = r => (r.population_year || legacyPopulations.year) === populations.year ? populations : legacyPopulations;
@@ -252,13 +256,17 @@ export class Goku {
     );
   }
   publicRoom(r) {
-    const { players, answers, order, clueOrder, priceOrder, chronologyOrder, polling, settled, ...publicData } = r;
+    const { players, answers, order, clueOrder, priceOrder, chronologyOrder, chronology_points, polling, settled, ...publicData } = r;
     publicData.quiz ||= "pokemon";
     publicData.manche ||= publicData.quiz === "culture" ? 1 : "cards";
     if (publicData.quiz === "culture") publicData.manche_total = cultureStages.length;
     return publicData;
   }
   advanceRound(r, now = Date.now()) {
+    if (quizOf(r) === "pokemon") {
+      if ((r.manche ?? "cards") === "cards" && r.round === 6) return this.beginClues(r);
+      if (r.manche === "clues" && r.round === PRICE_START - 1) return this.beginPrice(r);
+    }
     if (r.round === rounds(r)) {
       if (cultureStage(r)?.id !== "population") {
         r.phase = "finished";
@@ -270,7 +278,8 @@ export class Goku {
     }
     r.round++;
     r.phase = "question";
-    r.starts_at = now + (r.manche === "price" || isChronology(r) ? 0 : 2000);
+    if (isChronology(r)) r.chronology_points = CHRONOLOGY_POINTS;
+    r.starts_at = now + (isChronology(r) ? CHRONOLOGY_INTRO : r.manche === "price" ? 0 : 2000);
     r.remaining_ms = roundDuration(r);
     r.deadline = r.starts_at + r.remaining_ms;
     r.answers = {};
@@ -328,10 +337,10 @@ export class Goku {
       if (count !== (r.cluesShown || 0)) { r.cluesShown = count; changed = true; }
     }
     if (!force && quizOf(r) === "pokemon" && (r.manche ?? "cards") === "cards" && r.round === 6 && r.phase === "reveal") {
-      this.beginClues(r); changed = true;
+      this.advanceRound(r, now); changed = true;
     }
     if (!force && quizOf(r) === "pokemon" && r.manche === "clues" && r.round === PRICE_START - 1 && r.phase === "reveal") {
-      this.beginPrice(r); changed = true;
+      this.advanceRound(r, now); changed = true;
     }
     if (changed) this.put("room", r.id, r);
     return changed;
@@ -400,6 +409,8 @@ export class Goku {
         chronology: {
           category: chronology.category,
           total: CHRONOLOGY_ROUNDS,
+          card_interval_ms: CHRONOLOGY_CARD_INTERVAL,
+          points_per_match: chronologyPoints(r),
           items: cultureRevealed ? chronology.items : chronology.items.map(({ id, name }) => ({ id, name })),
           ...(cultureRevealed ? { correct: correctChronology(chronology.items) } : {}),
           participants,
@@ -766,7 +777,8 @@ export class Goku {
         if (!Array.isArray(p.answer) || p.answer.length !== items.length ||
             new Set(p.answer).size !== items.length ||
             !items.every(({ id }) => p.answer.includes(id))) fail("Ordina tutti e quattro gli elementi");
-        const points = correctChronology(items).reduce((sum, id, index) => sum + (p.answer[index] === id ? 30 : 0), 0);
+        const points = correctChronology(items).reduce((sum, id, index) =>
+          sum + (p.answer[index] === id ? chronologyPoints(r) : 0), 0);
         const result = { done: true, choice: p.answer };
         r.answers[s.id] = { ...result, points, requests: { [p.request_id]: result } };
         this.recordPoll(r, s.id, now);
@@ -844,6 +856,10 @@ export class Goku {
         this.settle(r, true);
         if (c === "skip_to_clues") this.beginClues(r);
         else this.beginPrice(r);
+      } else if (c === "skip_round" && ["question", "paused", "reveal"].includes(r.phase)) {
+        this.settle(r, true);
+        delete r.paused_from;
+        this.advanceRound(r, now);
       } else if (
         (c === "start" && r.phase === "lobby") ||
         (c === "next" && r.phase === "reveal" && !isChronology(r))
@@ -852,7 +868,7 @@ export class Goku {
         this.advanceRound(r, now);
       } else if (
         c === "pause" &&
-        ((r.phase === "question" && now >= r.starts_at) || (quizOf(r) === "culture" && r.phase === "reveal" && now < r.deadline))
+        ((r.phase === "question" && (isChronology(r) || now >= r.starts_at)) || (quizOf(r) === "culture" && r.phase === "reveal" && now < r.deadline))
       ) {
         r.remaining_ms = Math.max(0, r.deadline - now);
         if (quizOf(r) === "culture") r.paused_from = r.phase;
@@ -860,6 +876,9 @@ export class Goku {
       } else if (c === "resume" && r.phase === "paused") {
         r.phase = r.paused_from || "question";
         r.deadline = now + r.remaining_ms;
+        if (isChronology(r) && r.phase === "question" && r.remaining_ms > roundDuration(r)) {
+          r.starts_at = r.deadline - roundDuration(r);
+        }
         delete r.paused_from;
       } else if (c === "end" && r.phase !== "finished") {
         this.settle(r, true);

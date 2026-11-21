@@ -352,7 +352,17 @@ test('Cronologia keeps its server draw, scores by position and advances after ti
  assert.equal(first.room.chronologyOrder,undefined);
  assert.equal(first.room.polling,undefined);
  assert.equal(first.chronology.participants,2);
+ assert.equal(first.chronology.points_per_match,50);
+ assert.equal(first.chronology.card_interval_ms,2000);
+ assert.equal(first.room.starts_at-Date.now(),9000);
+ assert.equal(first.room.deadline-first.room.starts_at,30000);
  assert.equal(game.settle({...get(),players:{}}),false);
+ assert.throws(()=>send('p1',[0,1,2,3]),/Risposte chiuse/);
+ t.mock.timers.tick(4000);command('pause');
+ assert.equal(state('p1').remaining_ms,35000);
+ t.mock.timers.tick(15000);command('resume');
+ assert.equal(get().starts_at-Date.now(),5000);
+ t.mock.timers.tick(5000);
  assert.throws(()=>send('p1',[0,1,1,3]),/Ordina tutti/);
  assert.throws(()=>send('p1',[0,1,2,4]),/Ordina tutti/);
  assert.throws(()=>send('p1',[0,1,2,3],crypto.randomUUID(),1),/non più attuale/);
@@ -375,11 +385,11 @@ test('Cronologia keeps its server draw, scores by position and advances after ti
  assert.equal(revealed.room.phase,'reveal');
  assert.deepEqual(revealed.chronology.items,draw[0].items);
  assert.deepEqual(revealed.chronology.correct,order(0));
- assert.equal(revealed.me.points,60);
- assert.equal(revealed.me.score,110);
- assert.equal(state('p2').me.points,120);
+ assert.equal(revealed.me.points,100);
+ assert.equal(revealed.me.score,150);
+ assert.equal(state('p2').me.points,200);
  assert.deepEqual(send('p1',partial,request),{done:true,choice:partial});
- assert.equal(state('p1').me.score,110);
+ assert.equal(state('p1').me.score,150);
  assert.equal(state('offline').me.points,0);
  assert.throws(()=>command('next'),/non disponibile/);
 
@@ -397,6 +407,7 @@ test('Cronologia keeps its server draw, scores by position and advances after ti
   assert.equal(q.room.round,round);
   assert.equal(q.chronology.category,categories[round-1]);
   assert.equal(q.remaining_ms,30000);
+  t.mock.timers.tick(q.room.starts_at-Date.now());
   send('p2',order(round-1));
   if(round===2){
    assert.equal(get().phase,'question');
@@ -413,10 +424,43 @@ test('Cronologia keeps its server draw, scores by position and advances after ti
  const final=state('p2');
  assert.equal(final.room.phase,'finished');
  assert.equal(final.room.round,5);
- assert.equal(final.me.score,600);
- assert.equal(final.players[1].score,470);
+ assert.equal(final.me.score,1000);
+ assert.equal(final.players[1].score,750);
  assert.equal(game.settle(get()),false);
  assert.deepEqual(get().chronologyOrder,draw);
+});
+
+test('skip_round moves only one round, crosses manche boundaries and settles submitted answers once', t => {
+ t.mock.timers.enable({apis:['Date'],now:1700000000000});
+ const {game,rpc}=setupCultureGame();
+ for(const [quiz,stages] of [['pokemon',{'cards':6,'clues':12,'price':24}],['culture',{1:10,2:5}]]){
+  const {id,code}=rpc('admin','create',{quiz});
+  rpc('p1','join',{code,nickname:'Ash'});
+  rpc('p2','join',{code,nickname:'Misty'});
+  const get=()=>game.get('room',id);
+  const command=(command,session='admin',revision=get().revision)=>rpc(session,'command',{room_id:id,revision,command});
+  command('start');
+  assert.throws(()=>command('skip_round','p1'),/Privilegi/);
+  for(const [manche,end] of Object.entries(stages)){
+   while(String(get().manche)===manche&&get().phase!=='finished'){
+    const before=get();
+    if(manche==='2'&&before.round===1){
+     t.mock.timers.tick(before.starts_at-Date.now());
+     const [a,b,c,d]=[...game.question(before).items].sort((a,b)=>a.year-b.year).map(item=>item.id);
+     const result=rpc('p1','answer',{room_id:id,manche:2,round:1,request_id:crypto.randomUUID(),answer:[a,c,b,d]});
+     assert.equal(result.done,true);
+     command('pause');
+    }
+    command('skip_round');
+    assert.throws(()=>command('skip_round','admin',before.revision),/Stato cambiato/);
+    const after=get();
+    if(before.round<end)assert.equal(after.round,before.round+1);
+    else assert.ok(after.manche!==before.manche||after.phase==='finished');
+   }
+  }
+  assert.equal(get().phase,'finished');
+  assert.equal(get().players.p1.score,quiz==='culture'?100:0);
+ }
 });
 
 test('Cultura generale retains the host manual next control', t => {
