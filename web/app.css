@@ -447,15 +447,9 @@ body.pokeprice {
   #podium .winner { max-width: 100%; }
 }
 
-.culture-quiz #culture-stage{max-width:760px;margin:14px auto;text-align:center}.culture-quiz #population-match{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.culture-quiz .population-country{display:flex;flex-direction:column;justify-content:center;gap:8px;min-width:0;min-height:120px;padding:14px;border:3px solid var(--frame);border-radius:14px;background:var(--panel);cursor:pointer;transition:outline-color .2s ease,background-color .2s ease,transform .2s ease}.culture-quiz .population-country:disabled{opacity:1;cursor:default}.culture-quiz .population-selected{outline:4px solid #3172a3;transform:scale(1.02)}
-.culture-quiz .population-label { display: flex; flex-direction: column; align-items: center; gap: clamp(6px, 1.4svh, 12px); width: 100%; }
-.culture-quiz .population-flag { display: block; width: min(100%, clamp(104px, 33vw, 224px)); height: clamp(66px, 12svh, 144px); object-fit: contain; }
-.culture-quiz .population-name{font-size:clamp(17px,3vw,26px);overflow-wrap:anywhere}.culture-quiz .population-value{font-weight:700}.culture-quiz .population-winner{outline:4px solid #27865a;background:#e1f6e8}.culture-quiz #population-match button{min-height:72px;font-size:clamp(16px,3vw,24px);touch-action:manipulation}.culture-quiz #population-feedback{min-height:1.5em}
-@media(max-width:600px){.culture-quiz #population-match{gap:8px}.culture-quiz .population-country{min-height:110px;padding:10px}.culture-quiz .population-name{font-size:16px}.culture-quiz #population-match button{min-height:64px;padding:8px;font-size:16px}}
-
 .culture-quiz #ranking li.rank-up{animation:culture-rank-up .65s ease}.culture-quiz #ranking li.rank-down{animation:culture-rank-down .65s ease}@keyframes culture-rank-up{50%{transform:translateY(-5px);background:#d7f6e3}}@keyframes culture-rank-down{50%{transform:translateY(5px);background:#ffe2d9}}
 
-.chronology-quiz {
+:is(.chronology-quiz, .population-quiz) {
   --stage: #173f58;
   --muted: #c6e5f0;
   --yellow: #ffcc00;
@@ -464,16 +458,16 @@ body.pokeprice {
   color: var(--panel);
   font: 500 1rem/1.25 system-ui, sans-serif;
 }
-.chronology-quiz #app {
+:is(.chronology-quiz, .population-quiz) #app {
   width: min(100%, 1600px);
   height: 100svh;
   padding: max(10px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right))
     max(10px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
 }
-.chronology-quiz #app > :is(header, nav),
-.chronology-quiz #room > p:has(#back),
-.chronology-quiz #pokemon-parade { display: none; }
-.chronology-quiz #app > :is(#error, #notice), .chronology-quiz #revoked {
+:is(.chronology-quiz, .population-quiz) #app > :is(header, nav),
+:is(.chronology-quiz, .population-quiz) #room > p:has(#back),
+:is(.chronology-quiz, .population-quiz) #pokemon-parade { display: none; }
+:is(.chronology-quiz, .population-quiz) #app > :is(#error, #notice), :is(.chronology-quiz, .population-quiz) #revoked {
   position: fixed;
   z-index: 3;
   inset: auto 12px max(68px, calc(env(safe-area-inset-bottom) + 68px));
@@ -484,15 +478,15 @@ body.pokeprice {
   border-radius: 8px;
   background: #0e2c40;
 }
-.chronology-quiz #notice { top: 0; bottom: auto; }
-.chronology-quiz.host #app { width: 100%; padding-inline: clamp(24px, 5vw, 76px); }
+:is(.chronology-quiz, .population-quiz) #notice { top: 0; bottom: auto; }
+:is(.chronology-quiz, .population-quiz).host #app { width: 100%; padding-inline: clamp(24px, 5vw, 76px); }
 .chronology-quiz:is(.host, .player) #room {
   display: grid;
   height: 100%;
   grid-template: "score" auto "stage" minmax(0, 1fr) "controls" auto / minmax(0, 1fr);
   gap: clamp(8px, 1.4svh, 18px);
 }
-.chronology-quiz .scoreboard {
+:is(.chronology-quiz, .population-quiz) .scoreboard {
   grid-area: score;
   justify-content: space-between;
   margin: 0;
@@ -504,14 +498,14 @@ body.pokeprice {
   box-shadow: none;
   font-size: .875rem;
 }
-.chronology-quiz .scoreboard strong { color: white; font: inherit; margin-left: 3px; }
-.chronology-quiz #room #controls {
+:is(.chronology-quiz, .population-quiz) .scoreboard strong { color: white; font: inherit; margin-left: 3px; }
+:is(.chronology-quiz, .population-quiz) #room #controls {
   grid-area: controls;
   justify-content: space-between;
   margin: 0;
 }
-.chronology-quiz #skip-hint { align-self: center; color: var(--muted); }
-.chronology-quiz :is(#fullscreen, #controls button, #chronology-reset, #chronology-send) {
+:is(.chronology-quiz, .population-quiz) #skip-hint { align-self: center; color: var(--muted); }
+:is(.chronology-quiz, .population-quiz) :is(#fullscreen, #controls button, #chronology-reset, #chronology-send) {
   min-height: 44px;
   padding: 6px 14px;
   border: 1px solid var(--frame);
@@ -522,7 +516,7 @@ body.pokeprice {
   font: 650 .875rem/1.2 system-ui, sans-serif;
   touch-action: manipulation;
 }
-.chronology-quiz :is(#fullscreen, #controls button, #chronology-reset):hover:enabled { background: #2b6381; }
+:is(.chronology-quiz, .population-quiz) :is(#fullscreen, #controls button, #chronology-reset):hover:enabled { background: #2b6381; }
 .chronology-quiz :is(#chronology-send, #controls [data-command="resume"]) { background: var(--yellow); color: #142f42; border-color: var(--yellow); }
 .chronology-quiz:has(#chronology-stage[data-ranking]) #controls [data-command="pause"] {
   background: var(--yellow);
@@ -530,7 +524,178 @@ body.pokeprice {
   color: #142f42;
 }
 .chronology-quiz #chronology-send:hover:enabled { background: #ffe375; }
-.chronology-quiz :is(button, a):focus-visible { outline-color: var(--yellow); outline-offset: 3px; }
+:is(.chronology-quiz, .population-quiz) :is(button, a):focus-visible { outline-color: var(--yellow); outline-offset: 3px; }
+
+.population-quiz #app { height: 100dvh; }
+.population-quiz #app #room {
+  display: grid;
+  height: 100%;
+  grid-template: "score" auto "stage" minmax(0, 1fr) "ranking" auto "controls" auto / minmax(0, 1fr);
+  gap: clamp(5px, 1.3svh, 16px);
+}
+.population-quiz.player #app #room {
+  grid-template-rows: auto minmax(0, 1fr) minmax(0, 0fr) auto;
+  transition: grid-template-rows .36s var(--motion);
+}
+.population-quiz.player #app #room:has(#results:not([hidden])) {
+  grid-template-rows: auto minmax(0, 1fr) minmax(0, .5fr) auto;
+}
+.population-quiz :is(.scoreboard, .timer-row, #controls) { animation: chronology-enter .3s var(--motion); }
+.population-quiz #controls button { animation: chronology-enter .2s var(--motion); }
+.population-quiz .scoreboard { gap: 8px; }
+.population-quiz #app :is(#question, #results) { min-width: 0; min-height: 0; }
+.population-quiz #question {
+  grid-area: stage;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: clamp(5px, 1.4svh, 16px);
+}
+.population-quiz #question > #feedback,
+.population-quiz #timer img,
+.population-quiz #results :is(#podium, #personal:empty, #solution:empty) { display: none; }
+.population-quiz #question .timer-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  min-height: 0;
+  gap: 6px;
+}
+.population-quiz #timer {
+  padding: 5px clamp(12px, 2vw, 24px);
+  min-width: 3ch;
+  justify-content: center;
+  font-size: clamp(1.3rem, 4svh, 2.6rem);
+  line-height: 1.05;
+  border: 1px solid var(--frame);
+  background: #214f6a;
+  color: white;
+  box-shadow: none;
+  transition: color .2s ease, border-color .2s ease;
+}
+.population-quiz #question[data-urgent] #timer { color: var(--yellow); border-color: var(--yellow); }
+.population-quiz #population-phase { align-self: center; text-align: left; font-weight: 750; }
+.population-quiz.paused #population-phase { color: var(--yellow); }
+.population-quiz #received { justify-self: end; text-align: right; color: var(--muted); }
+.population-quiz :is(#population-phase, #received, #population-feedback) {
+  font-size: clamp(.75rem, 1.7svh, .95rem);
+  line-height: 1.2;
+  text-shadow: none;
+}
+.population-quiz #culture-stage {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-height: 0;
+  gap: clamp(5px, 1.3svh, 16px);
+}
+.population-quiz #culture-prompt {
+  margin: 0;
+  font-size: clamp(1.125rem, min(4.6vw, 4.7svh), 3.6rem);
+  font-weight: 850;
+  letter-spacing: -.04em;
+  line-height: 1.06;
+  text-wrap: balance;
+}
+.population-quiz #population-year {
+  display: block;
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: clamp(.7rem, 1.9svh, 1rem);
+  font-weight: 550;
+  letter-spacing: 0;
+}
+.population-quiz #population-match {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(8px, 1.5vw, 20px);
+  min-height: 0;
+}
+.population-quiz .population-country {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  padding: clamp(6px, 1.6svh, 18px) clamp(5px, 1.35vw, 15px);
+  border: 2px solid var(--rim);
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--stage);
+  box-shadow: none;
+  touch-action: manipulation;
+  transition: background-color .28s var(--motion), border-color .28s var(--motion), transform .18s var(--motion);
+}
+.population-quiz .population-country:disabled { opacity: 1; }
+.population-quiz .population-selected { border-color: #72b4d9; background: #e4f1f7; }
+.population-quiz .population-winner { border-color: #58ad80; background: #d7f6e3; }
+.population-quiz .population-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 0;
+  gap: clamp(4px, 1.3svh, 12px);
+  width: 100%;
+}
+.population-quiz .population-flag {
+  width: min(100%, 280px);
+  height: clamp(50px, 25svh, 220px);
+  min-height: 0;
+  object-fit: contain;
+  transition: opacity .24s var(--motion);
+}
+.population-quiz .population-flag[data-loading] { opacity: 0; }
+.population-quiz .population-name {
+  max-width: 100%;
+  font-size: clamp(.94rem, min(4.6vw, 4svh), 2.5rem);
+  font-weight: 750;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+.population-quiz .population-value {
+  min-height: 2.15em;
+  margin-top: 4px;
+  color: #285776;
+  font-size: clamp(.77rem, 2.3svh, 1.3rem);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  line-height: 1.12;
+}
+.population-quiz #population-feedback { min-height: 2.4em; margin: 0; color: var(--muted); }
+.population-quiz .population-change {
+  display: inline-block;
+  animation: chronology-enter .25s var(--motion) backwards;
+}
+.population-quiz .population-value .population-change { animation-delay: .12s; }
+.population-quiz #app #results {
+  grid-area: ranking;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(3px, .9svh, 10px);
+  max-height: min(34dvh, 280px);
+  overflow: hidden;
+  margin: 0;
+  padding: clamp(7px, 1.5svh, 16px);
+  border-width: 1px;
+  border-radius: 12px;
+  color: var(--stage);
+  box-shadow: none;
+  font-size: clamp(.75rem, 1.95svh, 1.25rem);
+  text-align: left;
+  animation: chronology-enter .3s var(--motion) backwards;
+}
+.population-quiz #app #results :is(h2, p, ol) { margin: 0; }
+.population-quiz #app #results h2 { font-size: clamp(.95rem, 2.6svh, 1.6rem); line-height: 1.1; }
+.population-quiz.player #solution { display: none; }
+.population-quiz #personal { padding: 4px 8px; }
+.population-quiz #ranking { overflow: auto; scrollbar-color: var(--frame) var(--panel); }
+.population-quiz #app #ranking li { gap: 6px; margin: 0 0 4px; padding: 4px 8px; }
+.population-quiz #ranking li span { min-width: 0; overflow-wrap: anywhere; }
+.population-quiz #ranking strong { flex: none; white-space: nowrap; }
+@media (min-width: 850px) {
+  .population-quiz.host #app #room {
+    grid-template: "score score" auto "stage ranking" minmax(0, 1fr) "controls controls" auto / minmax(0, 3fr) minmax(0, 1.25fr);
+  }
+  .population-quiz.host #app #results { max-height: none; }
+}
 
 #chronology-stage {
   grid-area: stage;
