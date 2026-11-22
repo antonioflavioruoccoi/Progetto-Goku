@@ -173,6 +173,8 @@ test('Cultura generale keeps player choices private and restores the selected co
  const firstRoom=makeRoom('user-1',{nickname:'Ash',score:0,done:false,choice:null});
  const first=await boot('play/?room=culture-room',{anonymous:true,userId:'user-1',room:firstRoom});
  assert.equal(first.$('culture-stage').hidden,false);assert.equal(first.$('card-wrap').hidden,true);assert.equal(first.$('answer-form').hidden,true);assert.equal(first.$('population-match').children.length,2);assert.equal(first.$('population-a').querySelector('.population-name').textContent,'Italia');assert.equal(first.$('population-a').querySelector('.population-value').textContent,'');assert.equal(first.$('results').hidden,true);
+ assert.equal(first.$('population-progress').hidden,false);
+ assert.match(first.$('population-progress').firstElementChild.style.transform,/^scaleX\(0\.\d+\)$/);
  assert.equal(first.$('population-a').querySelector('.population-flag').src,'https://goku.test/assets/flags/it.svg');assert.equal(first.$('population-a').querySelector('.population-flag').alt,'');
  first.$('population-b').dispatchEvent(new first.window.MouseEvent('click',{bubbles:true}));await new Promise(r=>setImmediate(r));
  assert.equal(first.calls.find(call=>call.action==='answer').payload.answer,'TZA');assert.ok(first.$('population-b').classList.contains('population-selected'));assert.match(first.$('population-feedback').textContent,/Tanzania/);
@@ -185,6 +187,7 @@ test('Cultura generale keeps player choices private and restores the selected co
  assert.equal(reload.$('population-phase').textContent,'In pausa');
  reloadRoom.room.phase='reveal';reloadRoom.population.values=[60297396,58005463];reloadRoom.population.correct='ITA';reloadRoom.me.result='wrong';reloadRoom.me.points=0;await reload.notify();
  assert.equal(reload.$('results').hidden,false);
+ assert.ok(reload.$('population-progress').hasAttribute('data-hidden-progress'));
  const row=reload.$('ranking').firstElementChild;
  await reload.notify();
  assert.equal(reload.$('ranking').firstElementChild,row);

@@ -187,7 +187,7 @@ async function refresh(){
    clearTimeout(reconnectTimer);
    if(channel){channel.onclose=null;channel.close();channel=null;}
    state=null;
-   document.body.classList.remove('population-quiz');
+   document.body.className='live-shell';
    cardRound=0;
    cardAsset=null;
    $('answer').dataset.round='';
@@ -243,10 +243,10 @@ function renderPopulation(){
  const chosen=countries.find(country=>country.id===me?.choice);
  populationText($('population-feedback'),me?.result==='correct'&&values?'Risposta esatta!':me?.result==='wrong'&&values?'Risposta sbagliata.':chosen?`Hai scelto ${chosen.name}. In attesa della rivelazione.`:'');
 }
-function renderRoom(){const r=state.room,host=state.can_control,active=['question','paused'].includes(r.phase),lobby=r.phase==='lobby',final=r.phase==='finished',clues=r.manche==='clues',culture=r.quiz==='culture',cultureRevealed=culture&&!!state.population?.values,population=!!state.population&&!final,chronology=state.chronology&&!final,price=state.price,checkpoint=price&&r.phase==='reveal'&&price.round%3===0;document.body.className=(host?'host':'player')+' '+r.phase+(clues?' gameboy':'')+(culture?' culture-quiz':'')+(population?' population-quiz':'')+(chronology?' chronology-quiz':'')+(price?' pokeprice':'')+(checkpoint?' price-checkpoint':'');
+function renderRoom(){const r=state.room,host=state.can_control,active=['question','paused'].includes(r.phase),lobby=r.phase==='lobby',final=r.phase==='finished',clues=r.manche==='clues',culture=r.quiz==='culture',cultureRevealed=culture&&!!state.population?.values,population=!!state.population&&!final,chronology=state.chronology&&!final,price=state.price,checkpoint=price&&r.phase==='reveal'&&price.round%3===0;document.body.className=(host?'host':'player')+' '+r.phase+(lobby?' live-shell':'')+(clues?' gameboy':'')+(culture?' culture-quiz':'')+(population?' population-quiz':'')+(chronology?' chronology-quiz':'')+(price?' pokeprice':'')+(checkpoint?' price-checkpoint':'');
  document.querySelector('h1').textContent=price?'PokéPrice':clues?'PokéIndizi':culture?'Cultura generale':'Pixelcard';
  show('pokemon-parade',clues);
- show('clue-stage',clues&&!final);show('question-prompt',!host&&!clues&&!price&&!culture);show('clue-reveal',clues&&!!state.solution_image);show('culture-stage',population);show('population-phase',population);if(population)renderPopulation();
+ show('clue-stage',clues&&!final);show('question-prompt',!host&&!clues&&!price&&!culture);show('clue-reveal',clues&&!!state.solution_image);show('culture-stage',population);show('population-phase',population);show('population-progress',population);if(population)renderPopulation();
  if(clues){const unlocked=state.clues||[];if(JSON.stringify(unlocked)!==$('clues').dataset.content){$('clues').dataset.content=JSON.stringify(unlocked);$('clues').replaceChildren(...unlocked.map((c,i)=>text('p',`${i+1}. ${c}`,'clue-dialog')));}
  if(state.solution_image){$('clue-image').src=base.href+state.solution_image;$('clue-image').alt='Sprite di '+state.solution;$('clue-caption').textContent=`${state.solution}${state.me?' · '+(state.me.points||0)+' punti':''}`;}
  if(state.me?.result==='correct')$('feedback').textContent=`Hai vinto ${state.me.points} punti!`;}
@@ -316,6 +316,9 @@ function tick(){if(!state)return;
   populationText($('seconds'),`${seconds}s`);
   populationText($('population-phase'),r.phase==='paused'?'In pausa':pre?'Preparati':state.population.values?'Rivelazione':'Tempo per rispondere');
   $('question').toggleAttribute('data-urgent',r.phase==='question'&&!pre&&seconds<=5);
+  const progress=$('population-progress');
+  progress.toggleAttribute('data-hidden-progress',!!state.population.values);
+  progress.firstElementChild.style.transform=`scaleX(${Math.min(1,ms/state.duration_ms)})`;
  }else if($('seconds').textContent!==(pre?'Pronti…':`${seconds}s`)){
   $('seconds').textContent=pre?'Pronti…':`${seconds}s`;
  }
