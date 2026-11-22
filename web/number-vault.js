@@ -169,8 +169,11 @@ async function submit() {
 
 function toggleAssist(enabled) {
   assist = enabled;
-  $('vault-assist').setAttribute('aria-pressed', String(enabled));
-  content($('vault-assist'), enabled ? 'Tastierino' : 'Inserimento assistito');
+  const button = $('vault-assist');
+  const label = enabled ? 'Tastierino' : 'Inserimento assistito';
+  button.setAttribute('aria-pressed', String(enabled));
+  button.title = label;
+  content($('vault-assist-name'), label);
   sizeViewport();
 }
 
@@ -276,7 +279,8 @@ export function renderVault(state, host, callbacks) {
   content($('vault-category'), `${vault.category} · ${vault.difficulty}`);
   content($('vault-question'), host ? vault.prompt : vault.mobile);
   content($('vault-unit'), `Unità · ${vault.unit}`);
-  const presence = `${state.received} conferme · ${state.active} attivi`;
+  content($('vault-opening-rule'), `6 stime. Fino a ${vault.max_points ?? 200} punti a domanda.`);
+  const presence = `${state.received} ${state.received === 1 ? 'risposta inviata' : 'risposte inviate'}`;
   const counter = $('vault-presence');
   if (host && counter.textContent && counter.textContent !== presence &&
       Number.parseInt(counter.textContent) < state.received && room.phase === 'question') {
@@ -292,20 +296,24 @@ export function tickVault(ms, introMs) {
   const paused = room.phase === 'paused';
   const intro = paused && room.paused_from === 'question' ? Math.max(0,ms-duration) : introMs;
   const elapsed = result ? Math.max(0,duration-ms) : 0;
+  const opening = host && !!vault.intro_ms && intro > vault.preview_ms;
   const nextBeat = result ? elapsed >= 7500 ? 'summary' : elapsed >= 5000 ? 'podium' :
-    elapsed >= 3000 ? 'solution' : elapsed >= 1000 ? 'rain' : 'verify' : intro > 0 ? 'intro' : 'play';
+    elapsed >= 3000 ? 'solution' : elapsed >= 1000 ? 'rain' : 'verify' : opening ? 'announcement' : intro > 0 ? 'intro' : 'play';
   const showAnswer = ['solution','podium','summary'].includes(nextBeat);
-  const showRank = ['podium','summary'].includes(nextBeat);
+  const showRank = showAnswer && (!!result.early || nextBeat !== 'solution');
   const previousBeat = beat;
   const remaining = Math.max(0,Math.min(duration,ms));
   canSend = !!me && !host && !result && !paused && !intro && remaining > 0;
   stage.toggleAttribute('data-paused', paused);
   stage.toggleAttribute('data-assisted', assist && !receipt && !result);
   stage.toggleAttribute('data-first', room.round === 1);
+  stage.toggleAttribute('data-ranked', showRank);
+  stage.toggleAttribute('data-early', !!result?.early);
   if (paused) stopVaultAudio();
   if (nextBeat !== beat) {
     const beatStart = {verify:0, rain:1000, solution:3000, podium:5000, summary:7500}[nextBeat];
-    const late = result ? elapsed - beatStart : intro ? Math.max(0,(room.round===1 ? 2000 : 800)-intro) : 0;
+    const introLength = opening ? vault.intro_ms : vault.preview_ms ?? 800;
+    const late = result ? elapsed - beatStart : intro ? Math.max(0,introLength-intro) : 0;
     stage.style.setProperty('--vault-delay', `-${Math.round(late)}ms`);
     stage.dataset.beat = beat = nextBeat;
     if (host && previousBeat && result && late < 350) {
@@ -326,9 +334,12 @@ export function tickVault(ms, introMs) {
       flutter($('vault-clock'), [{scale:'1.09'}, {scale:'1'}], 260);
     }
   }
+  $('vault-opening').hidden = !opening;
+  $('vault-clock').hidden = opening || (!host && !!result);
+  $('vault-band').hidden = opening;
   $('vault-entry').hidden = host || !me || !!receipt || !!result;
   $('vault-hold').hidden = host || !me || showAnswer || !(receipt || result);
-  $('vault-art').hidden = !host || (!!result && !['verify','solution','podium'].includes(beat));
+  $('vault-art').hidden = !host || opening || (!!result && !['verify','solution','podium'].includes(beat));
   $('vault-answer').hidden = !showAnswer;
   $('vault-scale').hidden = !host || !result || beat === 'verify';
   $('vault-ranking').hidden = !showRank;
@@ -345,7 +356,8 @@ export function tickVault(ms, introMs) {
   send.disabled = !canSend || sending || (!posted && Number(draft) < 1);
   content(send, sending ? 'Invio in corso…' : posted ? 'Riprova invio' : 'Conferma');
   content($('vault-status'), sending ? 'Invio in corso…' : posted && canSend ? 'Conferma non ricevuta.' :
-    assist && inputMessage ? inputMessage : draft.length === 8 ? 'Limite di 8 cifre raggiunto.' : !intro && !remaining ? 'Tempo scaduto.' : '');
+    paused ? 'In pausa' : intro ? 'Preparati' : assist && inputMessage ? inputMessage :
+    draft.length === 8 ? 'Limite di 8 cifre raggiunto.' : !remaining ? 'Tempo scaduto.' : '');
   if (!$('vault-hold').hidden) {
     const sealing = receipt && window.performance.now() < sealUntil;
     stage.toggleAttribute('data-sealing', !!sealing);
@@ -359,7 +371,7 @@ export function tickVault(ms, introMs) {
   const aside = host && room.round % 2 === 0 && (beat === 'rain' && scattered ? 'LE STIME SONO OVUNQUE!' :
     beat === 'podium' && !scattered && champion ? 'ABBIAMO UN CAMPIONE DI PRECISIONE!' : '');
   content($('vault-phase'), paused ? 'In pausa' : aside || ({
-    intro:'Preparati', play:remaining ? (receipt ? 'In attesa della sala' : 'Tempo per rispondere') : 'Tempo scaduto',
+    announcement:'Preparati', intro:'Preparati', play:remaining ? (receipt ? 'In attesa della sala' : 'Tempo per rispondere') : 'Tempo scaduto',
     verify:'Verifichiamo…', rain:host ? 'Pioggia delle stime' : 'Rivelazione in arrivo',
     solution:'Soluzione', podium:'Podio della domanda', summary:'Classifica generale',
   })[beat]);
@@ -371,7 +383,8 @@ export function tickVault(ms, introMs) {
 function renderAnswer(result, me, vault, host, round, elapsed) {
   const exact = !host && me?.choice === result.solution;
   stage.toggleAttribute('data-exact', exact);
-  const jokes = me?.done && resultJokes[exact ? 0 : me.points >= 90 ? 1 : me.points >= 40 ? 2 : 3];
+  const score = me?.points / (result.max_points ?? 100);
+  const jokes = me?.done && resultJokes[exact ? 0 : score >= .9 ? 1 : score >= .4 ? 2 : 3];
   content($('vault-popup'), host ? result.popup : jokes ? jokes[(round-1)%jokes.length] : '');
   const solution = $('vault-solution');
   const number = format.format(result.solution);

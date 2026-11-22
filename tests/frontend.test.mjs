@@ -374,5 +374,27 @@ test('Quanto ci vai vicino? restores the receipt and gates the Terracotta soluti
  assert.equal(host.$('vault-popup').textContent,"L'IMPERATORE APPROVA!");
  assert.equal(host.$('vault-art').querySelectorAll('.vault-warrior').length,12);
  assert.equal(host.$('vault-solution').textContent,'8.000');
+ Object.assign(room.room,{phase:'paused',paused_from:'question',round:1,revision:room.room.revision+1});
+ Object.assign(room.vault,{intro_ms:4000,preview_ms:1000,max_points:200});
+ Object.assign(room,{duration_ms:20000,remaining_ms:23500,received:0,players:[],vault_result:undefined});
+ await host.notify();
+ assert.equal(host.$('vault-opening').hidden,false);
+ assert.equal(host.$('vault-clock').hidden,true);
+ assert.match(host.$('vault-opening-rule').textContent,/200 punti/);
+ room.remaining_ms=20750;room.room.revision++;
+ await host.notify();
+ assert.equal(host.$('vault-opening').hidden,true);
+ assert.equal(host.$('vault-clock').hidden,false);
+ Object.assign(room.room,{paused_from:'reveal',revision:room.room.revision+1});
+ Object.assign(room,{duration_ms:8000,remaining_ms:5000,received:1,active:7,
+  players:[{user_id:'user-1',nickname:'Ada',rank:1,score:200}],
+  vault_result:{solution:8000,explanation:'8.000 statue è una stima.',source:null,popup:"L'IMPERATORE APPROVA!",
+   early:true,max_points:200,distribution:[[8000,1]],podium:[{rank:1,points:200,players:[{nickname:'Ada',choice:8000}]}]},
+ });
+ await host.notify();
+ assert.equal(host.$('vault-presence').textContent,'1 risposta inviata');
+ assert.equal(host.$('vault-answer').hidden,false);
+ assert.equal(host.$('vault-ranking').hidden,false);
+ assert.match(host.$('vault-podium').textContent,/\+200 pt/);
  await host.window.happyDOM.close();
 });

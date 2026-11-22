@@ -160,7 +160,12 @@ const catalog = [
 export const VAULT_ROUNDS = 6;
 export const VAULT_DURATION = 20_000;
 export const VAULT_REVEAL = 8_000;
+export const VAULT_SOLUTION_AT = 3_000;
 export const VAULT_NEXT = 7_500;
+export const VAULT_MAX_POINTS = 200;
+const ANNOUNCEMENT_MS = 3_000;
+const preview = round => round === 1 ? 1_000 : 800;
+export const vaultIntro = round => (round === 1 ? ANNOUNCEMENT_MS : 0) + preview(round);
 const min = 1;
 const max = 99_999_999;
 
@@ -168,7 +173,8 @@ export const vaultQuestion = id => catalog.find(question => question.id === id);
 export const validGuess = value => Number.isSafeInteger(value) && value >= min && value <= max;
 export function vaultPoints(guess, solution) {
   const ratio = Math.max(guess, solution) / Math.min(guess, solution);
-  return Math.max(0, Math.min(100, Math.round(100 * (1 - Math.log10(ratio)))));
+  const base = Math.max(0, Math.min(100, Math.round(100 * (1 - Math.log10(ratio)))));
+  return base * (VAULT_MAX_POINTS / 100);
 }
 
 function shuffle(items) {
@@ -185,11 +191,14 @@ export function drawVault(mode) {
   return shuffle([...ids("facile").slice(0, 2), ...ids("media").slice(0, 4)]);
 }
 
-export function publicVault({ id, category, difficulty, prompt, mobile, unit, effect }) {
-  return { id, category, difficulty, prompt, mobile, unit, effect, min, max };
+export function publicVault({ id, category, difficulty, prompt, mobile, unit, effect }, round) {
+  return {
+    id, category, difficulty, prompt, mobile, unit, effect, min, max,
+    intro_ms: vaultIntro(round), preview_ms: preview(round), max_points: VAULT_MAX_POINTS,
+  };
 }
 
-export function settleVault(r, { solution, explanation, source, popup }) {
+export function settleVault(r, { solution, explanation, source, popup }, early = false) {
   const entries = Object.entries(r.answers);
   const spread = new Map();
   const byDistance = ([, a], [, b]) => {
@@ -213,7 +222,7 @@ export function settleVault(r, { solution, explanation, source, popup }) {
     }
   });
   r.vaultResult = {
-    solution, explanation, source, popup, podium,
+    solution, explanation, source, popup, podium, early, max_points: VAULT_MAX_POINTS,
     distribution: [...spread].sort(([a], [b]) => a - b),
   };
 }

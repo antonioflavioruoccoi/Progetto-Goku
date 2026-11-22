@@ -3,8 +3,8 @@ import populations from "../data/population-comparisons.json";
 import legacyPopulations from "../data/population-comparisons-2019.json";
 import { CHRONOLOGY_ROUNDS, correctChronology, drawChronology } from "./chronology.js";
 import {
-  VAULT_DURATION, VAULT_NEXT, VAULT_REVEAL, VAULT_ROUNDS,
-  drawVault, publicVault, settleVault, validGuess, vaultQuestion,
+  VAULT_DURATION, VAULT_NEXT, VAULT_REVEAL, VAULT_ROUNDS, VAULT_SOLUTION_AT,
+  drawVault, publicVault, settleVault, validGuess, vaultIntro, vaultQuestion,
 } from "./number-vault.js";
 import {
   PRICE_START, PRICE_ROUNDS, PRICE_DURATION,
@@ -299,8 +299,7 @@ export class Goku {
     r.phase = "question";
     if (isChronology(r)) r.chronology_points = CHRONOLOGY_POINTS;
     if (isVault(r)) delete r.vaultResult;
-    r.starts_at = now + (isChronology(r) ? CHRONOLOGY_INTRO : r.manche === "price" ? 0 :
-      isVault(r) && r.round > 1 ? 800 : 2000);
+    r.starts_at = now + (isVault(r) ? vaultIntro(r.round) : isChronology(r) ? CHRONOLOGY_INTRO : r.manche === "price" ? 0 : 2000);
     r.remaining_ms = roundDuration(r);
     r.deadline = r.starts_at + r.remaining_ms;
     r.answers = {};
@@ -328,9 +327,11 @@ export class Goku {
       const ids = isChronology(r) ? this.chronologyParticipants(r) : Object.keys(r.players);
       return ids.length > 0 && ids.every(id => r.answers[id]?.done);
     };
-    if (r.phase === "question" && (r.deadline <= now || (!isVault(r) && now >= r.starts_at && complete()))) {
+    const allAnswered = r.phase === "question" && now >= r.starts_at && now < r.deadline && complete();
+    if (r.phase === "question" && (r.deadline <= now || allAnswered)) {
       if (quizOf(r) === "culture") {
-        r.remaining_ms = isVault(r) ? VAULT_REVEAL : isChronology(r) ? CHRONOLOGY_REVEAL : 10000;
+        r.remaining_ms = isVault(r) ? VAULT_REVEAL - (allAnswered ? VAULT_SOLUTION_AT : 0) :
+          isChronology(r) ? CHRONOLOGY_REVEAL : 10000;
         r.deadline = now + r.remaining_ms;
       } else r.deadline = Math.min(r.deadline, now);
       r.phase = "reveal";
@@ -341,7 +342,7 @@ export class Goku {
       (force || ["reveal", "finished"].includes(r.phase)) &&
       r.settled < r.round
     ) {
-      if (isVault(r)) settleVault(r, this.question(r));
+      if (isVault(r)) settleVault(r, this.question(r), allAnswered);
       else if (r.manche === "price") settlePrice(r);
       else for (const [id, a] of Object.entries(r.answers))
         r.players[id].score += a.points || 0;
@@ -407,7 +408,7 @@ export class Goku {
       remaining_ms: r.phase === "paused" ? r.remaining_ms : Math.max(0, Math.min(duration_ms, r.deadline - server_now)),
       received: Object.keys(r.answers).length,
       active: this.chronologyParticipants(r, connected).length,
-      vault: publicVault(this.question(r)),
+      vault: publicVault(this.question(r), r.round),
       players: r.vaultResult || r.phase === "finished" ? rankings(r, connected) : [],
     };
   }
@@ -821,8 +822,10 @@ export class Goku {
         const result = { done: true, choice: p.answer };
         r.answers[s.id] = { ...result, requests: { [p.request_id]: result } };
         this.recordPoll(r, s.id, now);
-        r.revision++;
-        this.put("room", r.id, r);
+        if (!this.settle(r, false, now)) {
+          r.revision++;
+          this.put("room", r.id, r);
+        }
         this.changed.add(r.id);
         return result;
       }

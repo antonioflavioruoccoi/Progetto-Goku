@@ -73,7 +73,6 @@
   <div class="vault-header">
     <div class="vault-brand">
       <strong id="vault-title">Quanto ci vai vicino?</strong>
-      <span class="vault-title-digits" aria-hidden="true">7　3　1　5</span>
       <span id="vault-round"></span>
     </div>
     <div id="vault-audio"></div>
@@ -84,6 +83,11 @@
   </div>
   <span id="vault-clock-live" class="vault-sr" role="status"></span>
   <div class="vault-main">
+    <div id="vault-opening" hidden>
+      <span class="vault-opening-dial" aria-hidden="true"></span>
+      <h2>Quanto ci vai vicino?</h2>
+      <p id="vault-opening-rule"></p>
+    </div>
     <div class="vault-prompt">
       <p id="vault-category"></p>
       <h2 id="vault-question"></h2>
@@ -91,10 +95,13 @@
     </div>
     <div id="vault-art" aria-hidden="true"></div>
     <div id="vault-entry" hidden>
-      <div class="vault-display" id="vault-display" tabindex="0" aria-label="Stima in cifre" aria-describedby="vault-unit vault-status">
+      <div class="vault-display" id="vault-display" tabindex="0" aria-label="Stima in cifre" aria-describedby="vault-question vault-unit vault-status">
         <strong id="vault-number">—</strong>
-        <label id="vault-assisted-label" hidden><span class="vault-sr">Stima in cifre</span><input id="vault-assisted" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" aria-describedby="vault-unit vault-status"></label>
-        <button id="vault-assist" type="button" aria-pressed="false">Inserimento assistito</button>
+        <label id="vault-assisted-label" hidden><span class="vault-sr">Stima in cifre</span><input id="vault-assisted" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" aria-describedby="vault-question vault-unit vault-status"></label>
+        <button id="vault-assist" type="button" aria-pressed="false" title="Inserimento assistito">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h2m3 0h2m3 0h2M7 14h10"/></svg>
+          <span id="vault-assist-name" class="vault-sr">Inserimento assistito</span>
+        </button>
       </div>
       <p id="vault-status" role="status"></p>
       <div id="vault-keypad" role="group" aria-label="Tastierino numerico"></div>

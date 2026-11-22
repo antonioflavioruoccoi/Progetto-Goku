@@ -1278,6 +1278,56 @@ body.pokeprice {
   grid-template:"prompt art" minmax(0,1fr) / minmax(0,1.19fr) minmax(0,1fr);
   align-items:center;
 }
+#vault-stage[data-beat="announcement"] { background:var(--vault-night); }
+#vault-stage[data-beat="announcement"] :is(.vault-header, .vault-prompt) { display:none; }
+#vault-stage[data-role="host"][data-beat="announcement"] .vault-main {
+  grid-row:2;
+  grid-template:"opening" minmax(0,1fr) / minmax(0,1fr);
+}
+#vault-opening {
+  grid-area:opening;
+  display:grid;
+  justify-items:center;
+  gap:clamp(10px,2.5dvh,28px);
+  text-align:center;
+}
+#vault-opening h2 {
+  font-size:clamp(2rem,min(8vw,13dvh),7.75rem);
+  line-height:1.03;
+  letter-spacing:-.035em;
+  text-wrap:balance;
+}
+#vault-opening-rule { color:var(--vault-muted); font-size:clamp(1rem,2.6vw,1.5rem); }
+.vault-opening-dial {
+  position:relative;
+  display:grid;
+  place-items:center;
+  width:clamp(48px,12dvh,104px);
+  aspect-ratio:1;
+  border:2px solid var(--vault-gold);
+  border-radius:50%;
+  animation:vault-dial-lock .7s var(--vault-motion) var(--vault-delay) both;
+}
+.vault-opening-dial::before {
+  content:'';
+  width:62%;
+  height:26%;
+  border:2px solid var(--vault-gold);
+  border-radius:3px;
+}
+.vault-opening-dial::after {
+  content:'';
+  position:absolute;
+  top:7%;
+  width:2px;
+  height:11%;
+  background:var(--vault-gold);
+}
+@keyframes vault-dial-lock {
+  from { transform:rotate(-46deg); }
+  78% { transform:rotate(5deg); }
+  to { transform:rotate(0); }
+}
 .vault-prompt { grid-area:prompt; min-width:0; }
 #vault-category { color:var(--vault-aqua); font-weight:750; font-size:clamp(.78rem,1.35vw,1.15rem); }
 #vault-question { margin-block:.22em; color:var(--vault-ink); font-weight:800; font-size:clamp(1.6rem,min(4vw,7dvh),4.45rem); line-height:1.03; letter-spacing:-.032em; text-wrap:balance; }
@@ -1308,8 +1358,12 @@ body.pokeprice {
   width:min(100%,575px);
   justify-self:center;
   padding:clamp(9px,1.7dvh,21px);
+  background:none;
+  border-color:transparent;
+  box-shadow:none;
 }
-#vault-stage[data-role="player"] .vault-main { grid-template:"prompt" auto "entry" minmax(0,1fr) / minmax(0,1fr); }
+#vault-stage[data-role="player"]::before, #vault-stage[data-role="player"] .vault-header { display:none; }
+#vault-stage[data-role="player"] .vault-main { grid-row:2; grid-template:"entry" minmax(0,1fr) / minmax(0,1fr); }
 #vault-entry {
   grid-area:entry;
   min-height:0;
@@ -1332,7 +1386,9 @@ body.pokeprice {
   color:var(--vault-muted);
 }
 #vault-number, #vault-assisted { font-size:clamp(1.54rem,6vw,2.7rem); font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:.01em; }
-#vault-assist { font-size:.76rem; min-width:44px; padding-inline:7px; }
+#vault-assist { display:grid; place-items:center; flex:0 0 44px; width:44px; padding:0; }
+#vault-assist svg { display:block; width:22px; height:22px; }
+#vault-assist[aria-pressed="true"] { color:var(--vault-aqua); }
 #vault-assisted-label { min-width:0; flex:1; }
 #vault-assisted {
   color:var(--vault-ink);
@@ -1353,18 +1409,14 @@ body.pokeprice {
 #vault-keypad button {
   font-size:clamp(1.18rem,3.4dvh,2.1rem);
   padding:0;
-  background:linear-gradient(#344264,#25314f);
-  box-shadow:inset 0 1px 0 #7181a151,0 2px 0 #0c1326;
+  background:#24314b;
+  box-shadow:none;
 }
 #vault-keypad button:is([data-key="clear"],[data-key="back"]) { color:var(--vault-muted); font-size:clamp(.8rem,2.6dvh,1.2rem); }
 #vault-send { grid-area:send; width:100%; color:#152233; background:var(--vault-gold); border-color:var(--vault-gold); }
 #vault-send:hover:enabled { background:#f9e2a0; }
 #vault-stage[data-assisted] #vault-entry { grid-template-rows:auto 1.15em minmax(0,1fr) auto; }
 #vault-stage[data-assisted] #vault-entry .vault-display { flex-wrap:nowrap; }
-#vault-stage[data-role="player"] #vault-question { font-size:clamp(1rem,3.95vw,1.4rem); line-height:1.14; letter-spacing:0; text-wrap:wrap; }
-#vault-stage[data-role="player"] #vault-unit { font-size:.81rem; }
-#vault-stage[data-role="player"] #vault-category { font-size:.75rem; }
-#vault-stage[data-role="player"] #vault-audio label { font-size:0; }
 #vault-hold {
   grid-area:entry;
   display:grid;
@@ -1429,7 +1481,7 @@ body.pokeprice {
 #vault-stage[data-role="host"][data-beat="solution"] .vault-main {
   grid-template:"answer art" minmax(0,1fr) "scale scale" auto / minmax(0,1.25fr) minmax(0,1fr);
 }
-#vault-stage[data-role="host"]:is([data-beat="podium"],[data-beat="summary"]) .vault-main {
+#vault-stage[data-role="host"][data-ranked] .vault-main {
   grid-template:"answer art" minmax(0,1fr) "scale scale" auto "ranking ranking" auto / minmax(0,1.35fr) minmax(0,1fr);
 }
 #vault-stage:is([data-beat="solution"],[data-beat="podium"],[data-beat="summary"]) .vault-prompt { display:none; }
@@ -1468,7 +1520,7 @@ body.pokeprice {
 #vault-stage[data-beat="summary"] #vault-ranking { grid-template-columns:1fr; }
 #vault-stage[data-role="player"] #vault-ranking { grid-template-columns:1fr; }
 #vault-stage[data-role="host"] :is(#vault-personal,#vault-total):empty { display:none; }
-.vault-sr {
+.vault-sr, #vault-stage[data-role="player"] :is(.vault-prompt, #vault-band) {
   position:absolute;
   width:1px;
   height:1px;
@@ -1523,8 +1575,6 @@ body.pokeprice {
 .vault-finished #back { display:inline-flex; align-items:center; font-size:.9rem; }
 
 @media (max-width:600px) {
-  #vault-stage[data-role="player"] .vault-brand strong { font-size:1rem; }
-  #vault-stage[data-role="player"] #vault-clock { font-size:1.2rem; }
   #vault-stage[data-role="host"] #vault-question { font-size:clamp(1.1rem,4.6vw,1.6rem); }
   #vault-stage[data-role="host"] #vault-explanation { font-size:.87rem; }
   #vault-stage[data-role="host"] #vault-ranking { grid-template-columns:1fr; }
@@ -1534,32 +1584,19 @@ body.pokeprice {
 }
 @media (max-height:610px) {
   #vault-stage[data-role="player"] { gap:4px; padding:9px; }
-  #vault-stage[data-role="player"] #vault-category { display:none; }
-  #vault-stage[data-role="host"]:is([data-beat="podium"],[data-beat="summary"]) #vault-solution { font-size:clamp(1.6rem,5dvh,3.8rem); }
 }
 @media (orientation:landscape) and (max-height:460px) {
   #vault-stage[data-role="player"] { width:100%; padding-block:5px; gap:3px; }
-  #vault-stage[data-role="player"] .vault-main {
-    grid-template:"prompt display" auto "prompt status" 1.05em "prompt pad" minmax(0,1fr) "prompt send" 44px / minmax(0,.86fr) minmax(0,1fr);
+  #vault-stage[data-role="player"]:not([data-compact]):has(#vault-entry:not([hidden])) .vault-main {
+    grid-template:". pad" minmax(0,1fr) "display pad" 52px "status pad" 18px ". send" 44px / minmax(0,.9fr) minmax(0,1fr);
     gap:4px 12px;
   }
-  #vault-stage[data-role="player"]:not([data-compact]):has(#vault-entry:not([hidden])) .vault-main {
-    grid-template:"prompt pad" minmax(0,1fr) "display pad" 52px "status pad" 18px ". send" 44px / minmax(0,.9fr) minmax(0,1fr);
-  }
-  #vault-stage[data-role="player"] #vault-question { font-size:1rem; }
   #vault-stage[data-role="player"] #vault-entry { display:contents; }
   #vault-stage[data-role="player"] .vault-display { flex-wrap:nowrap; }
   #vault-stage[data-role="player"] :is(#vault-number,#vault-assisted) { font-size:clamp(1rem,3.15vw,1.35rem); }
-  #vault-stage[data-role="player"] #vault-assist { min-width:44px; max-width:49%; font-size:.72rem; }
   #vault-stage[data-role="player"] #vault-hold-value { font-size:clamp(1.35rem,4.25vw,2.3rem); }
   #vault-stage[data-role="player"] #vault-status { align-self:center; font-size:.75rem; }
   #vault-stage[data-role="player"] #vault-keypad { gap:2px; }
-  #vault-stage[data-role="player"] #vault-band { position:absolute; bottom:12px; left:11px; pointer-events:none; }
-  #vault-stage[data-role="player"]:has(#vault-hold:not([hidden])) .vault-main {
-    grid-template:"prompt entry" minmax(0,1fr) / minmax(0,.85fr) minmax(0,1fr);
-    padding-bottom:16px;
-  }
-  #vault-stage[data-role="player"]:is([data-beat="solution"],[data-beat="podium"],[data-beat="summary"]) .vault-main { padding-bottom:18px; }
   #vault-stage[data-role="player"] #vault-answer {
     display:grid;
     grid-template:"popup popup" auto "solution explanation" auto "source explanation" auto "personal personal" auto / minmax(0,.75fr) minmax(0,1fr);
@@ -1578,8 +1615,6 @@ body.pokeprice {
   .vault-finished #app #results { align-content:start; }
 }
 #vault-stage[data-assisted][data-compact] .vault-main { gap:3px; }
-#vault-stage[data-assisted][data-compact] .vault-prompt { display:none; }
-#vault-stage[data-assisted][data-compact] .vault-header { display:none; }
 #vault-stage[data-assisted][data-compact] #vault-entry {
   display:grid;
   grid-area:entry;
@@ -1589,7 +1624,6 @@ body.pokeprice {
 }
 #vault-stage[data-assisted][data-compact] #vault-assisted { font-size:clamp(1rem,4.7vw,1.3rem); }
 #vault-stage[data-assisted][data-compact] .vault-main { grid-template:"entry" minmax(0,1fr) / minmax(0,1fr); }
-#vault-stage[data-assisted][data-compact] #vault-band { display:none; }
 @media (orientation:landscape) and (max-height:460px) {
   #vault-stage[data-assisted][data-compact] #vault-entry {
     align-items:center;
@@ -1599,8 +1633,6 @@ body.pokeprice {
 
 #vault-stage[data-beat="intro"] .vault-prompt { animation:vault-enter .63s var(--vault-motion) var(--vault-delay) both; }
 #vault-stage[data-beat="intro"] .vault-object { animation:vault-rise .78s var(--vault-motion) var(--vault-delay) both; }
-#vault-stage[data-beat="intro"][data-first] :is(.vault-header,.vault-floor) { animation:vault-open 1.3s var(--vault-motion) var(--vault-delay) both; }
-#vault-stage[data-beat="intro"][data-first]::before { animation:vault-incision 1.3s ease var(--vault-delay) both; }
 #vault-stage[data-beat="verify"]::before { animation:vault-verify .9s ease var(--vault-delay) both; }
 #vault-stage[data-beat="rain"] .vault-drop { animation:vault-rain .64s var(--vault-motion) calc(var(--vault-delay) + var(--i) * 45ms) both; }
 #vault-stage[data-beat="solution"] .vault-true { animation:vault-gold .65s ease var(--vault-delay) both; }
@@ -1615,14 +1647,12 @@ body.pokeprice {
 #vault-stage[data-beat="solution"] :is(.vault-moon,.vault-orbit) { animation:vault-gold 1s var(--vault-motion) var(--vault-delay) both; }
 #vault-stage[data-beat="solution"] :is(.vault-piano-key,.vault-seat,.vault-tile) { animation:vault-lit .7s var(--vault-motion) calc(var(--vault-delay) + var(--i)*30ms) both; }
 #vault-stage[data-beat="podium"] .vault-object { animation:vault-fade .8s ease var(--vault-delay) both; }
-#vault-stage[data-beat="podium"] #vault-ranking li { animation:vault-enter .57s var(--vault-motion) var(--vault-delay) both; }
+#vault-stage[data-beat="podium"]:not([data-early]) #vault-ranking li { animation:vault-enter .57s var(--vault-motion) var(--vault-delay) both; }
 #vault-stage[data-beat="summary"] .vault-dots { animation:vault-fade .4s ease var(--vault-delay) both; }
 #vault-stage:not([data-beat="solution"]) :is(.vault-beam,.vault-dust,.vault-orbit) { opacity:0; }
 #vault-stage:is([data-paused],[data-away]) *, #vault-stage:is([data-paused],[data-away])::before { animation-play-state:paused !important; }
 @keyframes vault-enter { from { opacity:.15; transform:perspective(650px) rotateX(-7deg) translateY(9px); } to { opacity:1; transform:none; } }
-@keyframes vault-open { from { opacity:.15; transform:translateY(6px) scale(.985); } to { opacity:1; transform:none; } }
 @keyframes vault-rise { from { opacity:0; transform:translateY(25px); } to { opacity:1; transform:none; } }
-@keyframes vault-incision { from { opacity:0; } to { opacity:1; } }
 @keyframes vault-verify { 40% { border-color:#e8cb77; box-shadow:inset 0 0 20px #f2d47e33; } }
 @keyframes vault-rain { 0% { opacity:0; transform:translateY(-36px); } 78% { opacity:1; transform:translateY(3px); } 100% { transform:none; } }
 @keyframes vault-gold { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
@@ -1678,53 +1708,35 @@ body.pokeprice {
 @keyframes vault-reel-settle { 0%,40% { color:transparent; } 68% { color:#fff1bb; } 100% { color:inherit; } }
 @keyframes vault-reel-scroll { from { transform:translateY(430%); opacity:.68; } to { transform:none; opacity:0; } }
 
-#vault-stage[data-role="player"] .vault-header { padding-right:51px; min-height:44px; }
 #vault-stage[data-role="player"] #vault-clock {
-  position:absolute;
+  grid-row:1;
+  justify-self:center;
   width:44px;
+  font-size:1.2rem;
+}
+#vault-stage[data-role="player"][data-assisted][data-compact] #vault-clock {
+  position:absolute;
   top:clamp(9px,1.7dvh,21px);
   right:clamp(9px,1.7dvh,21px);
 }
 @media (orientation:landscape) and (max-height:460px) {
-  #vault-stage[data-role="player"] #vault-clock { top:5px; }
+  #vault-stage[data-role="player"][data-assisted][data-compact] #vault-clock { top:5px; }
 }
-#vault-stage[data-beat="intro"][data-first] #vault-clock { animation:vault-open 1.3s var(--vault-motion) var(--vault-delay) both; }
 
-#vault-stage[data-role="host"]:is([data-beat="podium"],[data-beat="summary"]) #vault-solution {
+#vault-stage[data-role="host"][data-ranked] #vault-solution {
   font-size:clamp(1.6rem,min(5.25vw,7dvh),4.7rem);
 }
-#vault-stage[data-role="host"]:is([data-beat="podium"],[data-beat="summary"]) #vault-explanation {
+#vault-stage[data-role="host"][data-ranked] #vault-explanation {
   font-size:clamp(.85rem,1.35vw,1.15rem);
 }
-#vault-stage[data-role="host"]:is([data-beat="podium"],[data-beat="summary"]) #vault-axis {
+#vault-stage[data-role="host"][data-ranked] #vault-axis {
   height:clamp(68px,12dvh,102px);
 }
 
-.vault-brand { position:relative; }
-.vault-title-digits, .vault-water-digits { display:none; }
-#vault-stage[data-role="host"][data-first][data-beat="intro"] .vault-title-digits {
-  display:block;
-  position:absolute;
-  top:.1em;
-  right:clamp(10px,5vw,72px);
-  color:var(--vault-gold);
-  font-size:clamp(.85rem,1.8vw,1.6rem);
-  font-variant-numeric:tabular-nums;
-  opacity:0;
-  pointer-events:none;
-  animation:vault-title-settle .75s var(--vault-motion) var(--vault-delay) both;
-}
+.vault-water-digits { display:none; }
 #vault-stage[data-beat="solution"] .vault-water-digits {
   display:inline;
   opacity:0;
   animation:vault-cascade 1.5s var(--vault-motion) var(--vault-delay) both;
 }
-@keyframes vault-title-settle {
-  0% { opacity:0; transform:translateY(-13px) scaleX(1.55); }
-  26% { opacity:.8; }
-  100% { opacity:0; transform:translateX(18px) scaleX(.5); }
-}
 @keyframes vault-cascade { 15% { opacity:.75; } 90%,100% { opacity:0; transform:translateY(42px); } }
-@media (max-width:720px) {
-  #vault-stage[data-role="host"][data-first][data-beat="intro"] .vault-title-digits { display:none; }
-}

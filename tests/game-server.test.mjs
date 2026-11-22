@@ -507,25 +507,25 @@ test('Quanto ci vai vicino? catalog, inclusive bounds and multiplicative ties', 
   assert.equal(mixed.filter(q=>q.difficulty==='media').length,4);
  }
  for(const q of catalog){
-  assert.deepEqual([publicVault(q).min,publicVault(q).max],[1,99_999_999]);
-  assert.equal(publicVault(q).solution,undefined);
+  assert.deepEqual([publicVault(q,1).min,publicVault(q,1).max],[1,99_999_999]);
+  assert.equal(publicVault(q,1).solution,undefined);
  }
  assert.equal(catalog.at(-1).effect,'terracotta-army');
  assert.equal(catalog.at(-1).solution,8000);
  assert.match(catalog.at(-1).explanation,/stima, non un conteggio esatto/);
  for(const value of [0,-1,100_000_000,'10',1.5,null])assert.equal(validGuess(value),false);
  for(const value of [1,99_999_999])assert.equal(validGuess(value),true);
- assert.deepEqual([1000,900,500,2000,10000,100].map(n=>vaultPoints(n,1000)),[100,95,70,70,0,0]);
+ assert.deepEqual([1000,900,500,2000,10000,100].map(n=>vaultPoints(n,1000)),[200,190,140,140,0,0]);
  const values=[1000,999,500,2000,10000];
  const answers=Object.fromEntries(values.map(choice=>[choice,{choice}]));
  const players=Object.fromEntries(values.map(choice=>[choice,{nickname:String(choice),score:0}]));
  const room={answers,players};
  settleVault(room,{solution:1000});
- assert.deepEqual(values.map(value=>[answers[value].rank,players[value].score]),[[1,100],[2,100],[3,70],[3,70],[5,0]]);
+ assert.deepEqual(values.map(value=>[answers[value].rank,players[value].score]),[[1,200],[2,200],[3,140],[3,140],[5,0]]);
  assert.equal(room.vaultResult.podium.at(-1).players.length,2);
 });
 
-test('Quanto ci vai vicino? locks answers privately and settles each timed round once', t => {
+test('Quanto ci vai vicino? locks answers and reveals as soon as everyone answers or time expires', t => {
  t.mock.timers.enable({apis:['Date'],now:1700000000000});
  const {game,rpc}=setupCultureGame();
  assert.throws(()=>rpc('admin','create',{quiz:'culture',vault_mode:'invalid'}),/Modalità/);
@@ -546,12 +546,14 @@ test('Quanto ci vai vicino? locks answers privately and settles each timed round
  assert.equal(old.phase,'finished');
  assert.equal(game.settle(r),true);
  assert.equal(get().manche,3);
- assert.equal(get().starts_at-Date.now(),2000);
+ assert.equal(get().starts_at-Date.now(),4000);
  assert.equal(snap('admin').duration_ms,20000);
+ assert.equal(snap('admin').vault.preview_ms,1000);
+ assert.equal(snap('admin').vault.max_points,200);
  assert.throws(()=>send('p1',54),/chiuse/);
  command('pause');t.mock.timers.tick(3000);command('resume');
- assert.equal(get().starts_at-Date.now(),2000);
- t.mock.timers.tick(2000);
+ assert.equal(get().starts_at-Date.now(),4000);
+ t.mock.timers.tick(4000);
  assert.throws(()=>send('p1',54,crypto.randomUUID(),1,2),/non più attuale/);
  assert.throws(()=>send('p1','54'),/intero/);
  assert.throws(()=>send('p1',54,'------------------------------------'),/non valido/);
@@ -575,21 +577,22 @@ test('Quanto ci vai vicino? locks answers privately and settles each timed round
  assert.throws(()=>command('skip_round'),/Attendi la fine/);
  assert.throws(()=>command('next'),/Attendi la fine/);
  t.mock.timers.tick(19_999);
+ assert.equal(snap('p1').room.phase,'question');
+ assert.equal(snap('p1').me.score,90);
  send('p2',27);
  assert.equal(game.settle(get()),false);
- assert.equal(snap('p1').room.phase,'question');
- t.mock.timers.tick(1);
- assert.equal(game.settle(get()),true);
- assert.equal(game.settle(get()),false);
- assert.equal(snap('p1').me.score,190);
- assert.equal(snap('p2').me.score,70);
+ assert.equal(snap('p1').room.phase,'reveal');
+ assert.equal(snap('p1').vault_result.early,true);
+ assert.equal(snap('p1').remaining_ms,5000);
+ assert.equal(snap('p1').me.score,290);
+ assert.equal(snap('p2').me.score,140);
  assert.equal(snap('p2').vault_result.distribution,undefined);
  assert.deepEqual(snap('admin').vault_result.distribution,[[27,1],[54,1]]);
  assert.deepEqual(send('p1',54,request),{done:true,choice:54});
  assert.throws(()=>command('next'),/Attendi la fine/);
- t.mock.timers.tick(3500);command('pause');t.mock.timers.tick(20000);
- assert.equal(snap('admin').remaining_ms,4500);
- command('resume');t.mock.timers.tick(4000);command('next');
+ t.mock.timers.tick(2500);command('pause');t.mock.timers.tick(20000);
+ assert.equal(snap('admin').remaining_ms,2500);
+ command('resume');t.mock.timers.tick(2000);command('next');
  assert.equal(get().round,2);
  assert.throws(()=>send('p1',54,request),/non più attuale/);
  assert.equal(get().starts_at-Date.now(),800);
@@ -597,6 +600,8 @@ test('Quanto ci vai vicino? locks answers privately and settles each timed round
   t.mock.timers.tick(get().deadline-Date.now());
   assert.throws(()=>send('p2',1,crypto.randomUUID(),round),/chiuse/);
   assert.equal(game.settle(get()),true);
+  assert.equal(snap('p1').vault_result.early,false);
+  assert.equal(snap('p1').remaining_ms,8000);
   assert.equal(snap('p1').me.points,0);
   assert.equal(snap('p1').me.rank,null);
   assert.deepEqual(snap('admin').vault_result.podium,[]);
@@ -604,7 +609,7 @@ test('Quanto ci vai vicino? locks answers privately and settles each timed round
   assert.equal(game.settle(get()),true);
  }
  assert.equal(get().phase,'finished');
- assert.deepEqual(snap('admin').players.map(p=>p.score),[190,70]);
+ assert.deepEqual(snap('admin').players.map(p=>p.score),[290,140]);
 
  Object.assign(r,{phase:'question',starts_at:Date.now(),deadline:Date.now()+20000});
  r.answers={};
