@@ -385,7 +385,7 @@ test('Quanto ci vai vicino? restores the receipt and gates the Terracotta soluti
  await host.notify();
  assert.equal(host.$('vault-opening').hidden,true);
  assert.equal(host.$('vault-clock').hidden,false);
- Object.assign(room.room,{paused_from:'reveal',revision:room.room.revision+1});
+ Object.assign(room.room,{paused_from:'reveal',round:2,revision:room.room.revision+1});
  Object.assign(room,{duration_ms:8000,remaining_ms:5000,received:1,active:7,
   players:[{user_id:'user-1',nickname:'Ada',rank:1,score:200}],
   vault_result:{solution:8000,explanation:'8.000 statue è una stima.',source:null,popup:"L'IMPERATORE APPROVA!",
@@ -395,6 +395,7 @@ test('Quanto ci vai vicino? restores the receipt and gates the Terracotta soluti
  assert.equal(host.$('vault-presence').textContent,'1 risposta inviata');
  assert.equal(host.$('vault-answer').hidden,false);
  assert.equal(host.$('vault-ranking').hidden,false);
+ assert.equal(host.$('vault-solution').querySelector('[data-reel]'),null);
  assert.match(host.$('vault-podium').textContent,/\+200 pt/);
  await host.window.happyDOM.close();
 });

@@ -396,7 +396,7 @@ function renderAnswer(result, me, vault, host, round, elapsed) {
       reel.className = /^\d$/.test(digit) ? 'vault-digit' : 'vault-separator';
       reel.setAttribute('aria-hidden','true');
       reel.textContent = digit;
-      if (reel.className === 'vault-digit' && beat === 'solution' && elapsed < 3650) {
+      if (!result.early && reel.className === 'vault-digit' && beat === 'solution' && elapsed < 3650) {
         reel.dataset.reel = Array.from({length:4},(_,j) => (Number(digit)+6+j)%10).join('\n');
         reel.style.setProperty('--i',String(i));
       }
