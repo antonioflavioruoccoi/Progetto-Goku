@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 import fs from 'node:fs/promises';
+import {drawVault, publicVault, settleVault, validGuess, vaultPoints, vaultQuestion} from '../worker/number-vault.js';
 const { outputFiles } = await build({entryPoints:['worker/index.js'],bundle:true,write:false,format:'esm'});
 const { Goku } = await import('data:text/javascript;base64,'+Buffer.from(outputFiles[0].text).toString('base64'));
 const quiz = JSON.parse(await fs.readFile('worker/generated/quiz.json','utf8'));
@@ -424,11 +425,13 @@ test('Cronologia keeps its server draw, scores by position and advances after ti
   t.mock.timers.tick(15000);
   assert.equal(game.settle(get()),true);
  }
- const final=state('p2');
- assert.equal(final.room.phase,'finished');
- assert.equal(final.room.round,5);
- assert.equal(final.me.score,1000);
- assert.equal(final.players[1].score,750);
+ const next=state('p2');
+ assert.equal(next.room.phase,'question');
+ assert.equal(next.room.manche,3);
+ assert.equal(next.room.round,1);
+ assert.equal(next.room.manche_total,3);
+ assert.equal(next.me.score,1000);
+ assert.equal(state('p1').me.score,750);
  assert.equal(game.settle(get()),false);
  assert.deepEqual(get().chronologyOrder,draw);
 });
@@ -461,6 +464,11 @@ test('skip_round moves only one round, crosses manche boundaries and settles sub
     else assert.ok(after.manche!==before.manche||after.phase==='finished');
    }
   }
+  if(quiz==='culture'){
+   assert.equal(get().manche,3);
+   assert.throws(()=>command('skip_round'),/Attendi la fine/);
+   command('end');
+  }
   assert.equal(get().phase,'finished');
   assert.equal(get().players.p1.score,quiz==='culture'?100:0);
  }
@@ -487,4 +495,125 @@ test('Cultura generale validates quiz licenses before quota use', t => {
  assert.throws(()=>rpc('host','create',{quiz:'pokemon'}),/Quiz non incluso/);assert.equal(game.get('license',license.id).used_rooms,0);
  const room=rpc('host','create',{quiz:'culture'});assert.equal(game.get('license',license.id).used_rooms,1);assert.equal(game.get('room',room.id).population_year,2025);assert.equal(game.get('room',room.id).priceOrder,undefined);
  assert.deepEqual(rpc('admin','dashboard').licenses.find(x=>x.id===license.id).quizzes,['culture']);
+});
+
+test('Quanto ci vai vicino? catalog, inclusive bounds and multiplicative ties', () => {
+ const catalog=Array.from({length:12},(_,i)=>vaultQuestion(`Q${String(i+1).padStart(2,'0')}`));
+ assert.deepEqual(drawVault('demo'),catalog.slice(0,6).map(q=>q.id));
+ for(let i=0;i<12;i++){
+  const mixed=drawVault('mixed').map(vaultQuestion);
+  assert.equal(new Set(mixed).size,6);
+  assert.equal(mixed.filter(q=>q.difficulty==='facile').length,2);
+  assert.equal(mixed.filter(q=>q.difficulty==='media').length,4);
+ }
+ for(const q of catalog){
+  assert.deepEqual([publicVault(q).min,publicVault(q).max],[1,99_999_999]);
+  assert.equal(publicVault(q).solution,undefined);
+ }
+ assert.equal(catalog.at(-1).effect,'terracotta-army');
+ assert.equal(catalog.at(-1).solution,8000);
+ assert.match(catalog.at(-1).explanation,/stima, non un conteggio esatto/);
+ for(const value of [0,-1,100_000_000,'10',1.5,null])assert.equal(validGuess(value),false);
+ for(const value of [1,99_999_999])assert.equal(validGuess(value),true);
+ assert.deepEqual([1000,900,500,2000,10000,100].map(n=>vaultPoints(n,1000)),[100,95,70,70,0,0]);
+ const values=[1000,999,500,2000,10000];
+ const answers=Object.fromEntries(values.map(choice=>[choice,{choice}]));
+ const players=Object.fromEntries(values.map(choice=>[choice,{nickname:String(choice),score:0}]));
+ const room={answers,players};
+ settleVault(room,{solution:1000});
+ assert.deepEqual(values.map(value=>[answers[value].rank,players[value].score]),[[1,100],[2,100],[3,70],[3,70],[5,0]]);
+ assert.equal(room.vaultResult.podium.at(-1).players.length,2);
+});
+
+test('Quanto ci vai vicino? locks answers privately and settles each timed round once', t => {
+ t.mock.timers.enable({apis:['Date'],now:1700000000000});
+ const {game,rpc}=setupCultureGame();
+ assert.throws(()=>rpc('admin','create',{quiz:'culture',vault_mode:'invalid'}),/Modalità/);
+ const {id,code}=rpc('admin','create',{quiz:'culture'});
+ for(const name of ['p1','p2'])rpc(name,'join',{code,nickname:name});
+ const get=()=>game.get('room',id);
+ const snap=name=>rpc(name,'state',{room_id:id});
+ const command=command=>rpc('admin','command',{room_id:id,revision:get().revision,command});
+ const send=(session,answer,request_id=crypto.randomUUID(),round=1,manche=3)=>
+  rpc(session,'answer',{room_id:id,round,manche,answer,request_id});
+ const r=get();
+ Object.assign(r,{manche:2,round:5,settled:5,phase:'reveal',deadline:Date.now()});
+ r.players.p1.score=90;
+ const old=structuredClone(r);
+ delete old.vaultOrder;
+ assert.equal(game.publicRoom(old).manche_total,2);
+ game.advanceRound(old);
+ assert.equal(old.phase,'finished');
+ assert.equal(game.settle(r),true);
+ assert.equal(get().manche,3);
+ assert.equal(get().starts_at-Date.now(),2000);
+ assert.equal(snap('admin').duration_ms,20000);
+ assert.throws(()=>send('p1',54),/chiuse/);
+ command('pause');t.mock.timers.tick(3000);command('resume');
+ assert.equal(get().starts_at-Date.now(),2000);
+ t.mock.timers.tick(2000);
+ assert.throws(()=>send('p1',54,crypto.randomUUID(),1,2),/non più attuale/);
+ assert.throws(()=>send('p1','54'),/intero/);
+ assert.throws(()=>send('p1',54,'------------------------------------'),/non valido/);
+ const revision=get().revision, request=crypto.randomUUID();
+ assert.deepEqual(send('p1',54,request),{done:true,choice:54});
+ assert.deepEqual(send('p1',54,request),{done:true,choice:54});
+ assert.throws(()=>send('p1',55,request),/diversa/);
+ assert.throws(()=>send('p1',54),/bloccata/);
+ assert.equal(get().revision,revision+1);
+ assert.deepEqual(snap('admin').players,[]);
+ assert.equal(snap('p2').me.choice,null);
+ assert.equal(snap('p1').me.choice,54);
+ for(const name of ['admin','p1','p2']){
+  const state=snap(name);
+  assert.equal(state.vault.solution,undefined);
+  assert.equal(state.vault_result,undefined);
+  assert.equal(state.me?.points,undefined);
+  assert.equal(state.room.vaultOrder,undefined);
+ }
+ assert.equal(rpc('admin','dashboard').rooms[0].vaultOrder,undefined);
+ assert.throws(()=>command('skip_round'),/Attendi la fine/);
+ assert.throws(()=>command('next'),/Attendi la fine/);
+ t.mock.timers.tick(19_999);
+ send('p2',27);
+ assert.equal(game.settle(get()),false);
+ assert.equal(snap('p1').room.phase,'question');
+ t.mock.timers.tick(1);
+ assert.equal(game.settle(get()),true);
+ assert.equal(game.settle(get()),false);
+ assert.equal(snap('p1').me.score,190);
+ assert.equal(snap('p2').me.score,70);
+ assert.equal(snap('p2').vault_result.distribution,undefined);
+ assert.deepEqual(snap('admin').vault_result.distribution,[[27,1],[54,1]]);
+ assert.deepEqual(send('p1',54,request),{done:true,choice:54});
+ assert.throws(()=>command('next'),/Attendi la fine/);
+ t.mock.timers.tick(3500);command('pause');t.mock.timers.tick(20000);
+ assert.equal(snap('admin').remaining_ms,4500);
+ command('resume');t.mock.timers.tick(4000);command('next');
+ assert.equal(get().round,2);
+ assert.throws(()=>send('p1',54,request),/non più attuale/);
+ assert.equal(get().starts_at-Date.now(),800);
+ for(let round=2;round<=6;round++){
+  t.mock.timers.tick(get().deadline-Date.now());
+  assert.throws(()=>send('p2',1,crypto.randomUUID(),round),/chiuse/);
+  assert.equal(game.settle(get()),true);
+  assert.equal(snap('p1').me.points,0);
+  assert.equal(snap('p1').me.rank,null);
+  assert.deepEqual(snap('admin').vault_result.podium,[]);
+  t.mock.timers.tick(8000);
+  assert.equal(game.settle(get()),true);
+ }
+ assert.equal(get().phase,'finished');
+ assert.deepEqual(snap('admin').players.map(p=>p.score),[190,70]);
+
+ Object.assign(r,{phase:'question',starts_at:Date.now(),deadline:Date.now()+20000});
+ r.answers={};
+ delete r.vaultResult;
+ game.put('room',id,r);
+ send('p1',54);
+ command('end');
+ assert.equal(snap('p1').vault_result,undefined);
+ assert.equal(snap('p1').me.choice,null);
+ assert.equal(snap('p1').me.score,90);
+ assert.equal(game.settle(get()),false);
 });

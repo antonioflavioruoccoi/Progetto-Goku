@@ -1,9 +1,9 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs/promises';import vm from 'node:vm';import crypto from 'node:crypto';import {Window} from 'happy-dom';import {build} from 'esbuild';
 const {outputFiles}=await build({entryPoints:['web/app.js'],bundle:true,write:false,format:'iife',plugins:[{name:'mock-qr',setup(b){b.onResolve({filter:/^qrcode$/},args=>({path:args.path,namespace:'mock'}));b.onLoad({filter:/.*/,namespace:'mock'},()=>({contents:"export default {toCanvas:async()=>{}}"}));}}]});
 const app=outputFiles[0].text,html=await fs.readFile('web/app.html','utf8');
-async function boot(path,{anonymous=false,admin=false,room=null,licenses=[],blockedAudio=false,userId='user-1'}={}){
+async function boot(path,{anonymous=false,admin=false,room=null,licenses=[],blockedAudio=false,userId='user-1',answerResponse}={}){
  const window=new Window({url:'https://goku.test/'+path,settings:{disableJavaScriptFileLoading:true,disableCSSFileLoading:true}});window.document.write(html);const calls=[];let socket;
- const fetch=async(url,options)=>{const {action,payload}=JSON.parse(options.body);calls.push({action,payload});return {ok:true,json:async()=>action==='identity'?{id:userId,role:admin?'admin':anonymous?'player':'host'}:action==='dashboard'?{admin,licenses,rooms:[],server_now:Date.now()}:action==='state'?room:action==='answer'?room?.chronology?Object.assign(room.me,{done:true,choice:payload.answer}):room?.price?{done:true,choice:payload.answer}:room?.population?(Object.assign(room.me,{done:true,choice:payload.answer,result:'wrong',points:0}),{done:true,choice:payload.answer,result:'wrong',points:0}):{result:'wrong',attempts:1,done:false}:{}};};
+ const fetch=async(url,options)=>{const {action,payload}=JSON.parse(options.body);calls.push({action,payload});return {ok:true,json:async()=>action==='identity'?{id:userId,role:admin?'admin':anonymous?'player':'host'}:action==='dashboard'?{admin,licenses,rooms:[],server_now:Date.now()}:action==='state'?room:action==='answer'?answerResponse?answerResponse(payload):room?.chronology?Object.assign(room.me,{done:true,choice:payload.answer}):room?.price?{done:true,choice:payload.answer}:room?.population?(Object.assign(room.me,{done:true,choice:payload.answer,result:'wrong',points:0}),{done:true,choice:payload.answer,result:'wrong',points:0}):{result:'wrong',attempts:1,done:false}:{}};};
  class WebSocket {static OPEN=1;readyState=1;constructor(){socket=this;}close(){this.readyState=3;this.onclose?.();}}
  window.matchMedia=()=>({matches:true});
  const audio=window.document.getElementById('music'),audioEvents=[];let paused=true;
@@ -299,4 +299,80 @@ test('Cronologia presents previous scores, freezes the tally and reorders the st
  await h.notify();
  assert.deepEqual(standings(),[['1','Misty','300 pt'],['2','Ash','170 pt']]);
  await h.window.happyDOM.close();
+});
+
+test('Quanto ci vai vicino? restores the receipt and gates the Terracotta solution, rain and podium on server time',async()=>{
+ const now=Date.now();
+ const room={
+  room:{id:'vault-room',code:'123456',quiz:'culture',manche:3,manche_total:3,phase:'question',round:1,revision:1,starts_at:now-1000,deadline:now+19000},
+  server_now:now,duration_ms:20000,remaining_ms:19000,received:0,active:2,
+  players:[],can_control:false,me:{user_id:'user-1',done:false,choice:null,score:0},
+  vault:{id:'Q12',category:'Curiosità storiche',difficulty:'media',unit:'statue',effect:'terracotta-army',
+   prompt:"Quante statue di guerrieri si stima che compongano l'Esercito di Terracotta cinese?",
+   mobile:'Esercito di Terracotta: quanti guerrieri si stimano?',min:1,max:99_999_999},
+ };
+ const h=await boot('play/?room=vault-room',{anonymous:true,room,answerResponse:payload=>({error:'Ricevuta non disponibile'})});
+ const key=value=>h.$('vault-keypad').querySelector(`[data-key="${value}"]`).click();
+ assert.equal(h.$('question').hidden,true);
+ assert.equal(h.$('vault-answer').hidden,true);
+ assert.equal(h.$('error').textContent,'');
+ assert.equal(h.$('notice').textContent,'');
+ key('0');assert.equal(h.$('vault-send').disabled,true);
+ for(const digit of '123456789')key(digit);
+ assert.equal(h.$('vault-number').textContent,'12.345.678');
+ assert.match(h.$('vault-status').textContent,/Limite di 8 cifre/);
+ key('back');key('clear');
+ h.$('vault-assist').click();
+ assert.equal(h.$('vault-keypad').hidden,true);
+ h.$('vault-assisted').value='0008000';
+ h.$('vault-assisted').dispatchEvent(new h.window.Event('input'));
+ assert.equal(h.$('vault-assisted').value,'8000');
+ h.$('vault-send').click();
+ await new Promise(r=>setImmediate(r));
+ assert.equal(h.$('vault-send').textContent,'Riprova invio');
+ h.$('vault-send').click();
+ await new Promise(r=>setImmediate(r));
+ const payloads=h.calls.filter(x=>x.action==='answer').map(x=>x.payload);
+ assert.equal(payloads.length,2);
+ assert.deepEqual(payloads[0],payloads[1]);
+ assert.equal(payloads[0].answer,8000);
+ assert.equal(payloads[0].manche,3);
+ Object.assign(room.me,{done:true,choice:8000});
+ room.room.revision++;
+ await h.notify();
+ assert.equal(h.$('vault-entry').hidden,true);
+ assert.equal(h.$('vault-hold-status').textContent,'RISPOSTA BLOCCATA');
+ assert.equal(h.window.sessionStorage.getItem('goku-vault-send'),null);
+
+ Object.assign(room.room,{phase:'paused',paused_from:'reveal',revision:3});
+ room.duration_ms=8000;
+ room.remaining_ms=6400;
+ room.players=[{user_id:'user-1',nickname:'Ada',rank:1,score:100}];
+ Object.assign(room.me,{points:100,rank:1,score:100});
+ room.vault_result={solution:8000,explanation:'8.000 guerrieri è una stima, non un conteggio esatto.',source:null,popup:"L'IMPERATORE APPROVA!"};
+ await h.notify();
+ assert.equal(h.$('vault-answer').hidden,true);
+ assert.equal(h.$('vault-solution').textContent,'');
+ room.remaining_ms=4800;room.room.revision++;
+ await h.notify();
+ assert.equal(h.$('vault-solution').textContent,'8.000');
+ assert.match(h.$('vault-personal').textContent,/Stima esatta.*100 punti/);
+ assert.equal(h.$('vault-ranking').hidden,true);
+ room.remaining_ms=2300;room.room.revision++;await h.notify();
+ assert.match(h.$('vault-total').textContent,/1° nella domanda.*100 punti totali/);
+ await h.window.happyDOM.close();
+
+ Object.assign(room,{can_control:true,me:null,remaining_ms:6400});
+ room.vault_result.distribution=[[100,1],[1001,99]];
+ room.vault_result.podium=[{rank:1,points:10,players:[{nickname:'Ada',choice:1001}]}];
+ const host=await boot('host/?room=vault-room',{room});
+ assert.equal(host.$('vault-scale-label').textContent,'Scala logaritmica · statue');
+ assert.equal(host.$('vault-axis').querySelectorAll('use').length,2);
+ assert.equal(host.$('vault-axis').textContent.includes('×99'),true);
+ assert.equal(host.$('vault-answer').hidden,true);
+ room.remaining_ms=4800;room.room.revision++;await host.notify();
+ assert.equal(host.$('vault-popup').textContent,"L'IMPERATORE APPROVA!");
+ assert.equal(host.$('vault-art').querySelectorAll('.vault-warrior').length,12);
+ assert.equal(host.$('vault-solution').textContent,'8.000');
+ await host.window.happyDOM.close();
 });
