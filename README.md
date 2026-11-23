@@ -74,7 +74,12 @@ Dopo la sesta carta Pixelcard il server consolida i punti e avvia automaticament
 
 Nella schermata del conduttore, **Shift + N** passa al round successivo e consolida una sola volta i punti già ottenuti. In Quanto ci vai vicino? la scorciatoia è disponibile solo al termine della rivelazione. Si usa fuori dal campo di risposta e funziona anche nel quiz originale. Nel multiplayer il server verifica ruolo, licenza, fase e revisione.
 
-Cultura generale comprende 10 confronti sulla popolazione, 5 round di Cronologia, 6 domande di Quanto ci vai vicino? e il podio finale. In Cronologia ogni posizione corretta vale 50 punti.
+Cultura generale comprende 10 confronti sulla popolazione, 5 round di Cronologia, 6 domande di Quanto ci vai vicino? e il podio finale.
+
+- **Popolazione:** a ogni nuova stanza il server estrae 10 coppie dal catalogo di 82 nazioni (`data/population-countries.json`, IDB 2025): nessuna nazione ripetuta, rapporto tra popolazioni 1,05–3, difficoltà mista e lato casuale. La stanza salva gli ID estratti (`population_pairs`); le stanze create prima continuano con le coppie fisse 2025 o 2019. Fonti in [POPULATION-DATA-SOURCE.md](data/POPULATION-DATA-SOURCE.md) e [FLAGS-SOURCE.md](data/FLAGS-SOURCE.md).
+- **Cronologia:** ogni posizione corretta vale 50 punti. L'ordine corretto, con l'anno sotto ogni evento, resta sullo schermo senza timer finché il conduttore preme **Avanti**; poi la classifica dura 10 secondi e parte il round successivo. Avanti indica il round: doppi clic e richieste ripetute non saltano fasi.
+- **Podio:** gradini 1°–3° con pari merito, coriandoli (disattivati con *prefers-reduced-motion*) e tabella con i punti per manche (`manche_scores`).
+- Il quiz ha uno stile unico (variabili sotto `body.culture-quiz` in `web/app.css`): Bricolage Grotesque per titoli e cifre, Atkinson Hyperlegible per il testo, un solo colore d'accento.
 
 Asset locali e limiti: [ASSET_SOURCES.md](assets/pokeindizi/ASSET_SOURCES.md). Per i Pokémon recenti si usano icone dei giochi, non falsi sprite Game Boy.
 
