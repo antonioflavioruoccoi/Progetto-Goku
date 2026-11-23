@@ -23,6 +23,9 @@ const isChronology = r => cultureStage(r)?.id === "chronology";
 const CHRONOLOGY_POINTS = 50;
 const CHRONOLOGY_CARD_INTERVAL = 2000;
 const CHRONOLOGY_INTRO = 3000 + 3 * CHRONOLOGY_CARD_INTERVAL;
+// The first round of Popolazione and Cronologia opens with a 3 s title card.
+const MANCHE_OPENING = 3000;
+const openingMs = r => r.round === 1 && (cultureStage(r)?.id === "population" || isChronology(r)) ? MANCHE_OPENING : 0;
 // The solution stays on screen until the host presses "Avanti"; the ranking then lasts 10 s.
 const CHRONOLOGY_RANKING = 10000;
 const chronologyPoints = r => r.chronology_points ?? 30;
@@ -307,7 +310,7 @@ export class Goku {
     delete r.chronology_view;
     if (isChronology(r)) r.chronology_points = CHRONOLOGY_POINTS;
     if (isVault(r)) delete r.vaultResult;
-    r.starts_at = now + (isVault(r) ? vaultIntro(r.round) : isChronology(r) ? CHRONOLOGY_INTRO : r.manche === "price" ? 0 : 2000);
+    r.starts_at = now + openingMs(r) + (isVault(r) ? vaultIntro(r.round) : isChronology(r) ? CHRONOLOGY_INTRO : r.manche === "price" ? 0 : 2000);
     r.remaining_ms = roundDuration(r);
     r.deadline = r.starts_at + r.remaining_ms;
     r.answers = {};
@@ -468,6 +471,7 @@ export class Goku {
           category: chronology.category,
           total: CHRONOLOGY_ROUNDS,
           card_interval_ms: CHRONOLOGY_CARD_INTERVAL,
+          opening_ms: openingMs(r),
           points_per_match: chronologyPoints(r),
           items: cultureRevealed ? chronology.items : chronology.items.map(({ id, name }) => ({ id, name })),
           ...(cultureRevealed ? { correct: correctChronology(chronology.items), view: chronologyView(r), ranking_ms: CHRONOLOGY_RANKING } : {}),
@@ -478,6 +482,7 @@ export class Goku {
         ? {
             population: {
               year: populationsFor(r).year,
+              opening_ms: openingMs(r),
               countries: question.map(({ id, iso2, name }) => ({ id, iso2, name })),
               ...(cultureRevealed
                 ? {

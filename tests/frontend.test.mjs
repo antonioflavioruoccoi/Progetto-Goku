@@ -191,7 +191,7 @@ test('Cultura generale keeps player choices private and restores the selected co
  const row=reload.$('ranking').firstElementChild;
  await reload.notify();
  assert.equal(reload.$('ranking').firstElementChild,row);
- assert.equal(reload.$('population-a').querySelector('.population-value').textContent,'60.297.396 abitanti');assert.equal(reload.$('population-b').querySelector('.population-value').textContent,'58.005.463 abitanti');assert.ok(reload.$('population-a').classList.contains('population-winner'));assert.match(reload.$('population-feedback').textContent,/Risposta sbagliata/);assert.match(reload.$('solution').textContent,/Italia ha più abitanti/);
+ assert.equal(reload.$('population-a').querySelector('.population-value').textContent,'60.297.396 abitanti');assert.equal(reload.$('population-b').querySelector('.population-value').textContent,'58.005.463 abitanti');assert.ok(reload.$('population-a').classList.contains('population-winner'));assert.ok(reload.$('population-b').classList.contains('population-loser'));assert.equal(reload.$('population-score').textContent,'0 punti');assert.equal(reload.$('population-score').hidden,false);assert.equal(reload.$('population-compare').hidden,false);assert.match(reload.$('population-compare').textContent,/Italia · 60,3 mln/);assert.match(reload.$('solution').textContent,/Italia ha più abitanti/);
  await Promise.all([first.window.happyDOM.close(),second.window.happyDOM.close(),reload.window.happyDOM.close()]);
 });
 
@@ -256,15 +256,19 @@ test('Cronologia toggles and resets ranks, submits once, and reveals the player 
  assert.equal(send.hidden,true);assert.match(h.$('chronology-status').textContent,/In attesa/);
  room.room.phase='reveal';room.room.revision++;
  room.chronology.correct=[2,3,1,0];
- room.chronology.reveal_ms=15000;
+ room.chronology.view='solution';room.chronology.ranking_ms=10000;
  items.forEach((item,i)=>{item.year=[2014,2009,2002,2007][i];});
  room.me.points=100;
  await h.notify();
  assert.deepEqual([...list.children].map(card=>[card.dataset.item,card.dataset.result]),
-  [['2','correct'],['1','wrong'],['3','wrong'],['0','correct']]);
+  [['2','correct'],['3','wrong'],['1','wrong'],['0','correct']]);
  assert.deepEqual([...list.children].map(card=>card.querySelector('.chronology-detail').textContent),['+50','0','0','+50']);
  assert.match(h.$('chronology-status').textContent,/100 punti/);
- assert.equal(h.$('chronology-solution').querySelector('li strong').textContent,'2002');
+ assert.deepEqual([...list.children].map(card=>card.querySelector('.chronology-year').textContent),['2002','2007 · tu: 3°','2009 · tu: 2°','2014']);
+ assert.deepEqual([...list.children].map(card=>card.querySelector('.chronology-position').textContent),['1','2','3','4']);
+ assert.equal(h.$('chronology-solution'),null);
+ assert.equal(h.$('chronology-phase').textContent,'In attesa del conduttore…');
+ assert.equal(h.$('chronology-leaderboard').hidden,true);
  await h.window.happyDOM.close();
 });
 
@@ -274,7 +278,7 @@ test('Cronologia presents previous scores, freezes the tally and reorders the st
   room:{id:'chronology-ranking-room',code:'123456',quiz:'culture',manche:2,round:1,revision:1,
    phase:'reveal',starts_at:now-30000,deadline:now+9900},
   chronology:{category:'Brand',total:5,participants:2,card_interval_ms:2000,points_per_match:50,
-   reveal_ms:15000,items:[{id:0,name:'LEGO',year:1932}],correct:[0]},
+   view:'ranking',ranking_ms:10000,items:[{id:0,name:'LEGO',year:1932}],correct:[0]},
   server_now:now,duration_ms:30000,remaining_ms:9900,can_control:true,received:2,me:null,
   players:[{user_id:'p1',nickname:'Misty',score:300,round_points:200,rank:1},
    {user_id:'p2',nickname:'Ash',score:170,round_points:0,rank:2}],
@@ -356,7 +360,7 @@ test('Quanto ci vai vicino? restores the receipt and gates the Terracotta soluti
  room.remaining_ms=4800;room.room.revision++;
  await h.notify();
  assert.equal(h.$('vault-solution').textContent,'8.000');
- assert.match(h.$('vault-personal').textContent,/Stima esatta.*100 punti/);
+ assert.match(h.$('vault-personal').textContent,/Stima esatta.*8\.000 statue.*Punti.*\+100/);
  assert.equal(h.$('vault-ranking').hidden,true);
  room.remaining_ms=2300;room.room.revision++;await h.notify();
  assert.match(h.$('vault-total').textContent,/1° nella domanda.*100 punti totali/);
@@ -398,4 +402,66 @@ test('Quanto ci vai vicino? restores the receipt and gates the Terracotta soluti
  assert.equal(host.$('vault-solution').querySelector('[data-reel]'),null);
  assert.match(host.$('vault-podium').textContent,/\+200 pt/);
  await host.window.happyDOM.close();
+});
+
+test('Cronologia shows Avanti only to the host during the solution and sends the round with it',async()=>{
+ const now=Date.now();
+ const room={
+  room:{id:'avanti-room',code:'123456',quiz:'culture',manche:2,round:3,revision:7,phase:'reveal',starts_at:now-30000,deadline:null},
+  chronology:{category:'Brand',total:5,participants:1,card_interval_ms:2000,points_per_match:50,view:'solution',ranking_ms:10000,
+   items:[{id:0,name:'LEGO',year:1932},{id:1,name:'Nike',year:1964}],correct:[0,1]},
+  server_now:now,duration_ms:30000,remaining_ms:0,can_control:true,received:1,me:null,
+  players:[{user_id:'p1',nickname:'Misty',score:100,round_points:100,rank:1}],
+ };
+ const h=await boot('host/?room=avanti-room',{room});
+ const control=command=>h.window.document.querySelector(`[data-command="${command}"]`);
+ assert.equal(control('advance').hidden,false);
+ assert.equal(control('pause').hidden,true);
+ assert.equal(h.$('chronology-leaderboard').hidden,true);
+ assert.equal(h.$('chronology-count').textContent,'');
+ assert.deepEqual([...h.$('chronology-items').children].map(card=>card.querySelector('.chronology-year').textContent),['1932','1964']);
+ control('advance').click();
+ await new Promise(resolve=>setImmediate(resolve));
+ const sent=h.calls.find(call=>call.action==='command');
+ assert.deepEqual([sent.payload.command,sent.payload.round,sent.payload.manche],['advance',3,2]);
+ room.chronology.view='ranking';room.room.deadline=Date.now()+10000;room.remaining_ms=10000;room.room.revision++;
+ await h.notify();
+ assert.equal(control('advance').hidden,true);
+ assert.equal(control('pause').hidden,false);
+ assert.equal(h.$('chronology-leaderboard').hidden,false);
+ await h.window.happyDOM.close();
+ const player=await boot('play/?room=avanti-room',{anonymous:true,room:{...room,can_control:false,chronology:{...room.chronology,view:'solution'},me:{user_id:'p1',nickname:'Misty',score:100,done:true,choice:[0,1],points:100}}});
+ assert.equal(player.$('chronology-phase').textContent,'In attesa del conduttore…');
+ assert.equal(player.$('controls').hidden,true);
+ await player.window.happyDOM.close();
+});
+
+test('Cultura generale final podium groups ties on steps and splits points by manche',async()=>{
+ const players=[
+  {user_id:'a',nickname:'Ash',score:500,rank:1,manche_scores:{1:300,2:100,3:100}},
+  {user_id:'b',nickname:'Misty',score:500,rank:1,manche_scores:{1:200,2:200,3:100}},
+  {user_id:'c',nickname:'Brock',score:320,rank:3,manche_scores:{1:120,2:0,3:200}},
+  {user_id:'d',nickname:'Gary',score:10,rank:4,manche_scores:{1:10}},
+ ];
+ const room={room:{id:'final-room',code:'123456',quiz:'culture',manche:3,manche_total:3,round:6,revision:9,phase:'finished'},
+  server_now:Date.now(),remaining_ms:0,can_control:true,received:0,players,me:null};
+ const h=await boot('host/?room=final-room',{room});
+ assert.equal(h.$('results').hidden,false);
+ assert.equal(h.$('results-title').textContent,'Podio finale');
+ const steps=[...h.$('podium').querySelectorAll('.podium-step')];
+ assert.deepEqual(steps.map(step=>[step.dataset.place,step.dataset.rank,[...step.querySelectorAll('.podium-name')].map(n=>n.textContent).join('+')]),
+  [['2','3','Brock'],['1','1','Ash+Misty']]);
+ assert.match(h.$('podium').textContent,/Pari merito/);
+ assert.equal(h.$('final-table-wrap').hidden,false);
+ assert.equal(h.$('ranking').hidden,true);
+ assert.deepEqual([...h.$('final-table').querySelectorAll('tbody tr')].map(row=>[...row.querySelectorAll('th,td')].map(cell=>cell.textContent)),
+  [['1°','Ash','300','100','100','500'],['1°','Misty','200','200','100','500'],['3°','Brock','120','0','200','320'],['4°','Gary','10','0','0','10']]);
+ assert.ok(h.window.document.body.classList.contains('culture-final'));
+ await h.window.happyDOM.close();
+ // Older rooms without a complete split keep the plain ranking.
+ delete players[3].manche_scores;
+ const legacy=await boot('host/?room=final-room',{room});
+ assert.equal(legacy.$('final-table-wrap').hidden,true);
+ assert.equal(legacy.$('ranking').hidden,false);
+ await legacy.window.happyDOM.close();
 });

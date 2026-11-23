@@ -279,6 +279,7 @@ export function renderVault(state, host, callbacks) {
   content($('vault-category'), `${vault.category} · ${vault.difficulty}`);
   content($('vault-question'), host ? vault.prompt : vault.mobile);
   content($('vault-unit'), `Unità · ${vault.unit}`);
+  content($('vault-display-unit'), vault.unit);
   content($('vault-opening-rule'), `6 stime. Fino a ${vault.max_points ?? 200} punti a domanda.`);
   const presence = `${state.received} ${state.received === 1 ? 'risposta inviata' : 'risposte inviate'}`;
   const counter = $('vault-presence');
@@ -339,7 +340,8 @@ export function tickVault(ms, introMs) {
   $('vault-band').hidden = opening;
   $('vault-entry').hidden = host || !me || !!receipt || !!result;
   $('vault-hold').hidden = host || !me || showAnswer || !(receipt || result);
-  $('vault-art').hidden = !host || opening || (!!result && !['verify','solution','podium'].includes(beat));
+  // During the reveal the illustration would sit under the scale: keep it only while verifying.
+  $('vault-art').hidden = !host || opening || (!!result && beat !== 'verify');
   $('vault-answer').hidden = !showAnswer;
   $('vault-scale').hidden = !host || !result || beat === 'verify';
   $('vault-ranking').hidden = !showRank;
@@ -408,9 +410,23 @@ function renderAnswer(result, me, vault, host, round, elapsed) {
   const source = $('vault-source');
   source.hidden = !result.source;
   if (result.source && source.getAttribute('href') !== result.source) source.href = result.source;
-  content($('vault-personal'), host ? '' : me?.done ?
-    `${exact ? 'Stima esatta' : 'La tua stima'} · ${format.format(me.choice)} ${vault.unit} · ${me.points} punti` :
-    'Nessuna risposta · 0 punti');
+  const personal = $('vault-personal');
+  const lines = host ? [] : me?.done ?
+    [[exact ? 'Stima esatta' : 'La tua stima', `${format.format(me.choice)} ${vault.unit}`], ['Punti', `+${me.points}`]] :
+    [['La tua stima', 'Nessuna risposta'], ['Punti', '0']];
+  const signature = JSON.stringify(lines);
+  if (personal.dataset.signature !== signature) {
+    personal.dataset.signature = signature;
+    personal.replaceChildren(...lines.map(([label, value]) => {
+      const line = document.createElement('span');
+      const name = document.createElement('small');
+      const number = document.createElement('strong');
+      name.textContent = label;
+      number.textContent = value;
+      line.append(name, number);
+      return line;
+    }));
+  }
 }
 
 function row(label, value) {
@@ -440,7 +456,7 @@ function renderRankings(state, host, phase) {
   leaders.hidden = !host;
   const cumulativeRank = players.find(player=>player.user_id===me?.user_id)?.rank;
   content($('vault-total'), host ? '' : [me?.rank ? `${me.rank}° nella domanda` : '', cumulativeRank ?
-    `${cumulativeRank}° nella classifica · ${me.score} punti totali` : ''].filter(Boolean).join(' · '));
+    `${cumulativeRank}° in classifica · ${me.score} punti totali` : ''].filter(Boolean).join(' · '));
   if (!host || tableSignature === key) return;
   tableSignature = key;
   podium.replaceChildren(...result.podium.map(({rank, players, points}) => {
@@ -465,6 +481,20 @@ function svg(tag, attributes = {}, label = '') {
   return element;
 }
 
+// Two inner ticks rounded to the fewest significant digits that keep all four labels distinct.
+function niceTicks(start, end, log, scale) {
+  const raw = [1,2].map(i => {
+    const tick = scale(start) + (scale(end)-scale(start))*i/3;
+    return log ? 10 ** tick : tick;
+  });
+  for (let digits = 1; digits <= 8; digits++) {
+    const inner = raw.map(value => Number(value.toPrecision(digits)));
+    const ticks = [start, ...inner, end];
+    if (inner.every(value => value > start && value < end) && new Set(ticks).size === 4) return ticks;
+  }
+  return [start, ...raw.map(value => Math.round(value*100)/100), end];
+}
+
 export function vaultDomain(distribution, solution) {
   const low = distribution[0]?.[0] ?? solution;
   const high = distribution.at(-1)?.[0] ?? solution;
@@ -476,12 +506,7 @@ export function vaultDomain(distribution, solution) {
   const scale = log ? Math.log10 : value => value;
   return {
     log, position:value => (scale(value)-scale(start))/(scale(end)-scale(start)),
-    ticks:Array.from({length:4}, (_,i) => {
-      if (i === 0) return start;
-      if (i === 3) return end;
-      const tick = scale(start) + (scale(end)-scale(start))*i/3;
-      return log ? 10 ** tick : tick;
-    }),
+    ticks:niceTicks(start, end, log, scale),
   };
 }
 

@@ -1,6 +1,7 @@
 import QRCode from 'qrcode';
 import {renderPrice, showPriceBackground, tickPrice} from './pokeprice.js';
 import {chronologySelection, renderChronology, tickChronology} from './chronology.js';
+import {renderCultureFinal} from './culture-final.js';
 import {leaveVault, renderVault, stopVaultAudio, tickVault, toggleVaultAudio, vaultAudioEnabled, vaultRankGroups} from './number-vault.js';
 const $=id=>document.getElementById(id);
 const pixelStart=40*2/3,pixelEnd=3;
@@ -86,7 +87,7 @@ bind('join-form',async()=>{
 bind('fullscreen',async()=>{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();});
 const labelFullscreen=()=>{$('fullscreen').textContent=(!$('chronology-stage').hidden||!$('vault-stage').hidden||document.body.classList.contains('population-quiz'))&&document.fullscreenElement?'Esci da schermo intero':'Schermo intero';};
 document.addEventListener('fullscreenchange',labelFullscreen);
-for(const button of document.querySelectorAll('[data-command]'))button.addEventListener('click',async()=>{if(busy)return;busy=true;try{error('');if(button.dataset.command==='start'&&state.room.quiz!=='culture')$('music').play().catch(()=>{});await rpc('command',{room_id:roomId,revision:state.room.revision,command:button.dataset.command});await refresh();}catch(e){error(e.message);await refresh();}finally{busy=false;}});
+for(const button of document.querySelectorAll('[data-command]'))button.addEventListener('click',async()=>{if(busy)return;busy=true;try{error('');if(button.dataset.command==='start'&&state.room.quiz!=='culture')$('music').play().catch(()=>{});const command=button.dataset.command;await rpc('command',{room_id:roomId,revision:state.room.revision,command,...(command==='advance'?{round:state.room.round,manche:state.room.manche}:{})});await refresh();}catch(e){error(e.message);await refresh();}finally{busy=false;}});
 bind('answer-form',async()=>{const answer=$('answer').value.trim();const request=answerRequest?.answer===answer&&answerRequest.round===state.room.round?answerRequest:{answer,round:state.room.round,request_id:crypto.randomUUID()};answerRequest=request;const result=await rpc('answer',{room_id:roomId,...request});answerRequest=null;
  $('feedback').textContent=result.result==='invalid'?'Nome errato, riprova':result.result==='correct'?`Hai vinto ${result.points} punti!`:result.done?'Peccato, hai sbagliato':`Non è questo Pokémon! Restano ${3-result.attempts} tentativi.`;
  if(result.result==='wrong'&&!result.done)$('answer').value='';await refresh();},'submit');
@@ -239,6 +240,7 @@ async function refresh(){
  }finally{refreshing=false;}
 }
 function left(){return !state?0:state.room.phase==='paused'?state.remaining_ms:Math.max(0,Math.min(state.duration_ms||30000,new Date(state.room.deadline).getTime()-Date.now()-offset));}
+const compactPopulation=value=>value>=1e9?`${(value/1e9).toLocaleString('it-IT',{maximumFractionDigits:2})} mld`:`${(value/1e6).toLocaleString('it-IT',{maximumFractionDigits:value>=1e8?0:1})} mln`;
 function renderPopulation(){
  const {room,me}=state,stage=$('culture-stage'),key=`${room.id}/${room.round}`;
  const newRound=stage.dataset.round!==key;
@@ -248,6 +250,7 @@ function renderPopulation(){
  const enter=(node,delay)=>node.animate?.([{opacity:0,transform:'translateY(9px)'},{opacity:1,transform:'none'}],
   {duration:380,delay,fill:'backwards',easing:'cubic-bezier(.2,.72,.3,1)'});
  if(animate)enter($('culture-prompt'),0);
+ stage.toggleAttribute('data-revealed',!!values);
  $('population-year').textContent=`Stime ${state.population.year}`;
  countries.forEach((country,i)=>{
   const button=$(`population-${i?'b':'a'}`),selected=me?.choice===country.id;
@@ -264,14 +267,45 @@ function renderPopulation(){
   populationText(button.querySelector('.population-value'),population);
   button.setAttribute('aria-label',values?`${country.name}, ${population}${country.id===correct?', nazione con più abitanti':''}`:country.name);
   button.classList.toggle('population-winner',!!values&&country.id===correct);
+  button.classList.toggle('population-loser',!!values&&country.id!==correct);
   button.classList.toggle('population-selected',selected);
   button.setAttribute('aria-pressed',String(selected));
-  if(animate)enter(button,70+i*85);
+  if(animate)enter(button,70);
  });
  const chosen=countries.find(country=>country.id===me?.choice);
- populationText($('population-feedback'),me?.result==='correct'&&values?'Risposta esatta!':me?.result==='wrong'&&values?'Risposta sbagliata.':chosen?`Hai scelto ${chosen.name}. In attesa della rivelazione.`:'');
+ populationText($('population-feedback'),values?(me?chosen?'':'Nessuna risposta':''):chosen?`Hai scelto ${chosen.name}. In attesa della rivelazione.`:'');
+ const compare=$('population-compare');
+ compare.hidden=!values;
+ if(values){
+  const total=values[0]+values[1],bars=compare.querySelectorAll('.population-bar span'),labels=compare.querySelectorAll('.population-bar-labels span');
+  values.forEach((value,i)=>{
+   bars[i].style.flexGrow=String(value/total);
+   bars[i].classList.toggle('population-bar-winner',countries[i].id===correct);
+   const label=`${countries[i].name} · ${compactPopulation(value)}`;
+   if(labels[i].textContent!==label)labels[i].textContent=label;
+  });
+ }
+ const score=$('population-score'),points=values&&me?(me.result==='correct'?`+${me.points} punti`:'0 punti'):'';
+ score.hidden=!points;
+ score.dataset.result=me?.result||'';
+ if(score.textContent!==points){score.textContent=points;score.classList.remove('population-score-pop');if(points){void score.offsetWidth;score.classList.add('population-score-pop');}}
 }
-function renderRoom(){const r=state.room,host=state.can_control,active=['question','paused'].includes(r.phase),lobby=r.phase==='lobby',final=r.phase==='finished',clues=r.manche==='clues',culture=r.quiz==='culture',cultureRevealed=culture&&!!state.population?.values,population=!!state.population&&!final,chronology=state.chronology&&!final,vault=state.vault&&!final,vaultFinal=state.vault&&final,price=state.price,checkpoint=price&&r.phase==='reveal'&&price.round%3===0;document.body.className=(host?'host':'player')+' '+r.phase+(lobby?' live-shell':'')+(clues?' gameboy':'')+(culture?' culture-quiz':'')+(population?' population-quiz':'')+(chronology?' chronology-quiz':'')+(price?' pokeprice':'')+(checkpoint?' price-checkpoint':'')+(vault?' vault-quiz':'')+(vaultFinal?' vault-finished':'');
+// Manche opening card: icon, big centred title, one rule line (same layout as Quanto ci vai vicino?).
+const openings={
+ population:{title:'Popolazione',rule:'10 confronti · Fino a 150 punti a risposta, più rispondi in fretta più punti fai.',icon:'globe'},
+ chronology:{title:'Cronologia',rule:'5 round · Ordina 4 eventi dal più antico al più recente · 50 punti per posizione giusta.',icon:'hourglass'},
+};
+function renderOpening(kind){
+ const opening=$('culture-opening'),data=openings[kind];
+ opening.hidden=!data;
+ document.body.toggleAttribute('data-opening',!!data);
+ if(!data||opening.dataset.kind===kind)return;
+ opening.dataset.kind=kind;
+ opening.style.setProperty('--opening-icon',`url('/assets/interface/${data.icon}.svg')`);
+ $('culture-opening-title').textContent=data.title;
+ $('culture-opening-rule').textContent=data.rule;
+}
+function renderRoom(){const r=state.room,host=state.can_control,active=['question','paused'].includes(r.phase),lobby=r.phase==='lobby',final=r.phase==='finished',clues=r.manche==='clues',culture=r.quiz==='culture',cultureRevealed=culture&&!!state.population?.values,population=!!state.population&&!final,chronology=state.chronology&&!final,vault=state.vault&&!final,vaultFinal=state.vault&&final,price=state.price,checkpoint=price&&r.phase==='reveal'&&price.round%3===0;document.body.className=(host?'host':'player')+' '+r.phase+(lobby?' live-shell':'')+(clues?' gameboy':'')+(culture?' culture-quiz':'')+(population?' population-quiz':'')+(chronology?' chronology-quiz':'')+(price?' pokeprice':'')+(checkpoint?' price-checkpoint':'')+(vault?' vault-quiz':'')+(vaultFinal?' vault-finished':'')+(culture&&final?' culture-final':'');
  document.querySelector('h1').textContent=price?'PokéPrice':clues?'PokéIndizi':culture?'Cultura generale':'Pixelcard';
  show('pokemon-parade',clues);
  show('clue-stage',clues&&!final);show('question-prompt',!host&&!clues&&!price&&!culture);show('clue-reveal',clues&&!!state.solution_image);show('culture-stage',population);show('population-phase',population);show('population-progress',population);if(population)renderPopulation();
@@ -294,10 +328,10 @@ function renderRoom(){const r=state.room,host=state.can_control,active=['questio
  labelFullscreen();
  showPriceBackground(!!price&&!final);
  const results=!chronology&&!vault&&(final||checkpoint||(population?host||cultureRevealed:culture&&r.round>0||!price&&r.phase==='reveal'));
- show('results',results);show('controls',host&&!final);show('fullscreen',host);show('audio-control',!!vault||host&&!lobby&&!final&&!culture);show('revoked',route!=='play'&&!host);show('card-wrap',host&&!clues&&!price&&!culture);show('answer-form',!!state.me&&active&&!price&&!culture);show('population-match',population);show('paused',r.phase==='paused'&&!population);$('room-code').textContent=r.code;$('round').textContent=lobby?'Lobby':price?`Round ${price.round}/${price.total}`:clues?`PokéIndizi ${r.round-6}/6`:vault?`Manche ${r.manche}/${r.manche_total}`:culture?cultureRound(r,state.chronology?.total):`Carta ${r.round}/6`;
+ show('results',results);show('controls',host&&!final);show('fullscreen',host);show('audio-control',!!vault||host&&!lobby&&!final&&!culture);show('revoked',route!=='play'&&!host);show('card-wrap',host&&!clues&&!price&&!culture);show('answer-form',!!state.me&&active&&!price&&!culture);show('population-match',population);show('paused',r.phase==='paused'&&!population);$('room-code').textContent=r.code;$('round').textContent=lobby?'Lobby':price?`Round ${price.round}/${price.total}`:clues?`PokéIndizi ${r.round-6}/6`:vault?`Manche ${r.manche}/${r.manche_total}`:culture&&final?'Partita conclusa':culture?cultureRound(r,state.chronology?.total):`Carta ${r.round}/6`;
  const received=vault?'':`${state.received}/${chronology?.participants??state.players.length} risposte inviate`;
  if(population)populationText($('received'),received);else $('received').textContent=received;
- if(chronology)$('chronology-count').textContent=$('received').textContent;
+ if(chronology)$('chronology-count').textContent=state.chronology.correct?'':$('received').textContent;
  if(lobby){$('big-code').textContent=r.code;const url=base.href+'play/?code='+r.code;$('join-link').textContent=url;$('join-link').href=url;if(qrCode!==r.code){qrCode=r.code;QRCode.toCanvas($('qr'),url,{width:280,margin:4}).catch(e=>error(e.message));}$('lobby-players').replaceChildren(...state.players.map(p=>text('span',`${p.connected?'●':'○'} ${p.nickname}${p.connected?'':' · disconnesso'}`,'player-chip'+(p.connected?'':' offline'))));}
  const questionKey=`${r.id}/${r.manche}/${r.round}`;
  if($('answer').dataset.round!==questionKey){deadlineRequested=false;$('answer').value='';$('answer').dataset.round=questionKey;$('feedback').textContent='';answerRequest=null;}
@@ -307,8 +341,9 @@ function renderRoom(){const r=state.room,host=state.can_control,active=['questio
  tick();
  },250);};img.onerror=()=>{cardRound=0;error('Impossibile caricare la carta.');};img.src=base.href+asset;}).catch(e=>{cardRound=0;error(e.message);});}
  if(!active&&r.round>0&&!culture)$('card').classList.add('revealed');
- for(const b of document.querySelectorAll('[data-command]')){const c=b.dataset.command;b.hidden=!(c==='end'||c==='start'&&lobby||c==='pause'&&(r.phase==='question'||(culture&&r.phase==='reveal'))||c==='resume'&&r.phase==='paused'||c==='next'&&r.phase==='reveal'&&!chronology);if(c==='next')b.textContent=vault?(r.round===6?'Mostra podio':'Prossima domanda'):price?(price.round===price.total?'Mostra podio':'Prossimo round'):culture?(r.round===10?'Avvia Cronologia':'Prossimo confronto'):r.round===6?'Avvia PokéIndizi':'Prossima domanda';}
- show('vault-pages',!!vaultFinal&&state.players.length>vaultPageSize());
+ for(const b of document.querySelectorAll('[data-command]')){const c=b.dataset.command;b.hidden=!(c==='end'||c==='start'&&lobby||c==='pause'&&(r.phase==='question'||(culture&&r.phase==='reveal'&&!(chronology&&state.chronology.view==='solution')))||c==='resume'&&r.phase==='paused'||c==='next'&&r.phase==='reveal'&&!chronology||c==='advance'&&!!chronology&&r.phase==='reveal'&&state.chronology.view==='solution');if(c==='next')b.textContent=vault?(r.round===6?'Mostra podio':'Prossima domanda'):price?(price.round===price.total?'Mostra podio':'Prossimo round'):culture?(r.round===10?'Avvia Cronologia':'Prossimo confronto'):r.round===6?'Avvia PokéIndizi':'Prossima domanda';}
+ show('vault-pages',!culture&&!!vaultFinal&&state.players.length>vaultPageSize());
+ if(!(culture&&final))renderCultureFinal(null);
  if(results){
   const title=final?'Podio finale':culture&&!cultureRevealed?'Classifica attuale':price?'Classifica intermedia':'Soluzione e classifica';
   const solution=cultureRevealed?`${state.population.countries[state.population.values[1]>state.population.values[0]?1:0].name} ha più abitanti (${new Intl.NumberFormat('it-IT').format(Math.max(...state.population.values))}, stima ${state.population.year}).`:state.solution?`È ${state.solution}!`:'';
@@ -320,6 +355,7 @@ function renderRoom(){const r=state.room,host=state.can_control,active=['questio
   }
   if(culture&&previousRankRoom!==r.id){previousRanks.clear();previousRankRoom=r.id;}
   const ranking=$('ranking');
+  ranking.hidden=culture&&final;
   const signature=population?JSON.stringify([r.id,state.players.map(p=>[p.user_id,p.nickname,p.score,p.rank])]):'';
   if(!population||ranking.dataset.content!==signature){
    ranking.dataset.content=signature;
@@ -332,7 +368,10 @@ function renderRoom(){const r=state.room,host=state.can_control,active=['questio
    previousRanks=new Map(state.players.map(p=>[p.user_id,p.rank]));
   }
   $('podium').replaceChildren();
-  if(final){
+  if(final&&culture){
+   $('music').pause();
+   renderCultureFinal(state,host,me);
+  }else if(final){
    $('music').pause();
    const groups=vaultFinal?vaultRankGroups(state.players):null;
    const winners=vaultFinal?[...groups.values()].map(group=>group[0]):state.players.filter(p=>p.rank<=3);
@@ -365,8 +404,15 @@ function tick(){if(!state)return;
  const r=state.room,ms=left(),introMs=r.phase==='question'?Math.max(0,new Date(r.starts_at).getTime()-Date.now()-offset):0,pre=introMs>0;
  show('clue-intro',r.manche==='clues'&&r.round===7&&pre);
  const seconds=Math.ceil((pre?introMs:ms)/1000);
+ const cultureIntro=r.phase==='paused'&&r.paused_from!=='reveal'&&state.chronology?Math.max(0,ms-state.duration_ms):introMs;
+ const openingKind=r.phase!=='finished'&&(state.population?.opening_ms&&cultureIntro>2000?'population':
+  state.chronology?.opening_ms&&cultureIntro>3000+3*state.chronology.card_interval_ms?'chronology':'');
+ if(r.quiz==='culture')renderOpening(openingKind);
  if(state.population&&r.phase!=='finished'){
   populationText($('seconds'),`${seconds}s`);
+  const countdown=$('population-countdown'),counting=!state.can_control&&pre&&!openingKind;
+  countdown.hidden=!counting;
+  if(counting&&countdown.lastElementChild.textContent!==String(seconds))countdown.lastElementChild.textContent=String(seconds);
   populationText($('population-phase'),r.phase==='paused'?'In pausa':pre?'Preparati':state.population.values?'Rivelazione':'Tempo per rispondere');
   $('question').toggleAttribute('data-urgent',r.phase==='question'&&!pre&&seconds<=5);
   const progress=$('population-progress');
@@ -389,7 +435,7 @@ function tick(){if(!state)return;
   if(state.can_control)document.querySelector('[data-command="pause"]').hidden=pre||r.phase!=='question';
  }
  if(!state.price&&r.manche!=='clues'&&cardAsset&&['question','paused'].includes(r.phase)){const blockSize=pixelEnd+(pixelStart-pixelEnd)*ms/30000,width=Math.ceil(310/blockSize),height=Math.round(width*cardAsset.naturalHeight/cardAsset.naturalWidth),canvas=$('pixels');if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;canvas.getContext('2d').drawImage(cardAsset,0,0,width,height);}}
- if((r.phase==='question'||(r.quiz==='culture'&&r.phase==='reveal'))&&ms===0&&!deadlineRequested&&!refreshing){deadlineRequested=true;refresh();}}
+ if((r.phase==='question'||(r.quiz==='culture'&&r.phase==='reveal'&&r.deadline))&&ms===0&&!deadlineRequested&&!refreshing){deadlineRequested=true;refresh();}}
 setInterval(tick,100);
 window.addEventListener('offline',()=>{if(roomId&&!roomUnavailable)notice('Connessione assente. Riconnessione automatica al ritorno della rete.');});
 window.addEventListener('online',()=>{

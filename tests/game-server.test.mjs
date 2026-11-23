@@ -253,7 +253,7 @@ test('Cultura generale reveals mixed answers immediately, pauses results, resume
  assert.equal(r.population_year,2025);assert.equal(r.order.length,10);assert.equal(r.priceOrder,undefined);
  const command=name=>rpc('admin','command',{room_id:r.id,revision:game.get('room',r.id).revision,command:name});
  command('start');r=game.get('room',room.id);
- assert.equal(r.deadline-r.starts_at,15000);assert.equal(r.starts_at-Date.now(),2000);
+ assert.equal(r.deadline-r.starts_at,15000);assert.equal(r.starts_at-Date.now(),5000);
  let snapshot=rpc('p1','state',{room_id:r.id});
  assert.equal(snapshot.population.year,2025);assert.deepEqual(snapshot.population.countries.map(country=>country.iso2),['IT','TZ']);
  assert.equal(snapshot.population.values,undefined);assert.equal(snapshot.population.correct,undefined);
@@ -356,15 +356,15 @@ test('Cronologia keeps its server draw, scores by position, waits for Avanti and
  assert.equal(first.players[0].round_points,undefined);
  assert.equal(first.chronology.points_per_match,50);
  assert.equal(first.chronology.card_interval_ms,2000);
- assert.equal(first.room.starts_at-Date.now(),9000);
+ assert.equal(first.room.starts_at-Date.now(),12000);assert.equal(first.chronology.opening_ms,3000);
  assert.equal(first.room.deadline-first.room.starts_at,30000);
  assert.equal(game.settle({...get(),players:{}}),false);
  assert.throws(()=>send('p1',[0,1,2,3]),/Risposte chiuse/);
  t.mock.timers.tick(4000);command('pause');
- assert.equal(state('p1').remaining_ms,35000);
+ assert.equal(state('p1').remaining_ms,38000);
  t.mock.timers.tick(15000);command('resume');
- assert.equal(get().starts_at-Date.now(),5000);
- t.mock.timers.tick(5000);
+ assert.equal(get().starts_at-Date.now(),8000);
+ t.mock.timers.tick(8000);
  assert.throws(()=>send('p1',[0,1,1,3]),/Ordina tutti/);
  assert.throws(()=>send('p1',[0,1,2,4]),/Ordina tutti/);
  assert.throws(()=>send('p1',[0,1,2,3],crypto.randomUUID(),1),/non più attuale/);
