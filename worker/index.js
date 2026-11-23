@@ -1,6 +1,7 @@
 import quiz from "./generated/quiz.json";
 import populations from "../data/population-comparisons.json";
 import legacyPopulations from "../data/population-comparisons-2019.json";
+import { drawPopulationPairs, populationCountry, populationYear } from "./population.js";
 import { CHRONOLOGY_ROUNDS, correctChronology, drawChronology } from "./chronology.js";
 import {
   VAULT_DURATION, VAULT_NEXT, VAULT_REVEAL, VAULT_ROUNDS, VAULT_SOLUTION_AT,
@@ -26,7 +27,10 @@ const CHRONOLOGY_REVEAL = 15000;
 const chronologyPoints = r => r.chronology_points ?? 30;
 // The client's reconnect backoff refreshes via HTTP at least every 15.3 seconds.
 const POLL_PRESENCE_MS = 20000;
-const populationsFor = r => (r.population_year || legacyPopulations.year) === populations.year ? populations : legacyPopulations;
+// Rooms created before random matches keep their fixed pairs (2025, or 2019 without population_year).
+const populationsFor = r => r.population_pairs
+  ? { year: r.population_year, pairs: r.population_pairs.map(pair => pair.map(populationCountry)) }
+  : (r.population_year || legacyPopulations.year) === populations.year ? populations : legacyPopulations;
 const roundDuration = r => cultureStage(r)?.duration ?? (quizOf(r) === "culture" ? 0 : r.manche === "price" ? PRICE_DURATION : 30000);
 const rounds = r => quizOf(r) === "culture" ? cultureStage(r)?.count ?? 0 : PRICE_START + PRICE_ROUNDS - 1;
 function rankings(r, connected, extra = () => ({})) {
@@ -272,7 +276,7 @@ export class Goku {
     );
   }
   publicRoom(r) {
-    const { players, answers, order, clueOrder, priceOrder, chronologyOrder, chronology_points, vaultOrder, vaultResult, polling, settled, ...publicData } = r;
+    const { players, answers, order, population_pairs, clueOrder, priceOrder, chronologyOrder, chronology_points, vaultOrder, vaultResult, polling, settled, ...publicData } = r;
     publicData.quiz ||= "pokemon";
     publicData.manche ||= publicData.quiz === "culture" ? 1 : "cards";
     if (publicData.quiz === "culture") publicData.manche_total = vaultOrder ? cultureStages.length : 2;
@@ -394,7 +398,7 @@ export class Goku {
   question(r) {
     if (isVault(r)) return vaultQuestion(r.vaultOrder[r.round - 1]);
     if (isChronology(r)) return r.chronologyOrder[r.round - 1];
-    if (quizOf(r) === "culture") return populationsFor(r).pairs[r.order[r.round - 1]];
+    if (quizOf(r) === "culture") return r.population_pairs ? populationsFor(r).pairs[r.round - 1] : populationsFor(r).pairs[r.order[r.round - 1]];
     return r.manche === "clues" ? quiz.clues[r.clueOrder[r.round - 7]] : quiz.cards[r.order[r.round - 1]];
   }
   vaultShared(r) {
@@ -727,7 +731,7 @@ export class Goku {
         code = null;
       }
       if (!code) fail("PIN esauriti");
-      const order = (selectedQuiz === "culture" ? populations.pairs : quiz.cards).map((_, i) => i);
+      const order = quiz.cards.map((_, i) => i);
       for (let i = order.length - 1; i > 0; i--) {
         const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1);
         [order[i], order[j]] = [order[j], order[i]];
@@ -748,9 +752,8 @@ export class Goku {
         settled: 0,
         players: {},
         answers: {},
-        order,
-        ...(selectedQuiz === "culture" ? { population_year: populations.year, chronologyOrder: drawChronology(), vaultOrder: drawVault(vaultMode) } : {}),
-        ...(selectedQuiz === "pokemon" ? { priceOrder: selectPriceCards(quiz.priceCards) } : {}),
+        ...(selectedQuiz === "culture" ? { population_year: populationYear, population_pairs: drawPopulationPairs(), chronologyOrder: drawChronology(), vaultOrder: drawVault(vaultMode) } : {}),
+        ...(selectedQuiz === "pokemon" ? { order, priceOrder: selectPriceCards(quiz.priceCards) } : {}),
       };
       this.put("room", r.id, r);
       return { id: r.id, code };

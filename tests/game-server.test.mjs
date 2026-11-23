@@ -249,7 +249,7 @@ test('Cultura generale reveals mixed answers immediately, pauses results, resume
  const {game,rpc}=setupCultureGame(['admin','p1','p2','p3']);
  const room=rpc('admin','create',{quiz:'culture'});
  for(const id of ['p1','p2'])rpc(id,'join',{code:room.code,nickname:id});
- let r=game.get('room',room.id);r.order=Array.from({length:10},(_,i)=>i);game.put('room',r.id,r);
+ let r=game.get('room',room.id);delete r.population_pairs;r.order=Array.from({length:10},(_,i)=>i);game.put('room',r.id,r);
  assert.equal(r.population_year,2025);assert.equal(r.order.length,10);assert.equal(r.priceOrder,undefined);
  const command=name=>rpc('admin','command',{room_id:r.id,revision:game.get('room',r.id).revision,command:name});
  command('start');r=game.get('room',room.id);
@@ -290,7 +290,7 @@ test('Cultura generale legacy rooms keep 2019 answers while new rooms use 2025 d
  t.mock.timers.enable({apis:['Date'],now:1700000000000});
  const {game,rpc}=setupCultureGame(['admin','p1','p2']);
  const room=rpc('admin','create',{quiz:'culture'});rpc('p1','join',{code:room.code,nickname:'Ash'});
- let r=game.get('room',room.id);r.order=Array.from({length:10},(_,i)=>i);delete r.population_year;r.round=1;r.phase='question';r.starts_at=Date.now();r.deadline=Date.now()+15000;r.remaining_ms=15000;r.answers={};r.settled=0;game.put('room',r.id,r);
+ let r=game.get('room',room.id);delete r.population_pairs;r.order=Array.from({length:10},(_,i)=>i);delete r.population_year;r.round=1;r.phase='question';r.starts_at=Date.now();r.deadline=Date.now()+15000;r.remaining_ms=15000;r.answers={};r.settled=0;game.put('room',r.id,r);
  let snapshot=rpc('p1','state',{room_id:r.id});assert.equal(snapshot.population.year,2019);assert.deepEqual(snapshot.population.countries.map(country=>country.iso2),['IT','TZ']);assert.equal(snapshot.population.values,undefined);
  const request_id=crypto.randomUUID();
  assert.deepEqual(rpc('p1','answer',{room_id:r.id,round:1,request_id,answer:'ITA'}),{done:true,result:'correct',choice:'ITA',points:150});
@@ -302,7 +302,7 @@ test('Cultura generale keeps unanswered players through the question timeout and
  const {game,rpc}=setupCultureGame(['admin','p1','p2','p3']);
  const room=rpc('admin','create',{quiz:'culture'});
  for(const id of ['p1','p2','p3'])rpc(id,'join',{code:room.code,nickname:id});
- let r=game.get('room',room.id);r.order=Array.from({length:10},(_,i)=>i);game.put('room',r.id,r);
+ let r=game.get('room',room.id);delete r.population_pairs;r.order=Array.from({length:10},(_,i)=>i);game.put('room',r.id,r);
  const command=name=>rpc('admin','command',{room_id:r.id,revision:game.get('room',r.id).revision,command:name});
  command('start');r=game.get('room',room.id);t.mock.timers.tick(r.starts_at-Date.now());r=game.get('room',room.id);
  const [first,second]=game.question(r),correct=second.population>first.population?second:first,wrong=correct===first?second:first;
@@ -478,7 +478,7 @@ test('Cultura generale retains the host manual next control', t => {
  t.mock.timers.enable({apis:['Date'],now:1700000000000});
  const {game,rpc}=setupCultureGame();
  const room=rpc('admin','create',{quiz:'culture'});rpc('p1','join',{code:room.code,nickname:'Ash'});
- let r=game.get('room',room.id);r.order=Array.from({length:10},(_,i)=>i);game.put('room',r.id,r);
+ let r=game.get('room',room.id);delete r.population_pairs;r.order=Array.from({length:10},(_,i)=>i);game.put('room',r.id,r);
  const command=name=>rpc('admin','command',{room_id:r.id,revision:game.get('room',r.id).revision,command:name});
  command('start');r=game.get('room',room.id);t.mock.timers.tick(r.starts_at-Date.now());r=game.get('room',room.id);
  const [first,second]=game.question(r),answer=second.population>first.population?second.id:first.id;
