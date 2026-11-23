@@ -4,7 +4,7 @@ import { build } from 'esbuild';
 import fs from 'node:fs/promises';
 import {drawVault, publicVault, settleVault, validGuess, vaultPoints, vaultQuestion} from '../worker/number-vault.js';
 const { outputFiles } = await build({entryPoints:['worker/index.js'],bundle:true,write:false,format:'esm'});
-const { Goku } = await import('data:text/javascript;base64,'+Buffer.from(outputFiles[0].text).toString('base64'));
+const { Goku, addPoints } = await import('data:text/javascript;base64,'+Buffer.from(outputFiles[0].text).toString('base64'));
 const quiz = JSON.parse(await fs.readFile('worker/generated/quiz.json','utf8'));
 function setupCultureGame(ids=['admin','p1','p2']) {
  const game=Object.create(Goku.prototype),records=new Map();
@@ -662,7 +662,7 @@ test('Cronologia: Shift + N during the solution skips once, and legacy timed rev
  const revision=get().revision;
  command('skip_round');
  assert.equal(get().round,2);assert.equal(get().phase,'question');
- assert.equal(get().players.p1.score,200);
+ assert.equal(get().players.p1.score,200);assert.equal(get().players.p1.manche_scores[2],200);
  assert.throws(()=>rpc('admin','command',{room_id:room.id,revision,command:'skip_round'}),/Stato cambiato/);
  assert.deepEqual(command('advance',{round:1,manche:2}),{ok:true,unchanged:true});
  assert.equal(get().round,2);
@@ -670,4 +670,14 @@ test('Cronologia: Shift + N during the solution skips once, and legacy timed rev
  r=get();r.phase='reveal';r.deadline=Date.now()+15000;delete r.chronology_view;r.settled=2;game.put('room',r.id,r);
  assert.equal(rpc('p1','state',{room_id:room.id}).chronology.view,'ranking');
  t.mock.timers.tick(15000);assert.equal(game.settle(get()),true);assert.equal(get().round,3);
+});
+
+test('Cultura generale records points per manche for the final podium', () => {
+ const r={quiz:'culture',manche:3,players:{a:{user_id:'a',nickname:'Ash',score:150,manche_scores:{1:100,2:50}},b:{user_id:'b',nickname:'Misty',score:0}},
+  answers:{a:{done:true,choice:54},b:{done:true,choice:5400}}};
+ settleVault(r,vaultQuestion('Q01'),false,addPoints);
+ assert.deepEqual(r.players.a.manche_scores,{1:100,2:50,3:200});assert.equal(r.players.a.score,350);
+ assert.deepEqual(r.players.b.manche_scores,{3:0});assert.equal(r.players.b.score,0);
+ const pokemon={quiz:'pokemon',manche:'cards',players:{a:{score:0}}};
+ addPoints(pokemon,'a',30);assert.equal(pokemon.players.a.score,30);assert.equal(pokemon.players.a.manche_scores,undefined);
 });

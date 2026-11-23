@@ -31,6 +31,14 @@ const CHRONOLOGY_RANKING = 10000;
 const chronologyPoints = r => r.chronology_points ?? 30;
 // Rooms revealed before the "Avanti" button have no view and keep their timed reveal.
 const chronologyView = r => r.chronology_view ?? "ranking";
+export function addPoints(r, id, points) {
+  const player = r.players[id];
+  player.score += points;
+  if (quizOf(r) === "culture") {
+    player.manche_scores ??= {};
+    player.manche_scores[r.manche] = (player.manche_scores[r.manche] || 0) + points;
+  }
+}
 // The client's reconnect backoff refreshes via HTTP at least every 15.3 seconds.
 const POLL_PRESENCE_MS = 20000;
 // Rooms created before random matches keep their fixed pairs (2025, or 2019 without population_year).
@@ -358,10 +366,10 @@ export class Goku {
       (force || ["reveal", "finished"].includes(r.phase)) &&
       r.settled < r.round
     ) {
-      if (isVault(r)) settleVault(r, this.question(r), allAnswered);
+      if (isVault(r)) settleVault(r, this.question(r), allAnswered, addPoints);
       else if (r.manche === "price") settlePrice(r);
       else for (const [id, a] of Object.entries(r.answers))
-        r.players[id].score += a.points || 0;
+        addPoints(r, id, a.points || 0);
       r.settled = r.round;
       changed = true;
     }

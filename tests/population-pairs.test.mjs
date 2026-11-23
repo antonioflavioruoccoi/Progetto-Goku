@@ -88,6 +88,7 @@ test('new culture rooms store drawn country IDs and serve them in order without 
   }
   const after = game.get('room', r.id);
   assert.equal(after.manche, 2);
+  assert.equal(after.players.p1.manche_scores[1], after.players.p1.score);
 });
 
 test('stored rooms without drawn pairs keep the fixed 2025 or legacy 2019 comparisons', t => {

@@ -198,7 +198,7 @@ export function publicVault({ id, category, difficulty, prompt, mobile, unit, ef
   };
 }
 
-export function settleVault(r, { solution, explanation, source, popup }, early = false) {
+export function settleVault(r, { solution, explanation, source, popup }, early = false, addPoints = (room, id, points) => { room.players[id].score += points; }) {
   const entries = Object.entries(r.answers);
   const spread = new Map();
   const byDistance = ([, a], [, b]) => {
@@ -214,7 +214,7 @@ export function settleVault(r, { solution, explanation, source, popup }, early =
     const { choice } = answer;
     const points = vaultPoints(choice, solution);
     Object.assign(answer, { rank, points });
-    r.players[id].score += points;
+    addPoints(r, id, points);
     spread.set(choice, (spread.get(choice) || 0) + 1);
     if (rank <= 3) {
       if (podium.at(-1)?.rank !== rank) podium.push({ rank, points, players: [] });
