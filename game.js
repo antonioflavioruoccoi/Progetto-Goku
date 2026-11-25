@@ -206,6 +206,15 @@ $('continue').addEventListener('click', () => {
   nextCard(performance.now());
 });
 
+document.addEventListener('keydown', event => {
+  if (!event.shiftKey || event.key.toLowerCase() !== 'n' || event.ctrlKey || event.altKey ||
+      event.metaKey || event.repeat || event.isComposing || phase === 'idle' || phase === 'finished') return;
+  if (event.target?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"])')) return;
+  event.preventDefault();
+  index++;
+  nextCard(performance.now());
+});
+
 function startGame() {
   if (phase !== 'idle' && phase !== 'finished') return;
   // Called synchronously from the user gesture to comply with autoplay policies.
