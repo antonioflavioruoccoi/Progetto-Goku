@@ -1,6 +1,7 @@
 import quiz from "./generated/quiz.json";
 import populations from "../data/population-comparisons.json";
 import legacyPopulations from "../data/population-comparisons-2019.json";
+import { inappropriateName } from "./name-filter.js";
 import { drawPopulationPairs, populationCountry, populationYear } from "./population.js";
 import { CHRONOLOGY_ROUNDS, correctChronology, drawChronology } from "./chronology.js";
 import {
@@ -760,8 +761,7 @@ export class Goku {
     if (action === "create") {
       const selectedQuiz = p.quiz ?? "pokemon";
       if (!["pokemon", "culture"].includes(selectedQuiz)) fail("Quiz non valido", 400);
-      const vaultMode = p.vault_mode === undefined ? "demo" : p.vault_mode;
-      if (selectedQuiz === "culture" && !["demo", "mixed"].includes(vaultMode)) fail("Modalità di stima non valida", 400);
+      if (p.name_filter !== undefined && typeof p.name_filter !== "boolean") fail("Filtro nomi non valido", 400);
       const license = admin ? null : this.license(s);
       if (!admin && !(license?.quizzes || ["pokemon"]).includes(selectedQuiz)) fail("Quiz non incluso nella licenza");
       if (!admin) {
@@ -803,7 +803,8 @@ export class Goku {
         settled: 0,
         players: {},
         answers: {},
-        ...(selectedQuiz === "culture" ? { population_year: populationYear, population_pairs: drawPopulationPairs(), chronologyOrder: drawChronology(), vaultOrder: drawVault(vaultMode), meadowOrder: drawMeadow() } : {}),
+        name_filter: p.name_filter !== false,
+        ...(selectedQuiz === "culture" ? { population_year: populationYear, population_pairs: drawPopulationPairs(), chronologyOrder: drawChronology(), vaultOrder: drawVault(), meadowOrder: drawMeadow() } : {}),
         ...(selectedQuiz === "pokemon" ? { order, priceOrder: selectPriceCards(quiz.priceCards) } : {}),
       };
       this.put("room", r.id, r);
@@ -820,6 +821,9 @@ export class Goku {
         .replace(/\s+/g, " ");
       if (!/^[\p{L}\p{N} _.-]{1,24}$/u.test(nickname))
         fail("Nickname non valido");
+      // Rooms created before the filter existed keep it on.
+      if (r.name_filter !== false && inappropriateName(nickname))
+        fail("Questo nickname non è consentito. Scegline un altro.");
       if (
         Object.values(r.players).some(
           (x) => x.nickname.toLowerCase() === nickname.toLowerCase(),

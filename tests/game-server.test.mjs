@@ -531,11 +531,10 @@ test('Cultura generale validates quiz licenses before quota use', t => {
  assert.deepEqual(rpc('admin','dashboard').licenses.find(x=>x.id===license.id).quizzes,['culture']);
 });
 
-test('Quanto ci vai vicino? catalog, inclusive bounds and multiplicative ties', () => {
+test('Per un pelo catalog, inclusive bounds and multiplicative ties', () => {
  const catalog=Array.from({length:12},(_,i)=>vaultQuestion(`Q${String(i+1).padStart(2,'0')}`));
- assert.deepEqual(drawVault('demo'),catalog.slice(0,6).map(q=>q.id));
  for(let i=0;i<12;i++){
-  const mixed=drawVault('mixed').map(vaultQuestion);
+  const mixed=drawVault().map(vaultQuestion);
   assert.equal(new Set(mixed).size,6);
   assert.equal(mixed.filter(q=>q.difficulty==='facile').length,2);
   assert.equal(mixed.filter(q=>q.difficulty==='media').length,4);
@@ -559,10 +558,10 @@ test('Quanto ci vai vicino? catalog, inclusive bounds and multiplicative ties', 
  assert.equal(room.vaultResult.podium.at(-1).players.length,2);
 });
 
-test('Quanto ci vai vicino? locks answers and reveals as soon as everyone answers or time expires', t => {
+test('Per un pelo locks answers and reveals as soon as everyone answers or time expires', t => {
  t.mock.timers.enable({apis:['Date'],now:1700000000000});
  const {game,rpc}=setupCultureGame();
- assert.throws(()=>rpc('admin','create',{quiz:'culture',vault_mode:'invalid'}),/Modalità/);
+ assert.throws(()=>rpc('admin','create',{quiz:'culture',name_filter:'no'}),/Filtro/);
  const {id,code}=rpc('admin','create',{quiz:'culture'});
  for(const name of ['p1','p2'])rpc(name,'join',{code,nickname:name});
  const get=()=>game.get('room',id);
@@ -571,7 +570,7 @@ test('Quanto ci vai vicino? locks answers and reveals as soon as everyone answer
  const send=(session,answer,request_id=crypto.randomUUID(),round=1,manche=3)=>
   rpc(session,'answer',{room_id:id,round,manche,answer,request_id});
  const r=get();
- Object.assign(r,{manche:2,round:5,settled:5,phase:'reveal',deadline:Date.now()});
+ Object.assign(r,{manche:2,round:5,settled:5,phase:'reveal',deadline:Date.now(),vaultOrder:['Q01','Q02','Q03','Q04','Q05','Q06']});
  r.players.p1.score=90;
  const old=structuredClone(r);
  delete old.vaultOrder;delete old.meadowOrder;
@@ -683,7 +682,7 @@ test('Prato fiorito draws 5 distinct categories per game, each round 6 unique op
  assert.equal(meadowPoints(items,[]),0);
 });
 
-test('Prato fiorito follows Quanto ci vai vicino?, hides the bomb until reveal and scores on the server', t => {
+test('Prato fiorito follows Per un pelo, hides the bomb until reveal and scores on the server', t => {
  t.mock.timers.enable({apis:['Date'],now:1700000000000});
  const {game,rpc}=setupCultureGame(['admin','p1','p2','p3']);
  const {id,code}=rpc('admin','create',{quiz:'culture'});
@@ -814,4 +813,16 @@ test('every manche opens on a rules screen that only the host can close with Ava
  rpc('admin','command',{room_id:second.id,revision:game.get('room',second.id).revision,command:'start'});
  rpc('admin','command',{room_id:second.id,revision:game.get('room',second.id).revision,command:'end'});
  assert.equal(game.get('room',second.id).phase,'finished');
+});
+
+test('the nickname filter blocks disguised offensive names and can be switched off per room', () => {
+ const game=Object.create(Goku.prototype),records=new Map();game.changed=new Set();
+ game.get=(k,id)=>structuredClone(records.get(k+id));game.put=(k,id,v)=>records.set(k+id,structuredClone(v));
+ game.all=k=>[...records].filter(([id])=>id.startsWith(k)).map(([,v])=>structuredClone(v));game.ctx={getWebSockets:()=>[]};
+ for(const [id,role] of [['a','admin'],['p1','player'],['p2','player'],['p3','player']])game.put('session',id,{id,role,expires:Date.now()+86400000});
+ const rpc=(id,action,payload={})=>game.dispatch(action,payload,{session:id});
+ const on=rpc('a','create'),off=rpc('a','create',{name_filter:false});
+ for(const name of ['D10C4N3','porcodiddioladromerda','Il Duce','fr0c10'])assert.throws(()=>rpc('p1','join',{code:on.code,nickname:name}),/non è consentito/);
+ for(const [i,name] of ['Ignazio','Montenegro'].entries())rpc('p'+(i+1),'join',{code:on.code,nickname:name});
+ rpc('p3','join',{code:off.code,nickname:'Duce'});
 });

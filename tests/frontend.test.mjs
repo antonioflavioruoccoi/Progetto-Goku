@@ -305,7 +305,7 @@ test('Cronologia presents previous scores, freezes the tally and reorders the st
  await h.window.happyDOM.close();
 });
 
-test('Quanto ci vai vicino? restores the receipt and gates the Terracotta solution, rain and podium on server time',async()=>{
+test('Per un pelo restores the receipt and gates the Terracotta solution, rain and podium on server time',async()=>{
  const now=Date.now();
  const room={
   room:{id:'vault-room',code:'123456',quiz:'culture',manche:3,manche_total:3,phase:'question',round:1,revision:1,starts_at:now-1000,deadline:now+19000},
@@ -376,7 +376,7 @@ test('Quanto ci vai vicino? restores the receipt and gates the Terracotta soluti
  assert.equal(host.$('vault-answer').hidden,true);
  room.remaining_ms=4800;room.room.revision++;await host.notify();
  assert.equal(host.$('vault-popup').textContent,"L'IMPERATORE APPROVA!");
- assert.equal(host.$('vault-art').querySelectorAll('.vault-warrior').length,12);
+ assert.equal(host.$('vault-art').querySelectorAll('.vault-warrior').length,24);
  assert.equal(host.$('vault-solution').textContent,'8.000');
  Object.assign(room.room,{phase:'paused',paused_from:'question',round:1,revision:room.room.revision+1});
  Object.assign(room.vault,{intro_ms:4000,preview_ms:1000,max_points:200});
@@ -535,7 +535,7 @@ test('Cultura generale final podium groups ties on steps and splits points by ma
 
 test('every manche opens on a rules screen: game, short rules, and only the host can press Avanti',async()=>{
  const now=Date.now();
- const expected={1:['Popolazione',/150 punti/],2:['Cronologia',/50 punti/],3:['Quanto ci vai vicino?',/200 a domanda/],4:['Prato fiorito',/bomba/]};
+ const expected={1:['Popolazione',/150 punti/],2:['Cronologia',/50 punti/],3:['Per un pelo',/200 a domanda/],4:['Prato fiorito',/bomba/]};
  for(const manche of [1,2,3,4]){
   const room={room:{id:'intro-room',code:'123456',quiz:'culture',manche,manche_total:4,phase:'intro',round:0,revision:3,starts_at:now-1000,deadline:null},
    server_now:now,remaining_ms:0,can_control:true,players:[],me:null,received:0};

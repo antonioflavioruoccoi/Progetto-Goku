@@ -26,7 +26,7 @@ if(inviteToken){sessionStorage.setItem('goku-invite',inviteToken);history.replac
 else if(route==='invite')inviteToken=sessionStorage.getItem('goku-invite');
 const notice=s=>{$('notice').textContent=s;};
 const error=s=>{$('error').textContent=s;};
-const cultureRound=(r,total=5)=>r.manche===4?`Prato fiorito ${r.round}/5`:r.manche===3?`Quanto ci vai vicino? ${r.round}/6`:r.manche===2?`Cronologia ${r.round}/${total}`:`Confronto ${r.round}/10 · manche ${r.manche}/${r.manche_total}`;
+const cultureRound=(r,total=5)=>r.manche===4?`Prato fiorito ${r.round}/5`:r.manche===3?`Per un pelo ${r.round}/6`:r.manche===2?`Cronologia ${r.round}/${total}`:`Confronto ${r.round}/10 · manche ${r.manche}/${r.manche_total}`;
 async function rpc(action,payload={}){
  const start=Date.now();
  let response;
@@ -46,7 +46,6 @@ async function loadDashboard(){dashboard=await rpc('dashboard');if(route==='admi
   $('licenses').append(box);if(l.status==='attivo'&&l.used_rooms<l.max_rooms){const option=text('option',`${l.name||`Host ${l.id.slice(0,8)}`} · ${l.max_rooms-l.used_rooms} stanze · scade ${new Date(l.expires_at).toLocaleString()}`);option.value=l.id;$('license-select').append(option);}}
  if(!dashboard.licenses.length)$('licenses').append(text('p',dashboard.admin?'Nessuna licenza generata.':'Nessuna licenza associata. Apri il tuo invito personale e riscattalo.'));
  const allowed=new Set(dashboard.admin?['pokemon','culture']:dashboard.licenses.flatMap(l=>l.quizzes||['pokemon']));for(const option of $('quiz').options){option.hidden=!allowed.has(option.value);option.disabled=!allowed.has(option.value);}if(!allowed.has($('quiz').value))$('quiz').value=allowed.has('culture')?'culture':'pokemon';
- show('vault-mode-label',$('quiz').value==='culture');
  $('create-room').disabled=!dashboard.admin&&!$('license-select').options.length;
  $('rooms').replaceChildren();for(const r of dashboard.rooms){const box=text('div','', 'room-item');box.append(text('strong',`PIN ${r.code} · ${r.quiz==='culture'?'Cultura generale':'Pokémon'}`),text('p',`Stato: ${r.phase} · ${r.quiz==='culture'?cultureRound(r):r.manche==='price'?'PokéPrice '+(r.round-12)+'/12':r.manche==='clues'?'Indizio '+(r.round-6)+'/6':'Carta '+r.round+'/6'}`));const open=text('button','Apri stanza');open.onclick=()=>{location.href=`?room=${r.id}`;};box.append(open);
   if(dashboard.admin&&r.phase!=='finished'){const end=text('button','Interrompi');end.onclick=async()=>{end.disabled=true;try{const s=await rpc('state',{room_id:r.id});await rpc('command',{room_id:r.id,revision:s.room.revision,command:'end'});await loadDashboard();}catch(e){error(e.message);end.disabled=false;}};box.append(end);}$('rooms').append(box);}
@@ -65,10 +64,9 @@ async function redeem(){if(!inviteToken)throw Error('Invito mancante.');await rp
 bind('redeem',redeem);
 bind('license-form',async e=>{const f=new FormData(e.currentTarget);const result=await rpc('license_create',{name:f.get('name'),hours:Number(f.get('hours')),max_rooms:Number(f.get('max_rooms')),quizzes:f.getAll('quizzes')});$('invite-link').value=base.href+'invite/#token='+result.token;show('invite-result',true);await loadDashboard();},'submit');
 bind('copy-invite',async()=>{try{await navigator.clipboard.writeText($('invite-link').value);notice('Link copiato.');}catch{$('invite-link').select();notice('Selezionato: copia il link manualmente.');}});
-$('quiz').addEventListener('change',()=>show('vault-mode-label',$('quiz').value==='culture'));
 bind('create-form',async()=>{
  try{
-  const r=await rpc('create',{quiz:$('quiz').value,...($('quiz').value==='culture'?{vault_mode:$('vault-mode').value}:{}),license_id:$('license-select').value||null});
+  const r=await rpc('create',{quiz:$('quiz').value,name_filter:$('name-filter').checked,license_id:$('license-select').value||null});
   location.href=`?room=${r.id}`;
  }catch(e){
   if(e.status===0||e.status>=500){
@@ -311,7 +309,7 @@ function renderPopulation(){
 const openings={
  population:{title:'Popolazione',icon:'globe',rules:['10 confronti: quale dei due paesi ha più abitanti?','15 secondi per rispondere a ogni confronto.','Fino a 150 punti: più rispondi in fretta, più punti fai.']},
  chronology:{title:'Cronologia',icon:'hourglass',rules:['5 round: ordina 4 eventi dal più antico al più recente.','30 secondi per ogni round.','50 punti per ogni posizione giusta.']},
- vault:{title:'Quanto ci vai vicino?',icon:'target',rules:['6 domande con una risposta numerica: scrivi la tua stima.','20 secondi per ogni domanda.','Più la stima è vicina alla soluzione, più punti fai: fino a 200 a domanda.']},
+ vault:{title:'Per un pelo',icon:'target',rules:['6 domande con una risposta numerica: scrivi la tua stima.','20 secondi per ogni domanda.','Più la stima è vicina alla soluzione, più punti fai: fino a 200 a domanda.']},
  meadow:{title:'Prato fiorito',icon:'flower',rules:['5 round: tocca le risposte giuste tra 6 opzioni.','Una è una bomba: se la prendi, il round vale 0.','40 punti per ogni fiore salvo. Tutte e 5 giuste per primo: +40.']},
 };
 const mancheStage=r=>['population','chronology','vault','meadow'][r.manche-1];

@@ -1309,7 +1309,7 @@ body.pokeprice {
   .meadow-bud { transform: rotateX(-56deg); }
 }
 
-/* Quanto ci vai vicino? */
+/* Per un pelo */
 :is(.vault-quiz, .vault-finished) {
   --vault-night:#101629;
   --vault-panel:#293451;
@@ -1834,16 +1834,11 @@ body.pokeprice {
 #vault-stage[data-beat="solution"][data-effect="terracotta-army"] .vault-object { animation:vault-camera 1.6s var(--vault-motion) var(--vault-delay) both; }
 #vault-stage[data-beat="solution"] .vault-warrior { animation:vault-rise .87s var(--vault-motion) calc(var(--vault-delay) + var(--i) * 39ms) both; }
 #vault-stage[data-beat="solution"] .vault-dust { animation:vault-dust 1.65s ease var(--vault-delay) both; }
-#vault-stage[data-beat="solution"] :is(.vault-piece,.vault-period,.vault-die) { animation:vault-fan 1.35s var(--vault-motion) calc(var(--vault-delay) + var(--i,0)*35ms) both; }
-#vault-stage[data-beat="solution"] :is(.vault-beam,.vault-bubbles) { animation:vault-beam 1.5s var(--vault-motion) var(--vault-delay) both; }
-#vault-stage[data-beat="solution"] .vault-runner { animation:vault-run 1.15s var(--vault-motion) calc(var(--vault-delay) + var(--i)*100ms) both; }
-#vault-stage[data-beat="solution"] :is(.vault-wave,.vault-water,.vault-pixel-screen) { animation:vault-water .85s var(--vault-motion) var(--vault-delay) both; }
-#vault-stage[data-beat="solution"] :is(.vault-moon,.vault-orbit) { animation:vault-gold 1s var(--vault-motion) var(--vault-delay) both; }
-#vault-stage[data-beat="solution"] :is(.vault-piano-key,.vault-seat,.vault-tile) { animation:vault-lit .7s var(--vault-motion) calc(var(--vault-delay) + var(--i)*30ms) both; }
+#vault-stage[data-beat="solution"] .vault-pop { animation:vault-hop .8s var(--vault-motion) calc(var(--vault-delay) + var(--i,0)*45ms) both; }
 #vault-stage[data-beat="podium"] .vault-object { animation:vault-fade .8s ease var(--vault-delay) both; }
 #vault-stage[data-beat="podium"]:not([data-early]) #vault-ranking li { animation:vault-enter .57s var(--vault-motion) var(--vault-delay) both; }
 #vault-stage[data-beat="summary"] .vault-dots { animation:vault-fade .4s ease var(--vault-delay) both; }
-#vault-stage:not([data-beat="solution"]) :is(.vault-beam,.vault-dust,.vault-orbit) { opacity:0; }
+#vault-stage:not([data-beat="solution"]) .vault-dust { opacity:0; }
 #vault-stage:is([data-paused],[data-away]) *, #vault-stage:is([data-paused],[data-away])::before { animation-play-state:paused !important; }
 @keyframes vault-enter { from { opacity:.15; transform:perspective(650px) rotateX(-7deg) translateY(9px); } to { opacity:1; transform:none; } }
 @keyframes vault-rise { from { opacity:0; transform:translateY(25px); } to { opacity:1; transform:none; } }
@@ -1853,12 +1848,8 @@ body.pokeprice {
 @keyframes vault-accent { 45% { transform:translateY(-5px) scale(1.045); } }
 @keyframes vault-camera { from { transform:translate(-10px,-11px) scale(1.13); } to { transform:none; } }
 @keyframes vault-dust { 0%,100% { opacity:0; } 50% { opacity:.4; transform:translateY(-7px) scale(1.06); } }
-@keyframes vault-fan { 50% { transform:translate(var(--x,8px),-7px) rotate(4deg); } }
-@keyframes vault-beam { 0%,100% { opacity:0; } 52% { opacity:.54; transform:translateY(-8px) skewY(7deg); } }
-@keyframes vault-run { from { transform:translateX(-74px); opacity:.25; } 75% { opacity:1; } to { transform:translateX(24px); opacity:1; } }
-@keyframes vault-water { 0% { transform:translateY(11px); opacity:.4; } 72% { transform:translateY(-3px); } 100% { transform:none; opacity:1; } }
-@keyframes vault-lit { 52% { fill:#ffe4a2; } }
 @keyframes vault-fade { to { opacity:0; } }
+@keyframes vault-hop { 40% { transform:translateY(-7px); } 70% { transform:translateY(1px); } }
 @keyframes vault-lock { from { transform:translateY(-12px); } to { transform:none; } }
 @keyframes vault-seal { from { transform:perspective(180px) rotateX(55deg); opacity:.2; } to { transform:none; opacity:1; } }
 .vault-object { transform-origin:160px 100px; }
@@ -1927,17 +1918,10 @@ body.pokeprice {
   height:clamp(68px,12dvh,102px);
 }
 
-.vault-water-digits { display:none; }
-#vault-stage[data-beat="solution"] .vault-water-digits {
-  display:inline;
-  opacity:0;
-  animation:vault-cascade 1.5s var(--vault-motion) var(--vault-delay) both;
-}
-@keyframes vault-cascade { 15% { opacity:.75; } 90%,100% { opacity:0; transform:translateY(42px); } }
 
 /* ==========================================================================
    Cultura generale · sistema visivo unico
-   Lo stile di "Quanto ci vai vicino?" esteso a lobby, Popolazione, Cronologia,
+   Lo stile di "Per un pelo" esteso a lobby, Popolazione, Cronologia,
    classifiche e podio. Tutto è sotto body.culture-quiz: il quiz Pokémon non cambia.
    ========================================================================== */
 @font-face {
@@ -2415,7 +2399,7 @@ body.culture-quiz .chronology-ranking-position { color: var(--cg-muted); }
 body.culture-quiz .chronology-ranking-points { color: var(--cg-accent); }
 body.culture-quiz .chronology-ranking-delta { background: var(--cg-good-bg); color: var(--cg-good); }
 
-/* ---------- Quanto ci vai vicino? (accento unico, comandi e rivelazione) ---------- */
+/* ---------- Per un pelo (accento unico, comandi e rivelazione) ---------- */
 body.culture-quiz #vault-stage[data-urgent] #vault-clock { background: transparent; color: var(--cg-accent); }
 body.culture-quiz #vault-stage[data-urgent] #vault-clock circle + circle { stroke: var(--cg-accent); }
 body.culture-quiz .vault-lock { background: radial-gradient(circle, var(--cg-accent) 0 3px, #5b4d27 4px, #1f2740 65%); }

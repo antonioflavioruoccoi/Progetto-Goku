@@ -72,9 +72,12 @@ La verifica locale non dimostra l’eviction/ibernazione effettiva in produzione
 
 Dopo la sesta carta Pixelcard il server consolida i punti e avvia automaticamente 5 secondi di introduzione con Oak, poi sei PokéIndizi casuali senza ripetizioni dal dataset di dodici. PIN, identità e WebSocket restano gli stessi. Gli indizi si sbloccano a 30/20/10 secondi; dopo la seconda manche si passa a PokéPrice. I 12 confronti di PokéPrice precedono il podio cumulato.
 
-Nella schermata del conduttore, **Shift + N** passa alla domanda successiva in ogni manche (anche Quanto ci vai vicino? e Prato fiorito, durante la domanda o la rivelazione) e consolida una sola volta i punti già ottenuti. È gestita in un unico punto (`skip_round` nel server, un solo ascoltatore in `web/app.js`), quindi vale da sola per le manche future. Si usa fuori dal campo di risposta e funziona anche nel quiz originale. Nel multiplayer il server verifica ruolo, licenza, fase e revisione.
+Nella schermata del conduttore, **Shift + N** passa alla domanda successiva in ogni manche (anche Per un pelo e Prato fiorito, durante la domanda o la rivelazione) e consolida una sola volta i punti già ottenuti. È gestita in un unico punto (`skip_round` nel server, un solo ascoltatore in `web/app.js`), quindi vale da sola per le manche future. Si usa fuori dal campo di risposta e funziona anche nel quiz originale. Nel multiplayer il server verifica ruolo, licenza, fase e revisione.
 
-Cultura generale comprende 10 confronti sulla popolazione, 5 round di Cronologia, 6 domande di Quanto ci vai vicino?, 5 round di Prato fiorito e il podio finale.
+Cultura generale comprende 10 confronti sulla popolazione, 5 round di Cronologia, 6 domande di Per un pelo, 5 round di Prato fiorito e il podio finale.
+
+- **Per un pelo:** 6 domande di stima estratte a caso dalle 12 di `worker/number-vault.js` (sempre 2 facili e 4 medie; la vecchia modalità "Dimostrazione" non esiste più). Ogni domanda ha una scena isometrica disegnata in SVG da `web/vault-scenes.js`.
+- **Filtro nickname:** attivo di default alla creazione della stanza (casella «Blocca nickname inappropriati»), disattivabile. Il server (`worker/name-filter.js`) rifiuta nomi offensivi anche se scritti con numeri (D10C4N3), separatori o dentro parole più lunghe.
 
 Prima di ogni manche la stanza entra nella fase `intro`: una schermata mostra il gioco e le regole in breve e resta ferma, senza timer, finché il conduttore preme **Avanti** (comando `next`). Solo l’Host può chiuderla; **Termina partita** resta disponibile.
 

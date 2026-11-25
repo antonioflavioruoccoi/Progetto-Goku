@@ -75,7 +75,7 @@ function cue(name) {
   if (!volume) return;
   const notes = {
     tap:[415], seal:[165, 247, 330], verify:[130, 196], rain:[392, 587, 784, 494],
-    solution:[262, 392, 523, {'terracotta-army':196, piano:784, lunar:880, chemistry:698}[scene.state.vault.effect] ?? 659], tally:[330, 415, 523],
+    solution:[262, 392, 523, {'terracotta-army':196, piano:784, lunar:880, 'film-saga':698}[scene.state.vault.effect] ?? 659], tally:[330, 415, 523],
   }[name];
   stopVaultAudio();
   sound = audio.createGain();
