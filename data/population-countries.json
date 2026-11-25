@@ -1,0 +1,498 @@
+{
+  "year": 2025,
+  "source": "U.S. Census Bureau IDB, November 2026 release, idb5yr.txt, YR=2025, POP",
+  "countries": [
+    {
+      "id": "ITA",
+      "iso2": "IT",
+      "name": "Italia",
+      "population": 60924851
+    },
+    {
+      "id": "DEU",
+      "iso2": "DE",
+      "name": "Germania",
+      "population": 84012284
+    },
+    {
+      "id": "FRA",
+      "iso2": "FR",
+      "name": "Francia",
+      "population": 68512806
+    },
+    {
+      "id": "ESP",
+      "iso2": "ES",
+      "name": "Spagna",
+      "population": 47336448
+    },
+    {
+      "id": "GBR",
+      "iso2": "GB",
+      "name": "Regno Unito",
+      "population": 68751311
+    },
+    {
+      "id": "POL",
+      "iso2": "PL",
+      "name": "Polonia",
+      "population": 38364679
+    },
+    {
+      "id": "NLD",
+      "iso2": "NL",
+      "name": "Paesi Bassi",
+      "population": 17833885
+    },
+    {
+      "id": "BEL",
+      "iso2": "BE",
+      "name": "Belgio",
+      "population": 11960170
+    },
+    {
+      "id": "PRT",
+      "iso2": "PT",
+      "name": "Portogallo",
+      "population": 10194277
+    },
+    {
+      "id": "GRC",
+      "iso2": "GR",
+      "name": "Grecia",
+      "population": 10424536
+    },
+    {
+      "id": "SWE",
+      "iso2": "SE",
+      "name": "Svezia",
+      "population": 10643745
+    },
+    {
+      "id": "NOR",
+      "iso2": "NO",
+      "name": "Norvegia",
+      "population": 5541823
+    },
+    {
+      "id": "CHE",
+      "iso2": "CH",
+      "name": "Svizzera",
+      "population": 8925741
+    },
+    {
+      "id": "AUT",
+      "iso2": "AT",
+      "name": "Austria",
+      "population": 9174390
+    },
+    {
+      "id": "IRL",
+      "iso2": "IE",
+      "name": "Irlanda",
+      "population": 5279007
+    },
+    {
+      "id": "DNK",
+      "iso2": "DK",
+      "name": "Danimarca",
+      "population": 6051491
+    },
+    {
+      "id": "FIN",
+      "iso2": "FI",
+      "name": "Finlandia",
+      "population": 5550449
+    },
+    {
+      "id": "HUN",
+      "iso2": "HU",
+      "name": "Ungheria",
+      "population": 9827455
+    },
+    {
+      "id": "CZE",
+      "iso2": "CZ",
+      "name": "Repubblica Ceca",
+      "population": 10838703
+    },
+    {
+      "id": "ROU",
+      "iso2": "RO",
+      "name": "Romania",
+      "population": 17985252
+    },
+    {
+      "id": "UKR",
+      "iso2": "UA",
+      "name": "Ucraina",
+      "population": 36529111
+    },
+    {
+      "id": "RUS",
+      "iso2": "RU",
+      "name": "Russia",
+      "population": 140134279
+    },
+    {
+      "id": "HRV",
+      "iso2": "HR",
+      "name": "Croazia",
+      "population": 4071208
+    },
+    {
+      "id": "SRB",
+      "iso2": "RS",
+      "name": "Serbia",
+      "population": 6612318
+    },
+    {
+      "id": "TUR",
+      "iso2": "TR",
+      "name": "Turchia",
+      "population": 89991047
+    },
+    {
+      "id": "USA",
+      "iso2": "US",
+      "name": "Stati Uniti",
+      "population": 341784857
+    },
+    {
+      "id": "CAN",
+      "iso2": "CA",
+      "name": "Canada",
+      "population": 39187155
+    },
+    {
+      "id": "MEX",
+      "iso2": "MX",
+      "name": "Messico",
+      "population": 131741347
+    },
+    {
+      "id": "BRA",
+      "iso2": "BR",
+      "name": "Brasile",
+      "population": 221359387
+    },
+    {
+      "id": "ARG",
+      "iso2": "AR",
+      "name": "Argentina",
+      "population": 45418098
+    },
+    {
+      "id": "COL",
+      "iso2": "CO",
+      "name": "Colombia",
+      "population": 49842298
+    },
+    {
+      "id": "PER",
+      "iso2": "PE",
+      "name": "Perù",
+      "population": 32768614
+    },
+    {
+      "id": "CHL",
+      "iso2": "CL",
+      "name": "Cile",
+      "population": 19091343
+    },
+    {
+      "id": "VEN",
+      "iso2": "VE",
+      "name": "Venezuela",
+      "population": 25329609
+    },
+    {
+      "id": "CUB",
+      "iso2": "CU",
+      "name": "Cuba",
+      "population": 10059519
+    },
+    {
+      "id": "ECU",
+      "iso2": "EC",
+      "name": "Ecuador",
+      "population": 18479841
+    },
+    {
+      "id": "BOL",
+      "iso2": "BO",
+      "name": "Bolivia",
+      "population": 12436103
+    },
+    {
+      "id": "CRI",
+      "iso2": "CR",
+      "name": "Costa Rica",
+      "population": 5304932
+    },
+    {
+      "id": "HND",
+      "iso2": "HN",
+      "name": "Honduras",
+      "population": 9652170
+    },
+    {
+      "id": "URY",
+      "iso2": "UY",
+      "name": "Uruguay",
+      "population": 3449444
+    },
+    {
+      "id": "JAM",
+      "iso2": "JM",
+      "name": "Giamaica",
+      "population": 2938503
+    },
+    {
+      "id": "NGA",
+      "iso2": "NG",
+      "name": "Nigeria",
+      "population": 244344065
+    },
+    {
+      "id": "EGY",
+      "iso2": "EG",
+      "name": "Egitto",
+      "population": 112870457
+    },
+    {
+      "id": "ETH",
+      "iso2": "ET",
+      "name": "Etiopia",
+      "population": 121372632
+    },
+    {
+      "id": "ZAF",
+      "iso2": "ZA",
+      "name": "Sudafrica",
+      "population": 61089926
+    },
+    {
+      "id": "KEN",
+      "iso2": "KE",
+      "name": "Kenya",
+      "population": 55751717
+    },
+    {
+      "id": "TZA",
+      "iso2": "TZ",
+      "name": "Tanzania",
+      "population": 69145464
+    },
+    {
+      "id": "UGA",
+      "iso2": "UG",
+      "name": "Uganda",
+      "population": 49018818
+    },
+    {
+      "id": "MAR",
+      "iso2": "MA",
+      "name": "Marocco",
+      "population": 37698780
+    },
+    {
+      "id": "DZA",
+      "iso2": "DZ",
+      "name": "Algeria",
+      "population": 47735685
+    },
+    {
+      "id": "GHA",
+      "iso2": "GH",
+      "name": "Ghana",
+      "population": 33609721
+    },
+    {
+      "id": "SEN",
+      "iso2": "SN",
+      "name": "Senegal",
+      "population": 19311233
+    },
+    {
+      "id": "TUN",
+      "iso2": "TN",
+      "name": "Tunisia",
+      "population": 11962995
+    },
+    {
+      "id": "COD",
+      "iso2": "CD",
+      "name": "Repubblica Democratica del Congo",
+      "population": 121350985
+    },
+    {
+      "id": "AGO",
+      "iso2": "AO",
+      "name": "Angola",
+      "population": 38984796
+    },
+    {
+      "id": "MDG",
+      "iso2": "MG",
+      "name": "Madagascar",
+      "population": 31345040
+    },
+    {
+      "id": "CMR",
+      "iso2": "CM",
+      "name": "Camerun",
+      "population": 31518954
+    },
+    {
+      "id": "CHN",
+      "iso2": "CN",
+      "name": "Cina",
+      "population": 1407181209
+    },
+    {
+      "id": "IND",
+      "iso2": "IN",
+      "name": "India",
+      "population": 1419316933
+    },
+    {
+      "id": "IDN",
+      "iso2": "ID",
+      "name": "Indonesia",
+      "population": 285631317
+    },
+    {
+      "id": "PAK",
+      "iso2": "PK",
+      "name": "Pakistan",
+      "population": 257047044
+    },
+    {
+      "id": "BGD",
+      "iso2": "BD",
+      "name": "Bangladesh",
+      "population": 174370536
+    },
+    {
+      "id": "JPN",
+      "iso2": "JP",
+      "name": "Giappone",
+      "population": 122243352
+    },
+    {
+      "id": "PHL",
+      "iso2": "PH",
+      "name": "Filippine",
+      "population": 112904458
+    },
+    {
+      "id": "VNM",
+      "iso2": "VN",
+      "name": "Vietnam",
+      "population": 105095381
+    },
+    {
+      "id": "THA",
+      "iso2": "TH",
+      "name": "Thailandia",
+      "population": 74265793
+    },
+    {
+      "id": "KOR",
+      "iso2": "KR",
+      "name": "Corea del Sud",
+      "population": 51486343
+    },
+    {
+      "id": "IRN",
+      "iso2": "IR",
+      "name": "Iran",
+      "population": 89177357
+    },
+    {
+      "id": "IRQ",
+      "iso2": "IQ",
+      "name": "Iraq",
+      "population": 46265512
+    },
+    {
+      "id": "SAU",
+      "iso2": "SA",
+      "name": "Arabia Saudita",
+      "population": 37172774
+    },
+    {
+      "id": "AFG",
+      "iso2": "AF",
+      "name": "Afghanistan",
+      "population": 49474805
+    },
+    {
+      "id": "MYS",
+      "iso2": "MY",
+      "name": "Malaysia",
+      "population": 34905275
+    },
+    {
+      "id": "NPL",
+      "iso2": "NP",
+      "name": "Nepal",
+      "population": 31683992
+    },
+    {
+      "id": "LKA",
+      "iso2": "LK",
+      "name": "Sri Lanka",
+      "population": 22050561
+    },
+    {
+      "id": "ISR",
+      "iso2": "IL",
+      "name": "Israele",
+      "population": 9552637
+    },
+    {
+      "id": "ARE",
+      "iso2": "AE",
+      "name": "Emirati Arabi Uniti",
+      "population": 10093593
+    },
+    {
+      "id": "KAZ",
+      "iso2": "KZ",
+      "name": "Kazakistan",
+      "population": 20432662
+    },
+    {
+      "id": "MNG",
+      "iso2": "MN",
+      "name": "Mongolia",
+      "population": 3543677
+    },
+    {
+      "id": "SGP",
+      "iso2": "SG",
+      "name": "Singapore",
+      "population": 6080545
+    },
+    {
+      "id": "AUS",
+      "iso2": "AU",
+      "name": "Australia",
+      "population": 27490921
+    },
+    {
+      "id": "NZL",
+      "iso2": "NZ",
+      "name": "Nuova Zelanda",
+      "population": 5207259
+    },
+    {
+      "id": "PNG",
+      "iso2": "PG",
+      "name": "Papua Nuova Guinea",
+      "population": 10273996
+    }
+  ]
+}

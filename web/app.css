@@ -1952,3 +1952,687 @@ body.pokeprice {
   animation:vault-cascade 1.5s var(--vault-motion) var(--vault-delay) both;
 }
 @keyframes vault-cascade { 15% { opacity:.75; } 90%,100% { opacity:0; transform:translateY(42px); } }
+
+/* ==========================================================================
+   Cultura generale · sistema visivo unico
+   Lo stile di "Quanto ci vai vicino?" esteso a lobby, Popolazione, Cronologia,
+   classifiche e podio. Tutto è sotto body.culture-quiz: il quiz Pokémon non cambia.
+   ========================================================================== */
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('/assets/interface/bricolage-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* Testo: Atkinson Hyperlegible, ma con le cifre di Bricolage (lo zero di Atkinson è barrato). */
+@font-face {
+  font-family: 'CG Text';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('/assets/interface/atkinson-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'CG Text';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('/assets/interface/atkinson-latin.woff2') format('woff2');
+  unicode-range: U+0000-002F, U+003A-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'CG Text';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('/assets/interface/bricolage-latin.woff2') format('woff2');
+  unicode-range: U+0030-0039;
+}
+body.culture-quiz {
+  --cg-bg: #0f1629;
+  --cg-panel: #1b2440;
+  --cg-panel-2: #243052;
+  --cg-line: #45557c;
+  --cg-line-soft: #2f3c60;
+  --cg-ink: #f1f5ff;
+  --cg-muted: #aab7d2;
+  --cg-accent: #e8cb77;
+  --cg-accent-soft: #e8cb7733;
+  --cg-accent-ink: #1b1608;
+  --cg-good: #52cc8d;
+  --cg-good-bg: #163a31;
+  --cg-bad: #ef7474;
+  --cg-bad-bg: #3d1e2b;
+  --cg-off-bg: #2b3246;
+  --cg-off-ink: #7f89a1;
+  --cg-title: 'Bricolage Grotesque', 'Atkinson Hyperlegible Next', system-ui, sans-serif;
+  --cg-text: 'CG Text', 'Atkinson Hyperlegible Next', system-ui, sans-serif;
+  --cg-motion: cubic-bezier(.2, .72, .3, 1);
+  /* Token storici usati dalle tre manche, rimappati sulla palette unica. */
+  --stage: var(--cg-bg);
+  --surface: var(--cg-panel);
+  --surface-line: var(--cg-line);
+  --muted: var(--cg-muted);
+  --yellow: var(--cg-accent);
+  --frame: var(--cg-line);
+  --rim: var(--cg-line);
+  --panel: var(--cg-panel-2);
+  --ink: var(--cg-ink);
+  --live-font: var(--cg-text);
+  --vault-night: var(--cg-bg);
+  --vault-ink: var(--cg-ink);
+  --vault-muted: var(--cg-muted);
+  --vault-gold: var(--cg-accent);
+  --vault-aqua: var(--cg-accent);
+  --vault-violet: var(--cg-muted);
+  min-height: 100dvh;
+  background: radial-gradient(ellipse 90% 60% at 72% 0%, #1f2a4b 0%, transparent 70%) fixed, var(--cg-bg);
+  color: var(--cg-ink);
+  font: 500 1rem/1.3 var(--cg-text);
+}
+
+/* Due caratteri: titoli e cifre in Bricolage Grotesque, testo in Atkinson Hyperlegible. */
+body.culture-quiz :is(h1, h2, h3, #culture-prompt, .chronology-heading h2, .chronology-leaderboard h2,
+  #vault-question, #vault-opening h2, .vault-brand strong, #culture-opening-title) {
+  font-family: var(--cg-title);
+  font-weight: 750;
+  letter-spacing: -.02em;
+}
+body.culture-quiz :is(#big-code, .scoreboard strong, #seconds, #chronology-clock, #vault-seconds, #vault-solution,
+  .population-value, #population-score, #population-countdown strong, .chronology-year, .chronology-detail,
+  .chronology-ranking-points, .chronology-ranking-delta, #ranking strong, #vault-number, #vault-hold-value,
+  #vault-ranking strong, #vault-personal strong, .podium-points, .podium-rank, #final-table td) {
+  font-family: var(--cg-title);
+  font-variant-numeric: tabular-nums;
+}
+body.culture-quiz #app :is(p, li, span, label) { text-shadow: none; }
+body.culture-quiz :is(button, input, select, #vault-stage, #audio-control, #final-table) { font-family: var(--cg-text); }
+body.culture-quiz :is(a, button, input, select, [tabindex]):focus-visible { outline: 3px solid var(--cg-accent); outline-offset: 3px; }
+
+/* Pulsanti: un solo stile; l'azione principale usa l'accento pieno, il disattivato è grigio. */
+body.culture-quiz #app :is(#controls button, #fullscreen, #chronology-reset, #chronology-send, #meadow-clear, #meadow-send, #vault-send, #vault-prev, #vault-next, #join-form button) {
+  min-height: 44px;
+  padding: 6px 16px;
+  border: 1px solid var(--cg-line);
+  border-radius: 10px;
+  background: var(--cg-panel-2);
+  color: var(--cg-ink);
+  box-shadow: none;
+  font: 700 .95rem/1.1 var(--cg-text);
+  cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease, transform .1s ease;
+}
+body.culture-quiz #app :is(#controls button, #fullscreen, #chronology-reset, #vault-prev, #vault-next):hover:enabled { background: #30406a; }
+body.culture-quiz #app :is([data-command="start"], [data-command="resume"], [data-command="advance"], #chronology-send, #meadow-send, #vault-send, #join-form button) {
+  border-color: var(--cg-accent);
+  background: var(--cg-accent);
+  color: var(--cg-accent-ink);
+}
+body.culture-quiz #app :is([data-command="start"], [data-command="resume"], [data-command="advance"], #chronology-send, #meadow-send, #vault-send, #join-form button):hover:enabled {
+  border-color: #f3dc95;
+  background: #f3dc95;
+}
+body.culture-quiz #app :is(#controls button, #chronology-reset, #chronology-send, #meadow-clear, #meadow-send, #vault-send, #vault-prev, #vault-next):disabled {
+  border-color: transparent;
+  background: var(--cg-off-bg);
+  color: var(--cg-off-ink);
+  opacity: 1;
+  cursor: not-allowed;
+}
+body.culture-quiz #app [data-command="advance"] { min-width: 9rem; font-size: 1.05rem; }
+body.culture-quiz [data-command="advance"] { --interface-icon: url('/assets/interface/arrow-right.svg'); display: inline-flex; align-items: center; justify-content: center; gap: .5em; flex-direction: row-reverse; }
+body.culture-quiz [data-command="advance"]::before { content: ''; width: 1.1em; height: 1.1em; flex: none; background: currentColor; mask: var(--interface-icon) center / contain no-repeat; }
+body.culture-quiz.chronology-quiz:has(#chronology-stage[data-ranking]) #controls [data-command="pause"] {
+  border-color: var(--cg-line);
+  background: var(--cg-panel-2);
+  color: var(--cg-ink);
+}
+
+/* Barra superiore e comandi del conduttore. */
+body.culture-quiz .scoreboard { color: var(--cg-muted); }
+body.culture-quiz .scoreboard strong { color: var(--cg-ink); font-size: 1.05em; font-weight: 700; letter-spacing: .04em; margin-left: 4px; }
+body.culture-quiz #round { color: var(--cg-ink); font-weight: 700; }
+/* Il suggerimento Shift + N resta per il conduttore ma non disturba il pubblico. */
+body.culture-quiz #skip-hint {
+  opacity: 0;
+  color: var(--cg-muted);
+  font-size: .75rem;
+  transition: opacity .2s ease;
+}
+body.culture-quiz #controls:hover #skip-hint, body.culture-quiz #controls:focus-within #skip-hint { opacity: .65; }
+body.culture-quiz #error:not(:empty) { background: var(--cg-bad-bg); color: #ffd9d9; border: 1px solid var(--cg-bad); }
+body.culture-quiz #notice:not(:empty) { background: var(--cg-panel); color: var(--cg-ink); border: 1px solid var(--cg-line); border-radius: 8px; padding: 6px 10px; }
+
+/* Cornice del palco, ripresa da "Quanto ci vai vicino?". */
+body.culture-quiz.host :is(#question, #chronology-stage),
+body.culture-quiz.lobby #lobby,
+body.culture-final #app #results {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid #536487;
+  border-radius: clamp(12px, 2.15vw, 26px);
+  background:
+    radial-gradient(ellipse at 74% 24%, #394769 0%, transparent 51%),
+    radial-gradient(ellipse at 10% 105%, #212a4b 0%, transparent 60%), #151d33;
+  box-shadow: inset 0 0 0 4px #19233b, inset 0 0 0 5px #3b4b6b, 0 12px 36px #080c1870;
+}
+body.culture-quiz.host :is(#question, #chronology-stage)::before,
+body.culture-quiz.lobby #lobby::before,
+body.culture-final #app #results::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  z-index: -1;
+  border: 1px solid #65749157;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    radial-gradient(circle, #c5a36b 0 2px, transparent 3px) left top / 12px 12px no-repeat,
+    radial-gradient(circle, #c5a36b 0 2px, transparent 3px) right bottom / 12px 12px no-repeat;
+}
+
+/* ---------- Lobby ---------- */
+body.culture-quiz #app > nav, body.culture-quiz.lobby #app > header #subtitle { display: none; }
+body.culture-quiz.lobby #app { width: min(100% - 32px, 1100px); }
+body.culture-quiz.lobby h1 {
+  margin: 0 0 4px;
+  color: var(--cg-ink);
+  font: 750 clamp(2.4rem, 6vw, 4.6rem)/1 var(--cg-title);
+  letter-spacing: -.03em;
+}
+body.culture-quiz.lobby .scoreboard { border: 0; background: transparent; padding: 4px 0; }
+body.culture-quiz.lobby #lobby { padding: clamp(18px, 3.5dvh, 36px) clamp(16px, 4vw, 52px); color: var(--cg-ink); }
+body.culture-quiz.lobby #lobby h2 { font-size: clamp(1.4rem, 3vw, 2.2rem); }
+body.culture-quiz.lobby #lobby-pin { color: var(--cg-muted); }
+body.culture-quiz.lobby #big-code {
+  color: var(--cg-accent);
+  font: 800 clamp(3rem, 9vw, 6rem)/1 var(--cg-title);
+  letter-spacing: .08em;
+}
+body.culture-quiz.lobby #join-link { color: var(--cg-muted); font-size: .95rem; }
+body.culture-quiz.lobby #qr { background: white; padding: 6px; border-radius: 12px; }
+body.culture-quiz.lobby .player-chip { background: var(--cg-panel-2); color: var(--cg-ink); border: 1px solid var(--cg-line); border-radius: 999px; padding: 8px 14px; }
+body.culture-quiz.lobby .player-chip.offline { opacity: .55; }
+body.culture-quiz.lobby #room > p:has(#back) { margin: 18px 0 0; }
+body.culture-quiz.lobby #back { color: var(--cg-muted); font-size: .85rem; opacity: .6; }
+body.culture-quiz.lobby #back:hover { opacity: 1; }
+body.culture-quiz.player.lobby #lobby { text-align: center; }
+
+/* ---------- Apertura di manche (icona, titolo grande centrato, una riga di regola) ---------- */
+body.culture-quiz #culture-opening {
+  grid-area: stage;
+  grid-column: 1 / -1;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: clamp(12px, 2.5dvh, 28px);
+  min-height: 0;
+  padding: 16px;
+  text-align: center;
+  animation: cg-rise .6s var(--cg-motion) both;
+}
+body.culture-quiz #culture-opening h2 {
+  margin: 0;
+  color: var(--cg-ink);
+  font-size: clamp(2.6rem, min(9vw, 14dvh), 8rem);
+  line-height: 1;
+  text-wrap: balance;
+}
+body.culture-quiz #culture-opening p { max-width: 40ch; margin: 0; color: var(--cg-muted); font-size: clamp(1rem, 2.4vw, 1.5rem); text-wrap: balance; }
+body.culture-quiz .culture-opening-icon {
+  display: grid;
+  place-items: center;
+  width: clamp(60px, 12dvh, 108px);
+  aspect-ratio: 1;
+  border: 2px solid var(--cg-accent);
+  border-radius: 50%;
+  animation: vault-dial-lock .7s var(--cg-motion) both;
+}
+body.culture-quiz .culture-opening-icon::before {
+  content: '';
+  width: 48%;
+  height: 48%;
+  background: var(--cg-accent);
+  mask: var(--opening-icon) center / contain no-repeat;
+}
+body.culture-quiz[data-opening] :is(#question, #chronology-stage, #results) { display: none !important; }
+@keyframes cg-rise { from { opacity: 0; transform: translateY(14px); } }
+
+/* ---------- Popolazione ---------- */
+body.culture-quiz.population-quiz #app #room { gap: clamp(8px, 1.6svh, 18px); }
+body.culture-quiz.population-quiz.host #question { padding: clamp(14px, 2.6dvh, 30px) clamp(16px, 2.6vw, 40px); height: min(100%, 74svh); }
+body.culture-quiz.population-quiz #question .timer-row { align-items: center; }
+body.culture-quiz.population-quiz #population-phase { color: var(--cg-ink); }
+body.culture-quiz.population-quiz #received { color: var(--cg-muted); }
+body.culture-quiz.population-quiz #timer {
+  border: 1px solid var(--cg-line);
+  border-radius: 999px;
+  background: var(--cg-panel);
+  color: var(--cg-ink);
+  font-family: var(--cg-title);
+}
+body.culture-quiz.population-quiz #question[data-urgent] #timer { color: var(--cg-accent); border-color: var(--cg-accent); }
+body.culture-quiz.population-quiz #population-progress { background: var(--cg-line-soft); }
+body.culture-quiz.population-quiz #culture-prompt { color: var(--cg-ink); letter-spacing: -.025em; }
+body.culture-quiz .population-country {
+  border: 2px solid var(--cg-line);
+  border-radius: 16px;
+  background: var(--cg-panel);
+  color: var(--cg-ink);
+  cursor: pointer;
+}
+body.culture-quiz .population-country:hover:enabled { border-color: var(--cg-accent); background: var(--cg-panel-2); }
+body.culture-quiz .population-country:disabled { cursor: default; }
+body.culture-quiz .population-selected { border-color: var(--cg-accent); background: var(--cg-panel-2); box-shadow: 0 0 0 3px var(--cg-accent-soft); }
+body.culture-quiz .population-winner { border-color: var(--cg-good); background: var(--cg-good-bg); box-shadow: none; }
+body.culture-quiz .population-loser { border-color: var(--cg-bad); background: var(--cg-bad-bg); box-shadow: none; }
+body.culture-quiz .population-winner::before { color: var(--cg-good); }
+body.culture-quiz .population-loser { --interface-icon: url('/assets/interface/x.svg'); }
+body.culture-quiz .population-loser::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 1em;
+  height: 1em;
+  color: var(--cg-bad);
+  font-size: 1.4rem;
+  background: currentColor;
+  mask: var(--interface-icon) center / contain no-repeat;
+}
+/* Cornice fissa 3:2 per ogni bandiera: stessa area visiva qualunque sia la proporzione. */
+body.culture-quiz .population-flag {
+  box-sizing: border-box;
+  width: auto;
+  height: clamp(54px, 17svh, 190px);
+  max-width: 100%;
+  max-height: none;
+  aspect-ratio: 3 / 2;
+  padding: 4px;
+  object-fit: contain;
+  background: #0c1222;
+  border: 1px solid #56668c;
+  border-radius: 6px;
+}
+body.culture-quiz.player .population-flag { height: clamp(48px, 12svh, 120px); }
+body.culture-quiz .population-name { color: var(--cg-ink); font-family: var(--cg-title); font-weight: 700; }
+body.culture-quiz .population-value { color: var(--cg-ink); font-weight: 700; }
+body.culture-quiz .population-loser .population-value { color: var(--cg-muted); }
+body.culture-quiz.population-quiz #population-feedback { color: var(--cg-muted); min-height: 0; }
+body.culture-quiz.population-quiz #population-feedback:empty { display: none; }
+#population-compare { display: grid; gap: 6px; width: min(100%, 900px); align-self: center; }
+.population-bar { display: flex; gap: 3px; height: clamp(10px, 1.6svh, 16px); }
+.population-bar span {
+  flex: 1 1 0;
+  min-width: 4px;
+  border-radius: 999px;
+  background: var(--cg-bad);
+  transform-origin: left center;
+  animation: cg-bar .9s var(--cg-motion) .15s backwards;
+}
+.population-bar span + span { transform-origin: right center; }
+.population-bar span.population-bar-winner { background: var(--cg-good); }
+.population-bar-labels { display: flex; justify-content: space-between; gap: 12px; color: var(--cg-muted); font-size: clamp(.75rem, 1.8svh, 1rem); }
+.population-bar-labels span:last-child { text-align: right; }
+@keyframes cg-bar { from { transform: scaleX(0); } }
+#population-score {
+  margin: 0;
+  color: var(--cg-accent);
+  font-size: clamp(1.8rem, 8vw, 3.2rem);
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+}
+#population-score[data-result="wrong"] { color: var(--cg-muted); }
+#population-score.population-score-pop { animation: cg-score 1s var(--cg-motion) both; }
+@keyframes cg-score {
+  0% { opacity: 0; transform: translateY(18px) scale(.6); }
+  45% { opacity: 1; transform: translateY(-4px) scale(1.12); }
+  100% { transform: none; }
+}
+/* Fase "Preparati" sul telefono: conto alla rovescia a tutto schermo. */
+#population-countdown {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  background: radial-gradient(ellipse at 50% 40%, #222d50 0%, transparent 65%), var(--cg-bg);
+}
+#population-countdown span { color: var(--cg-muted); font-size: 1.1rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+#population-countdown strong {
+  color: var(--cg-accent);
+  font-size: clamp(7rem, 42vw, 14rem);
+  font-weight: 800;
+  line-height: 1;
+  animation: cg-tick 1s ease-out infinite;
+}
+@keyframes cg-tick { 0% { transform: scale(1.18); opacity: .4; } 30% { transform: scale(1); opacity: 1; } }
+body.culture-quiz.population-quiz #app #results, body.culture-quiz.population-quiz #personal {
+  border-color: var(--cg-line);
+  background: var(--cg-panel);
+  color: var(--cg-ink);
+}
+body.culture-quiz.population-quiz #personal { background: var(--cg-panel-2); color: var(--cg-ink); border-radius: 8px; }
+body.culture-quiz #app #results h2 { color: var(--cg-ink); }
+body.culture-quiz #app #ranking li {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--cg-panel-2);
+  color: var(--cg-ink);
+}
+body.culture-quiz #app #ranking strong { color: var(--cg-accent); }
+body.culture-quiz #ranking li.rank-up { animation: cg-rank-up .65s ease; }
+body.culture-quiz #ranking li.rank-down { animation: cg-rank-down .65s ease; }
+@keyframes cg-rank-up { 50% { transform: translateY(-5px); border-color: var(--cg-good); } }
+@keyframes cg-rank-down { 50% { transform: translateY(5px); border-color: var(--cg-bad); } }
+body.culture-quiz.population-quiz.player #app #room:has(#results:not([hidden])) { grid-template-rows: auto minmax(0, 1fr) auto auto; }
+@media (min-width: 850px) {
+  body.culture-quiz.population-quiz.host #app #room {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+    max-width: 1500px;
+    margin-inline: auto;
+    width: 100%;
+  }
+}
+
+/* ---------- Cronologia ---------- */
+body.culture-quiz.chronology-quiz.host #app #room { max-width: 1500px; margin-inline: auto; width: 100%; }
+body.culture-quiz.host #chronology-stage { padding: clamp(14px, 2.6dvh, 30px) clamp(16px, 2.6vw, 40px); }
+body.culture-quiz #chronology-meta { color: var(--cg-muted); }
+body.culture-quiz #chronology-phase { color: var(--cg-ink); }
+body.culture-quiz #chronology-stage[data-paused] #chronology-phase, body.culture-quiz #chronology-stage[data-solution] #chronology-phase { color: var(--cg-accent); }
+body.culture-quiz #chronology-clock { color: var(--cg-ink); font-weight: 800; letter-spacing: -.02em; }
+body.culture-quiz #chronology-stage[data-urgent] #chronology-clock { color: var(--cg-accent); }
+body.culture-quiz #chronology-stage[data-solution] :is(#chronology-clock, #chronology-progress) { visibility: hidden; }
+body.culture-quiz #chronology-progress { background: var(--cg-line-soft); }
+body.culture-quiz .chronology-heading { text-align: center; }
+body.culture-quiz .chronology-heading h2 { color: var(--cg-ink); letter-spacing: -.025em; line-height: 1.05; }
+body.culture-quiz.host .chronology-heading h2 { font-size: clamp(2.4rem, 7.5svh, 5.6rem); }
+body.culture-quiz.host .chronology-heading { min-height: 0; }
+body.culture-quiz .chronology-heading p { color: var(--cg-muted); }
+body.culture-quiz #chronology-stage[data-category-only] #chronology-board .chronology-heading { transform: translateY(clamp(60px, 24svh, 260px)); }
+body.culture-quiz #chronology-stage[data-category-only] .chronology-heading h2 { font-size: clamp(3rem, 12vw, 7.5rem); }
+body.culture-quiz.host #chronology-stage[data-category-only] .chronology-heading h2 { font-size: clamp(3.4rem, 13svh, 9rem); }
+body.culture-quiz .chronology-card {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 14px;
+  border: 2px solid var(--cg-line);
+  border-radius: 14px;
+  background: var(--cg-panel);
+  color: var(--cg-ink);
+}
+body.culture-quiz.host .chronology-card {
+  grid-template: auto / auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: clamp(12px, 1.8vw, 26px);
+  font-size: clamp(1.5rem, 4.4svh, 3.3rem);
+}
+body.culture-quiz .chronology-text { display: grid; gap: 2px; min-width: 0; }
+body.culture-quiz .chronology-name { font-weight: 700; }
+body.culture-quiz .chronology-year { color: var(--cg-accent); font-size: .92em; font-weight: 800; line-height: 1.05; animation: cg-rise .4s var(--cg-motion) backwards; animation-delay: calc(var(--reveal, 0) * 110ms); }
+body.culture-quiz .chronology-year:empty { display: none; }
+body.culture-quiz .chronology-detail { font-size: 1.05em; }
+body.culture-quiz .chronology-detail:empty { display: none; }
+body.culture-quiz.host .chronology-detail { grid-column: auto; min-height: 0; }
+/* Posizione: casella numerata, tratteggiata finché non è assegnata con un tocco. */
+body.culture-quiz .chronology-position {
+  width: 2.3rem;
+  border: 2px dashed var(--cg-line);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--cg-ink);
+  font: 800 1.15rem/1 var(--cg-title);
+}
+body.culture-quiz.host .chronology-position { width: 1.5em; font-size: .8em; }
+body.culture-quiz .chronology-card[aria-pressed="true"] .chronology-position,
+body.culture-quiz [data-phase="reveal"] .chronology-position {
+  border-style: solid;
+  border-color: var(--cg-accent);
+  background: var(--cg-accent);
+  color: var(--cg-accent-ink);
+}
+body.culture-quiz.player .chronology-card:enabled { cursor: pointer; }
+body.culture-quiz.player .chronology-card:enabled:hover { background: var(--cg-panel-2); border-color: #6476a0; }
+body.culture-quiz.player .chronology-card[aria-pressed="true"] { background: var(--cg-panel-2); border-color: var(--cg-accent); }
+body.culture-quiz.player .chronology-card[data-result="correct"] { background: var(--cg-good-bg); border-color: var(--cg-good); color: var(--cg-ink); }
+body.culture-quiz.player .chronology-card[data-result="wrong"] { background: var(--cg-bad-bg); border-color: var(--cg-bad); color: var(--cg-ink); }
+body.culture-quiz.player [data-result="correct"] .chronology-position { background: var(--cg-good); border-color: var(--cg-good); color: #082016; }
+body.culture-quiz.player [data-result="wrong"] .chronology-position { background: var(--cg-bad); border-color: var(--cg-bad); color: #2a0a0f; }
+body.culture-quiz.player [data-result="correct"] .chronology-detail { color: var(--cg-good); }
+body.culture-quiz.player [data-result="wrong"] .chronology-detail { color: var(--cg-bad); }
+body.culture-quiz #chronology-status { color: var(--cg-muted); }
+body.culture-quiz [data-phase="waiting"] #chronology-status, body.culture-quiz [data-phase="reveal"] #chronology-status { color: var(--cg-ink); }
+body.culture-quiz.player #chronology-stage[data-solution] #chronology-phase { animation: cg-breathe 1.8s ease-in-out infinite; }
+@keyframes cg-breathe { 50% { opacity: .55; } }
+/* Classifica di Cronologia: stretta e centrata, nome e punti vicini. */
+body.culture-quiz .chronology-leaderboard { width: min(100%, 760px); justify-self: center; }
+body.culture-quiz .chronology-leaderboard h2 { text-align: center; color: var(--cg-ink); letter-spacing: -.025em; }
+body.culture-quiz .chronology-ranking-row {
+  border: 1px solid var(--cg-line-soft);
+  border-left: 4px solid var(--cg-line);
+  border-radius: 10px;
+  background: var(--cg-panel);
+  color: var(--cg-ink);
+}
+body.culture-quiz .chronology-ranking-row[aria-current] { border-color: var(--cg-accent); background: var(--cg-panel-2); }
+body.culture-quiz .chronology-ranking-position { color: var(--cg-muted); }
+body.culture-quiz .chronology-ranking-points { color: var(--cg-accent); }
+body.culture-quiz .chronology-ranking-delta { background: var(--cg-good-bg); color: var(--cg-good); }
+
+/* ---------- Quanto ci vai vicino? (accento unico, comandi e rivelazione) ---------- */
+body.culture-quiz #vault-stage[data-urgent] #vault-clock { background: transparent; color: var(--cg-accent); }
+body.culture-quiz #vault-stage[data-urgent] #vault-clock circle + circle { stroke: var(--cg-accent); }
+body.culture-quiz .vault-lock { background: radial-gradient(circle, var(--cg-accent) 0 3px, #5b4d27 4px, #1f2740 65%); }
+body.culture-quiz .vault-dots { color: var(--cg-ink); }
+/* Telefono: domanda compatta sopra il tastierino e unità accanto al numero. */
+body.culture-quiz #vault-stage[data-role="player"]:is([data-beat="play"], [data-beat="intro"]) .vault-main {
+  grid-template: "prompt" auto "entry" minmax(0, 1fr) / minmax(0, 1fr);
+}
+body.culture-quiz #app #vault-stage[data-role="player"] .vault-prompt {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip-path: none;
+  white-space: normal;
+  text-align: center;
+}
+body.culture-quiz #vault-stage[data-role="player"] :is(#vault-category, #vault-unit) { display: none; }
+body.culture-quiz #vault-stage[data-role="player"] #vault-question { margin: 0; font-size: clamp(1.05rem, 4.6vw, 1.4rem); line-height: 1.2; }
+body.culture-quiz #vault-stage[data-role="player"]:has(#vault-hold:not([hidden])) .vault-prompt { display: none; }
+#vault-display-unit { flex: 1; align-self: center; padding-left: .45em; color: var(--cg-muted); font-size: clamp(.95rem, 3.6vw, 1.2rem); font-weight: 700; }
+body.culture-quiz .vault-display { border-color: var(--cg-line); }
+body.culture-quiz #vault-number { color: var(--cg-ink); }
+body.culture-quiz #vault-keypad button { background: var(--cg-panel); border-color: var(--cg-line); }
+body.culture-quiz #vault-keypad button:hover:enabled { background: var(--cg-panel-2); }
+body.culture-quiz #vault-keypad button:disabled { color: var(--cg-off-ink); }
+/* Conduttore: "Fonte" sotto la spiegazione. */
+body.culture-quiz #vault-stage[data-role="host"] #vault-answer {
+  grid-template: "popup" auto "solution" auto "explanation" auto "source" auto / minmax(0, 1fr);
+  justify-items: start;
+  gap: 4px;
+}
+body.culture-quiz #vault-stage[data-role="host"] #vault-source { justify-content: flex-start; min-height: 32px; margin-top: 4px; }
+body.culture-quiz #vault-source { color: var(--cg-muted); text-underline-offset: 3px; }
+body.culture-quiz #vault-stage[data-role="host"]:is([data-beat="solution"], [data-beat="podium"], [data-beat="summary"]) .vault-main {
+  grid-template: "answer" minmax(0, 1fr) "scale" auto / minmax(0, 1fr);
+}
+body.culture-quiz #vault-stage[data-role="host"][data-ranked] .vault-main {
+  grid-template: "answer" minmax(0, 1fr) "scale" auto "ranking" auto / minmax(0, 1fr);
+}
+/* Telefono, rivelazione: risultato, tua stima, punti, posizione (dall'alto verso il basso). */
+body.culture-quiz #vault-stage[data-role="player"]:is([data-beat="solution"], [data-beat="podium"], [data-beat="summary"]) .vault-main {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: clamp(10px, 2.2dvh, 22px);
+  padding-top: clamp(8px, 4dvh, 40px);
+}
+body.culture-quiz #vault-stage[data-role="player"] #vault-answer { display: contents; }
+body.culture-quiz #vault-stage[data-role="player"] #vault-popup { order: 1; text-align: center; }
+body.culture-quiz #vault-stage[data-role="player"] .vault-solution { order: 2; text-align: center; white-space: normal; }
+body.culture-quiz #vault-stage[data-role="player"] #vault-solution { font-size: clamp(3rem, 17vw, 5.5rem); }
+body.culture-quiz #vault-stage[data-role="player"] #vault-solution-unit { display: block; margin-top: 4px; font-size: 1.1rem; }
+body.culture-quiz #vault-stage[data-role="player"] #vault-personal { order: 3; display: grid; grid-template-columns: 1.4fr 1fr; gap: 8px; }
+body.culture-quiz #vault-stage[data-role="player"] #vault-ranking { order: 4; }
+body.culture-quiz #vault-stage[data-role="player"] #vault-explanation { order: 5; color: var(--cg-muted); text-align: center; }
+body.culture-quiz #vault-stage[data-role="player"] #vault-source { order: 6; align-self: center; }
+body.culture-quiz #vault-personal span {
+  display: grid;
+  gap: 3px;
+  padding: 12px 14px;
+  border: 1px solid var(--cg-line);
+  border-radius: 12px;
+  background: var(--cg-panel);
+}
+body.culture-quiz #vault-personal small { color: var(--cg-muted); font-size: .8rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+body.culture-quiz #vault-personal strong { color: var(--cg-ink); font-size: clamp(1.25rem, 5.5vw, 1.7rem); }
+body.culture-quiz #vault-personal span + span strong { color: var(--cg-accent); }
+body.culture-quiz #vault-stage[data-role="player"] #vault-total {
+  padding: 12px 14px;
+  border: 1px solid var(--cg-accent);
+  border-radius: 12px;
+  background: var(--cg-panel);
+  color: var(--cg-ink);
+  font-size: 1.05rem;
+  text-align: center;
+}
+body.culture-quiz #vault-stage[data-role="host"] #vault-personal:empty { display: none; }
+
+/* ---------- Podio finale ---------- */
+body.culture-final #app #results {
+  grid-area: stage;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: clamp(10px, 2dvh, 22px);
+  width: 100%;
+  max-height: none;
+  margin: 0;
+  padding: clamp(14px, 3dvh, 36px) clamp(12px, 3vw, 48px);
+  overflow: auto;
+  color: var(--cg-ink);
+  text-align: center;
+}
+body.culture-final #app #results h2 { margin: 0; color: var(--cg-ink); font-size: clamp(1.8rem, 5dvh, 3.4rem); }
+body.culture-final #app #results h2::before {
+  content: '';
+  display: block;
+  width: 1.1em;
+  height: 1.1em;
+  margin: 0 auto 6px;
+  background: var(--cg-accent);
+  mask: url('/assets/interface/trophy.svg') center / contain no-repeat;
+}
+body.culture-final #results p { margin: 0; color: var(--cg-muted); background: none; }
+body.culture-final #results p:empty { display: none; }
+body.culture-final #app #personal { padding: 8px 14px; border: 1px solid var(--cg-accent); border-radius: 999px; background: var(--cg-panel); color: var(--cg-ink); }
+body.culture-final #podium[data-culture] {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  align-items: end;
+  gap: clamp(6px, 1.2vw, 16px);
+  width: min(100%, 760px);
+  min-height: clamp(180px, 34dvh, 360px);
+}
+.podium-step { display: grid; justify-items: center; align-content: end; gap: 4px; min-width: 0; animation: cg-step .7s var(--cg-motion) backwards; }
+.podium-step[data-place="2"] { animation-delay: .25s; }
+.podium-step[data-place="3"] { animation-delay: .45s; }
+.podium-step[data-place="1"] { animation-delay: .65s; }
+.podium-names { display: grid; gap: 2px; max-width: 100%; }
+.podium-name { color: var(--cg-ink); font: 750 clamp(1.05rem, 2.8dvh, 1.9rem)/1.1 var(--cg-title); overflow-wrap: anywhere; }
+.podium-name[aria-current] { color: var(--cg-accent); }
+.podium-step[data-place="1"] .podium-name { font-size: clamp(1.3rem, 3.8dvh, 2.6rem); }
+.podium-tie { padding: 2px 8px; border: 1px solid var(--cg-line); border-radius: 999px; color: var(--cg-muted); font-size: .8rem; font-weight: 700; }
+.podium-points { color: var(--cg-accent); font-size: clamp(.95rem, 2.2dvh, 1.35rem); font-weight: 750; }
+.podium-block {
+  display: grid;
+  place-items: start center;
+  width: 100%;
+  margin-top: 6px;
+  padding-top: clamp(8px, 1.6dvh, 16px);
+  border: 1px solid var(--cg-line);
+  border-bottom: 0;
+  border-radius: 12px 12px 0 0;
+  background: linear-gradient(var(--cg-panel-2), var(--cg-panel));
+}
+.podium-step[data-place="1"] .podium-block { height: clamp(90px, 17dvh, 180px); border-color: var(--cg-accent); background: linear-gradient(#3a3a3a00, #e8cb7726), var(--cg-panel-2); }
+.podium-step[data-place="2"] .podium-block { height: clamp(64px, 12dvh, 130px); }
+.podium-step[data-place="3"] .podium-block { height: clamp(44px, 8dvh, 90px); }
+.podium-rank { color: var(--cg-ink); font-size: clamp(1.4rem, 4dvh, 2.8rem); font-weight: 800; }
+.podium-step[data-place="1"] .podium-rank { color: var(--cg-accent); }
+@keyframes cg-step { from { opacity: 0; transform: translateY(30px); } }
+#final-table-wrap { width: min(100%, 760px); overflow-x: auto; }
+#final-table { width: 100%; border-collapse: separate; border-spacing: 0 4px; font-size: clamp(.85rem, 2dvh, 1.1rem); }
+#final-table caption { margin-bottom: 4px; color: var(--cg-muted); font-size: .8rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+#final-table th, #final-table td { padding: 7px 10px; text-align: right; white-space: nowrap; }
+#final-table thead th { color: var(--cg-muted); font-size: .8em; font-weight: 700; }
+#final-table :is(th, td):nth-child(2) { text-align: left; white-space: normal; overflow-wrap: anywhere; }
+#final-table :is(th, td):first-child { text-align: left; }
+#final-table tbody tr { background: var(--cg-panel); }
+#final-table tbody tr > :first-child { border-radius: 8px 0 0 8px; color: var(--cg-muted); }
+#final-table tbody tr > :last-child { border-radius: 0 8px 8px 0; color: var(--cg-accent); font-weight: 800; }
+#final-table tbody tr[aria-current] { background: var(--cg-panel-2); }
+#final-table tbody tr[aria-current] > :first-child { box-shadow: inset 3px 0 0 var(--cg-accent); }
+#final-table tbody tr[aria-current] th { color: var(--cg-accent); }
+#final-table tbody th { color: var(--cg-ink); font-weight: 700; }
+body.culture-final #app #ranking { width: min(100%, 760px); }
+body.culture-final #room > p:has(#back) { margin: 0; text-align: center; }
+body.culture-final #back { color: var(--cg-muted); }
+/* Coriandoli: solo all'apertura del podio e mai con prefers-reduced-motion. */
+#confetti { position: fixed; inset: 0; z-index: 5; overflow: hidden; pointer-events: none; }
+#confetti span {
+  position: absolute;
+  top: -4vh;
+  left: var(--x);
+  width: 9px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--cg-accent);
+  opacity: 0;
+  transform: scale(var(--s));
+  animation: cg-confetti var(--t) linear var(--d) forwards;
+}
+#confetti span[data-tone="1"] { background: var(--cg-ink); }
+#confetti span[data-tone="2"] { background: #c5a36b; }
+@keyframes cg-confetti {
+  0% { opacity: 1; transform: translateY(0) rotate(0) scale(var(--s)); }
+  85% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(110vh) rotate(var(--r)) scale(var(--s)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #confetti { display: none !important; }
+  body.culture-quiz *, body.culture-quiz *::before { animation: none !important; transition: none !important; }
+}
+body.culture-final.player #app #results { padding-inline: 10px; }
+@media (max-width: 600px) {
+  #final-table th, #final-table td { padding: 6px 6px; }
+  #final-table thead th { font-size: .7em; }
+}
+body.culture-quiz #app #vault-audio #audio-control { font-family: var(--cg-text); }
+body.culture-quiz #vault-clock { font-size: clamp(.95rem, 3.1dvh, 2.05rem); letter-spacing: -.02em; }
+body.culture-quiz #vault-stage[data-role="player"] #vault-clock { font-size: 1.05rem; }
+
+/* Prato fiorito sulla palette unica di Cultura generale. */
+.culture-quiz .meadow-option { border-radius: 14px; border-color: var(--cg-line); background: var(--cg-panel); color: var(--cg-ink); }
+.culture-quiz .meadow-number { border-color: var(--cg-line); background: var(--cg-panel-2); color: var(--cg-ink); }
+@media (hover: hover) { .culture-quiz.player .meadow-option:enabled:hover { background: var(--cg-panel-2); } }
+.culture-quiz.player .meadow-option[aria-pressed="true"]:is(*, :hover) { border-color: var(--cg-accent); background: var(--cg-accent-soft); color: var(--cg-ink); }
+.culture-quiz #meadow-options .meadow-option[data-result="safe"]:is(.host *, [data-picked]) { border-color: var(--cg-good); background: var(--cg-good-bg); color: var(--cg-ink); }
+.culture-quiz #meadow-options .meadow-option[data-result="bomb"] { border-color: var(--cg-bad); background: var(--cg-bad-bg); color: var(--cg-ink); }
+.culture-quiz .meadow-option[data-result="safe"] .meadow-detail { color: var(--cg-good); }
+.culture-quiz .meadow-option[data-result="bomb"] .meadow-detail { color: var(--cg-bad); }
+.culture-quiz.player #meadow-stage[data-phase="reveal"] .meadow-option:not([data-picked]):not([data-result="bomb"]) { color: var(--cg-muted); }
+.culture-quiz #meadow-scene { border-color: var(--cg-line); background: linear-gradient(var(--cg-panel-2), var(--cg-bg) 72%); }
+.culture-quiz #meadow-scene figcaption { border-color: var(--cg-line); background: var(--cg-bg); }
+.culture-quiz .meadow-bud-label { background: var(--cg-bg); }

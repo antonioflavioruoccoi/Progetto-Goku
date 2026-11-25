@@ -1,4 +1,7 @@
-import { ANSWER_REVEAL_MS, element, rankingBoard } from './chronology.js';
+import { element, rankingBoard } from './chronology.js';
+
+// Fiori ed esplosione restano 5 s, poi la classifica (come la vecchia Cronologia).
+const ANSWER_REVEAL_MS = 5000;
 
 const $ = id => document.getElementById('meadow-' + id);
 const stage = $('stage');
