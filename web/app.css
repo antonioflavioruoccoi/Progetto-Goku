@@ -621,7 +621,7 @@ body.pokeprice {
   margin: 0;
 }
 :is(.chronology-quiz, .population-quiz) #skip-hint { align-self: center; color: var(--muted); }
-:is(.chronology-quiz, .population-quiz) :is(#fullscreen, #controls button, #chronology-reset, #chronology-send) {
+:is(.chronology-quiz, .population-quiz) :is(#fullscreen, #controls button, #chronology-reset, #chronology-send, #meadow-clear, #meadow-send) {
   min-height: 44px;
   padding: 6px 14px;
   border: 1px solid var(--frame);
@@ -632,14 +632,14 @@ body.pokeprice {
   font: 650 .875rem/1.2 var(--live-font);
   touch-action: manipulation;
 }
-:is(.chronology-quiz, .population-quiz) :is(#fullscreen, #controls button, #chronology-reset):hover:enabled { background: #2b6381; }
-.chronology-quiz :is(#chronology-send, #controls [data-command="resume"]) { background: var(--yellow); color: #142f42; border-color: var(--yellow); }
-.chronology-quiz:has(#chronology-stage[data-ranking]) #controls [data-command="pause"] {
+:is(.chronology-quiz, .population-quiz) :is(#fullscreen, #controls button, #chronology-reset, #meadow-clear):hover:enabled { background: #2b6381; }
+.chronology-quiz :is(#chronology-send, #meadow-send, #controls [data-command="resume"]) { background: var(--yellow); color: #142f42; border-color: var(--yellow); }
+.chronology-quiz:has(:is(#chronology-stage, #meadow-stage)[data-ranking]) #controls [data-command="pause"] {
   background: var(--yellow);
   border-color: var(--yellow);
   color: #142f42;
 }
-.chronology-quiz #chronology-send:hover:enabled { background: #ffe375; }
+.chronology-quiz :is(#chronology-send, #meadow-send):hover:enabled { background: #ffe375; }
 :is(.chronology-quiz, .population-quiz) :is(button, a):focus-visible { outline-color: var(--yellow); outline-offset: 3px; }
 :is(.live-shell, .chronology-quiz, .population-quiz) :is(#fullscreen, [data-command="pause"], [data-command="resume"], [data-command="start"]) {
   display: inline-flex;
@@ -882,7 +882,7 @@ body.pokeprice {
   text-align: left;
 }
 .host #chronology-stage { grid-template: "meta" auto "board" minmax(0, 1fr) / minmax(0, 1fr); }
-#chronology-meta {
+:is(#chronology-meta, #meadow-meta) {
   grid-area: meta;
   display: grid;
   grid-template-columns: 1fr auto;
@@ -890,29 +890,29 @@ body.pokeprice {
   gap: 6px 12px;
   color: var(--muted);
 }
-#chronology-title {
+:is(#chronology-title, #meadow-title) {
   color: var(--yellow);
   font-size: clamp(12px, 2vw, 18px);
   font-weight: 800;
   letter-spacing: .13em;
   text-transform: uppercase;
 }
-#chronology-phase { color: white; font-size: clamp(.875rem, 2vw, 1.25rem); font-weight: 700; }
-#chronology-stage[data-paused] #chronology-phase { color: var(--yellow); }
-#chronology-count { font-size: .875rem; margin-top: 2px; }
-.player #chronology-count { display: none; }
-#chronology-clock {
+:is(#chronology-phase, #meadow-phase) { color: white; font-size: clamp(.875rem, 2vw, 1.25rem); font-weight: 700; }
+#chronology-stage[data-paused] #chronology-phase, #meadow-stage[data-paused] #meadow-phase { color: var(--yellow); }
+:is(#chronology-count, #meadow-count) { font-size: .875rem; margin-top: 2px; }
+.player :is(#chronology-count, #meadow-count) { display: none; }
+:is(#chronology-clock, #meadow-clock) {
   color: white;
   font: 800 clamp(32px, 6svh, 68px)/.95 system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
   letter-spacing: -.06em;
 }
-#chronology-clock small { margin-left: 4px; color: var(--muted); font-size: .36em; letter-spacing: 0; }
-#chronology-seconds span { display: inline-block; animation: chronology-pop .18s var(--motion); }
-#chronology-stage[data-urgent] #chronology-clock { color: var(--yellow); }
-#chronology-stage[data-urgent] #chronology-seconds span { animation: chronology-count .38s var(--motion); }
-#chronology-progress { grid-column: 1 / -1; height: 4px; overflow: hidden; border-radius: 3px; background: #40708b; }
-#chronology-progress span {
+:is(#chronology-clock, #meadow-clock) small { margin-left: 4px; color: var(--muted); font-size: .36em; letter-spacing: 0; }
+:is(#chronology-seconds, #meadow-seconds) span { display: inline-block; animation: chronology-pop .18s var(--motion); }
+#chronology-stage[data-urgent] #chronology-clock, #meadow-stage[data-urgent] #meadow-clock { color: var(--yellow); }
+#chronology-stage[data-urgent] #chronology-seconds span, #meadow-stage[data-urgent] #meadow-seconds span { animation: chronology-count .38s var(--motion); }
+:is(#chronology-progress, #meadow-progress) { grid-column: 1 / -1; height: 4px; overflow: hidden; border-radius: 3px; background: #40708b; }
+:is(#chronology-progress, #meadow-progress) span {
   display: block;
   height: 100%;
   background: var(--yellow);
@@ -927,7 +927,7 @@ body.pokeprice {
   gap: clamp(6px, 1.6svh, 18px);
 }
 .chronology-outgoing { grid-area: board; z-index: 1; pointer-events: none; }
-.chronology-heading h2 {
+:is(.chronology-heading, .meadow-heading) h2 {
   margin: 0;
   color: white;
   font-size: clamp(1.9rem, 7.6vw, 3.1rem);
@@ -942,13 +942,13 @@ body.pokeprice {
 #chronology-stage[data-intro] :is(#chronology-clock, #chronology-progress, #chronology-actions),
 #chronology-stage[data-category-only] #chronology-instruction { visibility: hidden; }
 .host .chronology-heading h2 { font-size: clamp(3rem, 8.8svh, 7rem); }
-.chronology-heading h2 span {
+:is(.chronology-heading, .meadow-heading) h2 span {
   display: inline-block;
   white-space: pre;
   animation: chronology-enter .45s var(--motion) backwards;
   animation-delay: calc(var(--i) * 65ms);
 }
-.chronology-heading p { margin: 3px 0 0; color: var(--muted); font-size: clamp(.875rem, 2vw, 1.25rem); }
+:is(.chronology-heading, .meadow-heading) p { margin: 3px 0 0; color: var(--muted); font-size: clamp(.875rem, 2vw, 1.25rem); }
 .host .chronology-heading { min-height: calc(clamp(3rem, 8.8svh, 7rem) * 1.04 + 1.8rem); }
 .chronology-items {
   display: grid;
@@ -1012,9 +1012,9 @@ body.pokeprice {
 .player .chronology-card[aria-pressed="true"] { background: #e4f1f7; border-color: #7fc0e1; }
 .player .chronology-card[data-result="correct"] { background: #d7f6e3; border-color: #58ad80; color: #174b35; }
 .player .chronology-card[data-result="wrong"] { background: #ffe2d9; border-color: #c97568; color: #752a24; }
-#chronology-actions { grid-area: actions; display: grid; grid-template-columns: 1fr 1fr; gap: 5px 8px; }
-#chronology-status { grid-column: 1 / -1; margin: 0; font-size: .875rem; color: var(--muted); }
-[data-phase="waiting"] #chronology-status, [data-phase="reveal"] #chronology-status {
+:is(#chronology-actions, #meadow-actions) { grid-area: actions; display: grid; grid-template-columns: 1fr 1fr; gap: 5px 8px; }
+:is(#chronology-status, #meadow-status) { grid-column: 1 / -1; margin: 0; font-size: .875rem; color: var(--muted); }
+[data-phase="waiting"] :is(#chronology-status, #meadow-status), [data-phase="reveal"] :is(#chronology-status, #meadow-status) {
   color: white;
   font-weight: 750;
   animation: chronology-enter .26s var(--motion);
@@ -1088,7 +1088,7 @@ body.pokeprice {
   animation: chronology-pop .23s var(--motion);
 }
 .chronology-ranking-points { grid-column: 4; text-align: right; white-space: nowrap; }
-#chronology-stage[data-paused] :is(.chronology-leaderboard, .chronology-ranking-delta) {
+:is(#chronology-stage, #meadow-stage)[data-paused] :is(.chronology-leaderboard, .chronology-ranking-delta) {
   animation-play-state: paused;
 }
 @media (max-height: 590px) {
@@ -1099,6 +1099,218 @@ body.pokeprice {
 @keyframes chronology-enter { from { opacity: 0; transform: translateY(10px); } }
 @keyframes chronology-pop { from { opacity: .5; transform: scale(.78); } }
 @keyframes chronology-count { 30% { transform: translateY(-3px) scale(1.1); } }
+
+/* Prato fiorito: riusa la shell di Cronologia (.chronology-quiz) e aggiunge opzioni, fiori e prato 3D. */
+#meadow-stage {
+  grid-area: stage;
+  display: grid;
+  grid-template: "meta" auto "board" minmax(0, 1fr) "actions" auto / minmax(0, 1fr);
+  min-height: 0;
+  gap: clamp(6px, 1.4svh, 14px);
+  text-align: left;
+}
+.host #meadow-stage { grid-template: "meta" auto "board" minmax(0, 1fr) / minmax(0, 1fr); }
+#meadow-board {
+  grid-area: board;
+  display: grid;
+  grid-template: "heading" auto "options" minmax(0, 1fr) / minmax(0, 1fr);
+  min-height: 0;
+  gap: clamp(8px, 1.6svh, 18px);
+}
+.host #meadow-board {
+  grid-template: "heading scene" auto "options scene" minmax(0, 1fr) / minmax(0, 1fr) minmax(240px, .4fr);
+  column-gap: clamp(20px, 3vw, 48px);
+}
+.meadow-heading { grid-area: heading; }
+.meadow-heading h2 { letter-spacing: -.03em; text-wrap: balance; }
+.player .meadow-heading h2 { font-size: clamp(1.35rem, 6.2vw, 2.1rem); line-height: 1.1; }
+.host .meadow-heading h2 { font-size: clamp(2.4rem, 6.6svh, 5.25rem); line-height: 1.05; }
+.host .meadow-heading p { font-size: clamp(1rem, 2.6svh, 1.6rem); }
+#meadow-stage[data-intro] :is(#meadow-options, #meadow-clock, #meadow-progress, #meadow-actions) { visibility: hidden; }
+
+#meadow-options {
+  grid-area: options;
+  display: grid;
+  grid-template: repeat(6, minmax(52px, 1fr)) / minmax(0, 1fr);
+  gap: clamp(6px, 1svh, 10px);
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.host #meadow-options {
+  grid-template: repeat(3, minmax(0, 1fr)) / repeat(2, minmax(0, 1fr));
+  gap: clamp(12px, 2svh, 22px);
+}
+.meadow-option {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 52px;
+  margin: 0;
+  padding: 4px 14px 4px 8px;
+  border: 2px solid var(--rim);
+  border-radius: 10px;
+  background: var(--panel);
+  color: #173f58;
+  box-shadow: none;
+  font: 750 1.0625rem/1.15 var(--live-font);
+  text-align: left;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color .24s var(--motion), border-color .24s var(--motion), transform .15s var(--motion);
+  animation: chronology-enter .38s var(--motion) backwards;
+  animation-delay: calc(var(--i) * 55ms);
+}
+.host .meadow-option {
+  grid-template-columns: 1.15em 1.35em minmax(0, 1fr) auto;
+  gap: clamp(10px, 1.4vw, 22px);
+  padding: clamp(10px, 2svh, 24px) clamp(14px, 1.8vw, 28px);
+  border-radius: 15px;
+  font-size: clamp(1.5rem, 4.3svh, 3.25rem);
+}
+.meadow-name { overflow-wrap: anywhere; text-wrap: balance; }
+.meadow-number {
+  display: grid;
+  place-items: center;
+  width: 1.35em;
+  aspect-ratio: 1;
+  border: 1px solid #94bacd;
+  border-radius: 50%;
+  background: #e4f1f7;
+  font-size: .62em;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.meadow-detail { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.host .meadow-detail { font-size: .55em; }
+.host .meadow-name { overflow-wrap: break-word; }
+.meadow-detail:not(:empty) { animation: chronology-pop .23s var(--motion); }
+.player .meadow-option:disabled { opacity: 1; }
+@media (hover: hover) { .player .meadow-option:enabled:hover { background: #e4f1f7; } }
+.player .meadow-option:enabled:active { transform: scale(.985); }
+.player .meadow-option[aria-pressed="true"]:is(*, :hover) { background: #fff7d1; border-color: #c9a227; }
+.meadow-option:focus-visible { outline: 3px solid var(--yellow); outline-offset: 3px; }
+#meadow-options .meadow-option[data-result="safe"]:is(.host *, [data-picked]) { background: #d7f6e3; border-color: #58ad80; color: #174b35; }
+#meadow-options .meadow-option[data-result="bomb"] { background: #ffe2d9; border-color: #c97568; color: #752a24; }
+.player #meadow-stage[data-phase="reveal"] .meadow-option:not([data-picked]):not([data-result="bomb"]) { color: #285776; }
+
+/* Fiore: sei petali che si aprono ruotando dal centro. */
+.meadow-flower { display: block; width: 100%; height: auto; overflow: visible; }
+.meadow-flower :is(.meadow-petal, .meadow-heart, .meadow-bud-core, .meadow-burst) { transform-box: view-box; transform-origin: center; }
+.meadow-petal {
+  fill: #fffdf6;
+  stroke: #a87a00;
+  stroke-width: .9;
+  opacity: 0;
+  transform: scale(.2) rotate(-70deg);
+  transition: transform .55s cubic-bezier(.16, 1, .3, 1), opacity .18s ease-out;
+  transition-delay: calc(var(--k) * 38ms);
+}
+.meadow-bud-core { fill: #6fbf73; stroke: #2f7a43; stroke-width: 1.6; transition: transform .3s var(--motion); }
+.meadow-heart { fill: var(--yellow); stroke: #a87a00; stroke-width: 1; transform: scale(0); transition: transform .32s var(--motion) .16s; }
+.meadow-burst { fill: #e2563f; stroke: #7a1f12; stroke-width: 1.2; stroke-linejoin: round; opacity: 0; transform: scale(0); }
+.meadow-flower[data-open] .meadow-petal { opacity: 1; transform: none; }
+.meadow-flower[data-open] .meadow-heart { transform: none; }
+.meadow-flower[data-boom] :is(.meadow-petal, .meadow-heart, .meadow-bud-core) { opacity: 0; transform: scale(0); transition-duration: .12s; }
+.meadow-flower[data-boom] .meadow-burst { animation: meadow-boom .6s cubic-bezier(.16, 1, .3, 1) forwards; animation-delay: var(--boom-delay, 0s); }
+
+/* Prato 3D sullo schermo grande (solo CSS 3D, nessuna libreria). */
+#meadow-scene {
+  grid-area: scene;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--surface-line);
+  border-radius: 14px;
+  background: linear-gradient(#2b6381, var(--stage) 70%);
+}
+.player #meadow-scene { display: none; }
+.meadow-world { display: grid; place-items: center; min-height: 0; perspective: 760px; perspective-origin: 50% -10%; }
+#meadow-ground {
+  display: grid;
+  grid-template: repeat(2, 1fr) / repeat(3, 1fr);
+  place-items: end center;
+  width: 84%;
+  aspect-ratio: 3 / 2.3;
+  padding: 0 4% 9%;
+  border-radius: 28px;
+  background: radial-gradient(120% 90% at 35% 25%, #6cb862, #3f8f4e 55%, #2b6e40);
+  box-shadow: 0 34px 40px -18px #08202f;
+  transform: rotateX(56deg);
+  transform-style: preserve-3d;
+}
+.meadow-bud {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  width: 74%;
+  transform-origin: 50% 100%;
+  transform: rotateX(-56deg);
+  animation: meadow-sway 3.4s ease-in-out infinite alternate;
+  animation-delay: calc(var(--i) * -.55s);
+}
+.meadow-bud-flower { order: -1; width: 100%; filter: drop-shadow(0 6px 5px #0c2a1a66); }
+.meadow-bud .meadow-petal { transition-delay: calc(var(--i) * 130ms + var(--k) * 38ms); }
+.meadow-bud .meadow-flower { --boom-delay: .8s; }
+.meadow-stem { position: relative; z-index: -1; width: 7%; height: clamp(14px, 3svh, 30px); margin-top: -30%; border-radius: 4px; background: #2f7a43; }
+.meadow-bud-label {
+  margin-top: 4px;
+  padding: 0 .55em;
+  border-radius: 999px;
+  background: #173f58;
+  color: white;
+  font: 800 clamp(.8rem, 1.8svh, 1.1rem)/1.4 var(--live-font);
+  font-variant-numeric: tabular-nums;
+}
+.meadow-bud:has([data-boom])::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 120%;
+  aspect-ratio: 1;
+  border: 4px solid var(--yellow);
+  border-radius: 50%;
+  opacity: 0;
+  translate: -50% -10%;
+  animation: meadow-ring .7s ease-out .8s;
+}
+#meadow-scene figcaption {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: clamp(8px, 1.4svh, 14px) clamp(12px, 1.4vw, 18px);
+  border-top: 1px solid var(--surface-line);
+  background: var(--stage);
+  color: white;
+  font-size: clamp(.95rem, 2.1svh, 1.3rem);
+  font-variant-numeric: tabular-nums;
+}
+#meadow-round { color: var(--yellow); font: 800 clamp(1.6rem, 4.4svh, 2.8rem)/1 var(--live-font); letter-spacing: -.02em; }
+#meadow-stage[data-paused] :is(.meadow-bud, .meadow-bud::before, .meadow-burst) { animation-play-state: paused; }
+@media (max-width: 849px) {
+  .host #meadow-board { grid-template: "heading" auto "options" minmax(0, 1fr) / minmax(0, 1fr); }
+  .host #meadow-scene { display: none; }
+}
+@keyframes meadow-sway { from { transform: rotateX(-56deg) rotate(-3deg); } to { transform: rotateX(-56deg) rotate(3deg); } }
+@keyframes meadow-boom {
+  0% { opacity: 0; transform: scale(.2) rotate(-25deg); }
+  45% { opacity: 1; transform: scale(1.3) rotate(10deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+@keyframes meadow-ring { 0% { opacity: .9; scale: .3; } 100% { opacity: 0; scale: 1.4; } }
+@keyframes meadow-pop { from { opacity: .3; transform: scale(.8); } }
+@media (prefers-reduced-motion: reduce) {
+  .meadow-flower[data-open] :is(.meadow-petal, .meadow-heart) { animation: meadow-pop .14s ease-out !important; }
+  .meadow-flower[data-boom] .meadow-burst { opacity: 1; transform: none; animation: meadow-pop .14s ease-out !important; }
+  .meadow-bud { transform: rotateX(-56deg); }
+}
 
 /* Quanto ci vai vicino? */
 :is(.vault-quiz, .vault-finished) {

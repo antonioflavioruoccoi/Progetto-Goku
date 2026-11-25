@@ -399,3 +399,52 @@ test('Quanto ci vai vicino? restores the receipt and gates the Terracotta soluti
  assert.match(host.$('vault-podium').textContent,/\+200 pt/);
  await host.window.happyDOM.close();
 });
+
+test('Prato fiorito toggles flowers with aria-pressed, clears, sends a partial pick once and reveals the bomb',async()=>{
+ const now=Date.now(),options=['Ottawa','Atene','Copenaghen','Dublino','New York','Nairobi'].map((name,id)=>({id,name}));
+ const room={
+  room:{id:'meadow-room',code:'123456',quiz:'culture',manche:4,round:2,revision:1,manche_total:4,
+   phase:'question',starts_at:now-1000,deadline:now+29000},
+  meadow:{category:'È una capitale',total:5,participants:1,points_per_safe:40,options},
+  server_now:now,duration_ms:30000,remaining_ms:29000,can_control:false,received:0,
+  players:[],me:{done:false,points:0},
+ };
+ const h=await boot('play/?room=meadow-room',{anonymous:true,room,answerResponse:payload=>Object.assign(room.me,{done:true,choice:payload.answer})});
+ const buttons=[...h.$('meadow-options').children],send=h.$('meadow-send'),clear=h.$('meadow-clear');
+ const pressed=()=>buttons.map(b=>b.getAttribute('aria-pressed'));
+ const open=()=>buttons.map(b=>b.querySelector('.meadow-flower').hasAttribute('data-open'));
+ assert.equal(JSON.stringify(room).includes('bomb'),false);
+ assert.equal(send.disabled,false);assert.equal(clear.disabled,true);
+ buttons[0].click();buttons[2].click();buttons[4].click();buttons[4].click();
+ assert.deepEqual(pressed(),['true','false','true','false','false','false']);
+ assert.deepEqual(open(),[true,false,true,false,false,false]);
+ assert.match(h.$('meadow-status').textContent,/2 fiori · 80 punti/);
+ clear.click();
+ assert.deepEqual(pressed(),Array(6).fill('false'));
+ buttons[1].click();buttons[3].click();buttons[5].click();
+ send.click();send.click();
+ await new Promise(resolve=>setImmediate(resolve));
+ const answers=h.calls.filter(call=>call.action==='answer');
+ assert.equal(answers.length,1);
+ assert.deepEqual(answers[0].payload.answer,[1,3,5]);
+ assert.equal(answers[0].payload.manche,4);
+ assert.equal(send.hidden,true);assert.equal(clear.hidden,true);
+ assert.ok(buttons.every(b=>b.disabled));
+ assert.match(h.$('meadow-status').textContent,/In attesa/);
+ room.room.phase='reveal';room.room.revision++;
+ Object.assign(room.meadow,{bomb:4,reveal_ms:15000});room.me.points=120;
+ await h.notify();
+ assert.deepEqual(buttons.map(b=>b.dataset.result),['safe','safe','safe','safe','bomb','safe']);
+ assert.equal(buttons[4].querySelector('.meadow-flower').hasAttribute('data-boom'),true);
+ assert.deepEqual(buttons.map(b=>b.querySelector('.meadow-detail').textContent),['','+40','','+40','Bomba','+40']);
+ assert.match(h.$('meadow-status').textContent,/Prato salvo · \+120 punti/);
+ room.meadow.bomb=3;room.me.points=0;room.room.revision++;
+ await h.notify();
+ assert.match(h.$('meadow-status').textContent,/Hai preso la bomba · 0 punti/);
+ assert.deepEqual(buttons.map(b=>b.querySelector('.meadow-detail').textContent),['','','','Bomba','','']);
+ room.me={done:false,points:0};room.room.revision++;
+ await h.notify();
+ assert.match(h.$('meadow-status').textContent,/non inviata/);
+ assert.ok(buttons.every(b=>b.getAttribute('aria-pressed')==='false'&&!b.querySelector('.meadow-detail').textContent.startsWith('+')));
+ await h.window.happyDOM.close();
+});

@@ -5,13 +5,13 @@ const entries = $('items');
 const seconds = $('seconds');
 const leaderboard = $('leaderboard');
 const rankingList = leaderboard.querySelector('ol');
-const ANSWER_REVEAL_MS = 5000;
+export const ANSWER_REVEAL_MS = 5000;
 const RANK_COUNT_DELAY = 800;
 const RANK_COUNT_MS = 1200;
 const RANK_MOVE_MS = 650;
 const shortName = name => name.split(' - ', 1)[0];
 const setText = (node, value) => { if (node.textContent !== value) node.textContent = value; };
-const element = (tag, className, value = '') => {
+export const element = (tag, className, value = '') => {
   const node = document.createElement(tag);
   node.className = className;
   node.textContent = value;
@@ -19,7 +19,6 @@ const element = (tag, className, value = '') => {
 };
 
 let roundKey, previous, buttons = [], selected = [], enabled = false;
-let rankingKey, rankingRows = [], rankingAnimations = [], ranked = false;
 
 function setPosition(card, rank) {
   const badge = card.querySelector('.chronology-position');
@@ -40,8 +39,11 @@ function animateExit() {
   }).finished.then(() => outgoing.remove(), () => outgoing.remove());
 }
 
-function prepareRanking(players, me) {
-  const key = JSON.stringify([roundKey, players.map(p => [p.user_id, p.nickname, p.score, p.round_points])]);
+// Classifica animata condivisa da Cronologia e Prato fiorito.
+export function rankingBoard(list, empty) {
+  let rankingKey, rankingRows = [], rankingAnimations = [], ranked = false;
+  function prepare(players, me, round) {
+  const key = JSON.stringify([round, players.map(p => [p.user_id, p.nickname, p.score, p.round_points])]);
   if (key === rankingKey) return;
   rankingKey = key;
   rankingAnimations = [];
@@ -61,11 +63,11 @@ function prepareRanking(players, me) {
     row.rankBefore = index && row.start === orderBefore[index - 1].start ? orderBefore[index - 1].rankBefore : index + 1;
     row.position.textContent = String(row.rankBefore);
   });
-  rankingList.replaceChildren(...orderBefore.map(row => row.node));
-  $('ranking-empty').hidden = rankingRows.length > 0;
+  list.replaceChildren(...orderBefore.map(row => row.node));
+  empty.hidden = rankingRows.length > 0;
 }
 
-function tickRanking(elapsed, paused) {
+  function tick(elapsed, paused) {
   const countEnd = RANK_COUNT_DELAY + RANK_COUNT_MS;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const progress = ranked ? 1 : reduced ? Number(elapsed >= countEnd) :
@@ -76,11 +78,11 @@ function tickRanking(elapsed, paused) {
   }
   if (progress === 1 && !ranked) {
     ranked = true;
-    const animate = !reduced && !!rankingList.animate && elapsed < countEnd + RANK_MOVE_MS;
+    const animate = !reduced && !!list.animate && elapsed < countEnd + RANK_MOVE_MS;
     const before = animate ? rankingRows.map(row => row.node.getBoundingClientRect().top) : [];
-    const scroll = rankingList.scrollTop;
-    rankingList.replaceChildren(...rankingRows.map(row => row.node));
-    rankingList.scrollTop = scroll;
+    const scroll = list.scrollTop;
+    list.replaceChildren(...rankingRows.map(row => row.node));
+    list.scrollTop = scroll;
     rankingRows.forEach(({ node, position, player }, i) => {
       setText(position, String(player.rank));
       if (!animate) return;
@@ -98,6 +100,9 @@ function tickRanking(elapsed, paused) {
     if (!paused && animation.playState === 'paused') animation.play();
   }
 }
+  return { prepare, tick };
+}
+const ranking = rankingBoard(rankingList, $('ranking-empty'));
 
 function paintSelection() {
   for (const button of buttons) {
@@ -161,7 +166,7 @@ export function renderChronology(state, host) {
   stage.toggleAttribute('data-paused', room.phase === 'paused');
   $('instruction').hidden = reveal;
   $('reset').hidden = $('send').hidden = host || reveal || locked;
-  if (reveal) prepareRanking(state.players, me);
+  if (reveal) ranking.prepare(state.players, me, roundKey);
   if (reveal && (newRound || previous !== 'reveal')) {
     const byId = new Map(chronology.items.map(item => [item.id, item]));
     const order = chronology.correct;
@@ -215,7 +220,7 @@ export function tickChronology(state, ms, canAnswer, introMs) {
   leaderboard.hidden = !showRanking;
   $('solution').hidden = host || !reveal || showRanking;
   $('actions').hidden = host || showRanking;
-  if (showRanking) tickRanking(revealElapsed - ANSWER_REVEAL_MS, paused);
+  if (showRanking) ranking.tick(revealElapsed - ANSWER_REVEAL_MS, paused);
   if (host) {
     setText(document.querySelector('[data-command="pause"]'), showRanking ? 'Pausa classifica' : 'Pausa');
     setText(document.querySelector('[data-command="resume"]'), showRanking ? 'Riprendi classifica' : 'Riprendi');

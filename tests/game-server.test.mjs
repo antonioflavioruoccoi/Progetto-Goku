@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 import fs from 'node:fs/promises';
 import {drawVault, publicVault, settleVault, validGuess, vaultPoints, vaultQuestion} from '../worker/number-vault.js';
+import {MEADOW_CATEGORIES, drawMeadow, meadowPoints} from '../worker/meadow.js';
 const { outputFiles } = await build({entryPoints:['worker/index.js'],bundle:true,write:false,format:'esm'});
 const { Goku } = await import('data:text/javascript;base64,'+Buffer.from(outputFiles[0].text).toString('base64'));
 const quiz = JSON.parse(await fs.readFile('worker/generated/quiz.json','utf8'));
@@ -429,7 +430,7 @@ test('Cronologia keeps its server draw, scores by position and advances after ti
  assert.equal(next.room.phase,'question');
  assert.equal(next.room.manche,3);
  assert.equal(next.room.round,1);
- assert.equal(next.room.manche_total,3);
+ assert.equal(next.room.manche_total,4);
  assert.equal(next.me.score,1000);
  assert.equal(state('p1').me.score,750);
  assert.equal(game.settle(get()),false);
@@ -540,7 +541,7 @@ test('Quanto ci vai vicino? locks answers and reveals as soon as everyone answer
  Object.assign(r,{manche:2,round:5,settled:5,phase:'reveal',deadline:Date.now()});
  r.players.p1.score=90;
  const old=structuredClone(r);
- delete old.vaultOrder;
+ delete old.vaultOrder;delete old.meadowOrder;
  assert.equal(game.publicRoom(old).manche_total,2);
  game.advanceRound(old);
  assert.equal(old.phase,'finished');
@@ -608,7 +609,7 @@ test('Quanto ci vai vicino? locks answers and reveals as soon as everyone answer
   t.mock.timers.tick(8000);
   assert.equal(game.settle(get()),true);
  }
- assert.equal(get().phase,'finished');
+ assert.equal(get().manche,4);assert.equal(get().round,1);assert.equal(get().phase,'question');
  assert.deepEqual(snap('admin').players.map(p=>p.score),[290,140]);
 
  Object.assign(r,{phase:'question',starts_at:Date.now(),deadline:Date.now()+20000});
@@ -621,4 +622,80 @@ test('Quanto ci vai vicino? locks answers and reveals as soon as everyone answer
  assert.equal(snap('p1').me.choice,null);
  assert.equal(snap('p1').me.score,90);
  assert.equal(game.settle(get()),false);
+});
+
+test('Prato fiorito draws 5 distinct categories per game, each round 6 unique options with exactly one bomb', () => {
+ const seen=new Set();
+ let rounds=0;
+ for(let game=0;game<1000;game++){
+  const draw=drawMeadow();
+  assert.equal(draw.length,5);
+  assert.equal(new Set(draw.map(({category})=>category)).size,5);
+  for(const {category,items} of draw){
+   rounds++;seen.add(category);
+   assert.equal(items.length,6);
+   assert.deepEqual(items.map(({id})=>id),[0,1,2,3,4,5]);
+   assert.equal(new Set(items.map(({name})=>name)).size,6);
+   assert.equal(items.filter(({bomb})=>bomb===true).length,1);
+   assert.equal(items.filter(({bomb})=>bomb===false).length,5);
+  }
+ }
+ assert.ok(rounds>=1000);
+ assert.equal(seen.size,MEADOW_CATEGORIES);
+ const items=[0,1,2,3,4,5].map(id=>({id,name:'x'+id,bomb:id===5}));
+ assert.equal(meadowPoints(items,[0,1,2]),120);
+ assert.equal(meadowPoints(items,[0,1,2,3,4]),200);
+ assert.equal(meadowPoints(items,[0,1,2,5,3]),0);
+ assert.equal(meadowPoints(items,[]),0);
+});
+
+test('Prato fiorito follows Quanto ci vai vicino?, hides the bomb until reveal and scores on the server', t => {
+ t.mock.timers.enable({apis:['Date'],now:1700000000000});
+ const {game,rpc}=setupCultureGame(['admin','p1','p2','p3']);
+ const {id,code}=rpc('admin','create',{quiz:'culture'});
+ for(const name of ['p1','p2','p3'])rpc(name,'join',{code,nickname:name});
+ game.ctx.getWebSockets=()=>['p1','p2','p3'].map(user=>({readyState:1,deserializeAttachment:()=>({user})}));
+ const get=()=>game.get('room',id);
+ const snap=name=>rpc(name,'state',{room_id:id});
+ const command=command=>rpc('admin','command',{room_id:id,revision:get().revision,command});
+ const send=(session,answer,request_id=crypto.randomUUID(),manche=4)=>rpc(session,'answer',{room_id:id,round:get().round,manche,answer,request_id});
+ const draw=get().meadowOrder;
+ assert.equal(draw.length,5);
+ const r=get();Object.assign(r,{manche:3,round:6,settled:6,phase:'reveal',deadline:Date.now()});game.put('room',id,r);
+ assert.equal(game.settle(get()),true);
+ assert.equal(get().manche,4);assert.equal(get().round,1);
+ for(let round=1;round<=5;round++){
+  const {items}=draw[round-1],safe=items.filter(i=>!i.bomb).map(i=>i.id),bomb=items.find(i=>i.bomb).id;
+  for(const who of ['admin','p1']){
+   const before=snap(who);
+   assert.equal(before.room.manche_total,4);
+   assert.equal(before.meadow.category,draw[round-1].category);
+   assert.deepEqual(before.meadow.options,items.map(({id,name})=>({id,name})));
+   assert.doesNotMatch(JSON.stringify(before),/bomb|meadowOrder/);
+  }
+  assert.throws(()=>send('p1',[0]),/chiuse/);
+  t.mock.timers.tick(get().starts_at-Date.now());
+  assert.throws(()=>send('p1',[0,0]),/Selezione non valida/);
+  assert.throws(()=>send('p1',[0,1,2,3,4,5,6]),/Selezione non valida/);
+  assert.throws(()=>send('p1',['0']),/Selezione non valida/);
+  assert.throws(()=>send('p1',[0],crypto.randomUUID(),3),/non più attuale/);
+  const plays={1:[safe.slice(0,3),safe,[...safe.slice(0,4),bomb]],2:[[],safe.slice(0,1),[bomb]]}[round]??[safe.slice(0,2),safe.slice(0,2),safe.slice(0,2)];
+  const expected={1:[120,200,0],2:[0,40,0]}[round]??[80,80,80];
+  const request=crypto.randomUUID();
+  assert.deepEqual(send('p1',plays[0],request),{done:true,choice:plays[0]});
+  assert.deepEqual(send('p1',plays[0],request),{done:true,choice:plays[0]});
+  assert.throws(()=>send('p1',plays[0]),/già completato/);
+  const waiting=snap('p1');
+  assert.equal(waiting.me.points,0);assert.deepEqual(waiting.me.choice,plays[0]);
+  assert.doesNotMatch(JSON.stringify(waiting),/bomb/);
+  send('p2',plays[1]);send('p3',plays[2]);
+  const revealed=snap('p1');
+  assert.equal(revealed.room.phase,'reveal');
+  assert.equal(revealed.meadow.bomb,bomb);assert.equal(revealed.meadow.reveal_ms,15000);
+  assert.deepEqual(['p1','p2','p3'].map(name=>snap(name).me.points),expected);
+  assert.throws(()=>command('next'),/non disponibile/);
+  t.mock.timers.tick(15000);assert.equal(game.settle(get()),true);
+ }
+ assert.equal(get().phase,'finished');
+ assert.deepEqual(['p1','p2','p3'].map(name=>snap(name).me.score),[120+0+240,200+40+240,0+0+240]);
 });

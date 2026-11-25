@@ -10,15 +10,22 @@ import {
   PRICE_START, PRICE_ROUNDS, PRICE_DURATION,
   selectPriceCards, settlePrice, priceSnapshot,
 } from "./pokeprice.js";
+import { MEADOW_POINTS, MEADOW_ROUNDS, drawMeadow, meadowPoints } from "./meadow.js";
 const quizOf = r => r.quiz || "pokemon";
 const cultureStages = [
   { id: "population", count: populations.pairs.length, duration: 15000 },
   { id: "chronology", count: CHRONOLOGY_ROUNDS, duration: 30000 },
   { id: "vault", count: VAULT_ROUNDS, duration: VAULT_DURATION },
+  { id: "meadow", count: MEADOW_ROUNDS, duration: 30000 },
 ];
 const cultureStage = r => quizOf(r) === "culture" ? cultureStages[(r.manche || 1) - 1] : null;
 const isVault = r => cultureStage(r)?.id === "vault";
 const isChronology = r => cultureStage(r)?.id === "chronology";
+const isMeadow = r => cultureStage(r)?.id === "meadow";
+// Cronologia e Prato fiorito chiudono il round quando rispondono i giocatori presenti.
+const isTimeline = r => isChronology(r) || isMeadow(r);
+const MEADOW_INTRO = 3000;
+const MEADOW_REVEAL = 15000;
 const CHRONOLOGY_POINTS = 50;
 const CHRONOLOGY_CARD_INTERVAL = 2000;
 const CHRONOLOGY_INTRO = 3000 + 3 * CHRONOLOGY_CARD_INTERVAL;
@@ -272,10 +279,10 @@ export class Goku {
     );
   }
   publicRoom(r) {
-    const { players, answers, order, clueOrder, priceOrder, chronologyOrder, chronology_points, vaultOrder, vaultResult, polling, settled, ...publicData } = r;
+    const { players, answers, order, clueOrder, priceOrder, chronologyOrder, chronology_points, vaultOrder, meadowOrder, vaultResult, polling, settled, ...publicData } = r;
     publicData.quiz ||= "pokemon";
     publicData.manche ||= publicData.quiz === "culture" ? 1 : "cards";
-    if (publicData.quiz === "culture") publicData.manche_total = vaultOrder ? cultureStages.length : 2;
+    if (publicData.quiz === "culture") publicData.manche_total = meadowOrder ? cultureStages.length : vaultOrder ? 3 : 2;
     return publicData;
   }
   advanceRound(r, now = Date.now()) {
@@ -289,6 +296,8 @@ export class Goku {
         r.chronologyOrder ??= drawChronology();
       } else if (isChronology(r) && r.vaultOrder) {
         r.manche = 3;
+      } else if (isVault(r) && r.meadowOrder) {
+        r.manche = 4;
       } else {
         r.phase = "finished";
         return;
@@ -299,7 +308,7 @@ export class Goku {
     r.phase = "question";
     if (isChronology(r)) r.chronology_points = CHRONOLOGY_POINTS;
     if (isVault(r)) delete r.vaultResult;
-    r.starts_at = now + (isVault(r) ? vaultIntro(r.round) : isChronology(r) ? CHRONOLOGY_INTRO : r.manche === "price" ? 0 : 2000);
+    r.starts_at = now + (isVault(r) ? vaultIntro(r.round) : isChronology(r) ? CHRONOLOGY_INTRO : isMeadow(r) ? MEADOW_INTRO : r.manche === "price" ? 0 : 2000);
     r.remaining_ms = roundDuration(r);
     r.deadline = r.starts_at + r.remaining_ms;
     r.answers = {};
@@ -324,14 +333,14 @@ export class Goku {
   settle(r, force = false, now = Date.now()) {
     let changed = false;
     const complete = () => {
-      const ids = isChronology(r) ? this.chronologyParticipants(r) : Object.keys(r.players);
+      const ids = isTimeline(r) ? this.chronologyParticipants(r) : Object.keys(r.players);
       return ids.length > 0 && ids.every(id => r.answers[id]?.done);
     };
     const allAnswered = r.phase === "question" && now >= r.starts_at && now < r.deadline && complete();
     if (r.phase === "question" && (r.deadline <= now || allAnswered)) {
       if (quizOf(r) === "culture") {
         r.remaining_ms = isVault(r) ? VAULT_REVEAL - (allAnswered ? VAULT_SOLUTION_AT : 0) :
-          isChronology(r) ? CHRONOLOGY_REVEAL : 10000;
+          isChronology(r) ? CHRONOLOGY_REVEAL : isMeadow(r) ? MEADOW_REVEAL : 10000;
         r.deadline = now + r.remaining_ms;
       } else r.deadline = Math.min(r.deadline, now);
       r.phase = "reveal";
@@ -394,6 +403,7 @@ export class Goku {
   question(r) {
     if (isVault(r)) return vaultQuestion(r.vaultOrder[r.round - 1]);
     if (isChronology(r)) return r.chronologyOrder[r.round - 1];
+    if (isMeadow(r)) return r.meadowOrder[r.round - 1];
     if (quizOf(r) === "culture") return populationsFor(r).pairs[r.order[r.round - 1]];
     return r.manche === "clues" ? quiz.clues[r.clueOrder[r.round - 7]] : quiz.cards[r.order[r.round - 1]];
   }
@@ -431,7 +441,7 @@ export class Goku {
     }
     const connected = this.connectedPlayers(r);
     const cultureRevealed = ["reveal", "finished"].includes(r.phase) || (r.phase === "paused" && r.paused_from === "reveal");
-    const chronologyRevealed = isChronology(r) && cultureRevealed;
+    const chronologyRevealed = isTimeline(r) && cultureRevealed;
     const players = rankings(r, connected, p => chronologyRevealed ? { round_points: r.answers[p.user_id]?.points || 0 } : {});
     const remaining = r.phase === "paused" ? r.remaining_ms : Math.max(0, Math.min(roundDuration(r), r.deadline - Date.now()));
     const revealed = ["reveal", "finished"].includes(r.phase) || (r.manche === "clues" && r.answers[s.id]?.result === "correct");
@@ -439,7 +449,8 @@ export class Goku {
     const question = r.round && !price ? this.question(r) : null;
     const population = cultureStage(r)?.id === "population" && question;
     const chronology = isChronology(r) && question;
-    const participants = chronology && new Set([
+    const meadow = isMeadow(r) && question;
+    const participants = (chronology || meadow) && new Set([
       ...this.chronologyParticipants(r, connected),
       ...Object.keys(r.answers).filter(id => r.answers[id].done),
     ]).size;
@@ -449,7 +460,7 @@ export class Goku {
       room: this.publicRoom(r),
       server_now: Date.now(),
       remaining_ms: remaining,
-      ...(price ? { duration_ms: PRICE_DURATION, price: priceSnapshot(r, revealed) } : population || chronology ? { duration_ms: roundDuration(r) } : {}),
+      ...(price ? { duration_ms: PRICE_DURATION, price: priceSnapshot(r, revealed) } : population || chronology || meadow ? { duration_ms: roundDuration(r) } : {}),
       ...(chronology ? {
         chronology: {
           category: chronology.category,
@@ -458,6 +469,16 @@ export class Goku {
           points_per_match: chronologyPoints(r),
           items: cultureRevealed ? chronology.items : chronology.items.map(({ id, name }) => ({ id, name })),
           ...(cultureRevealed ? { correct: correctChronology(chronology.items), reveal_ms: CHRONOLOGY_REVEAL } : {}),
+          participants,
+        },
+      } : {}),
+      ...(meadow ? {
+        meadow: {
+          category: meadow.category,
+          total: MEADOW_ROUNDS,
+          points_per_safe: MEADOW_POINTS,
+          options: meadow.items.map(({ id, name }) => ({ id, name })),
+          ...(cultureRevealed ? { bomb: meadow.items.find(item => item.bomb).id, reveal_ms: MEADOW_REVEAL } : {}),
           participants,
         },
       } : {}),
@@ -482,12 +503,12 @@ export class Goku {
             attempts: r.answers[s.id]?.attempts || 0,
             done: r.answers[s.id]?.done || false,
             result: r.answers[s.id]?.result,
-            points: !chronology || cultureRevealed ? r.answers[s.id]?.points || 0 : 0,
+            points: !(chronology || meadow) || cultureRevealed ? r.answers[s.id]?.points || 0 : 0,
             ...(price ? {
               choice: r.answers[s.id]?.choice || null,
               streak: r.players[s.id].streak || 0,
               bonus: r.answers[s.id]?.bonus || 0,
-            } : population || chronology ? { choice: r.answers[s.id]?.choice || null } : {}),
+            } : population || chronology || meadow ? { choice: r.answers[s.id]?.choice || null } : {}),
           }
         : null,
       can_control: this.control(s, r),
@@ -749,7 +770,7 @@ export class Goku {
         players: {},
         answers: {},
         order,
-        ...(selectedQuiz === "culture" ? { population_year: populations.year, chronologyOrder: drawChronology(), vaultOrder: drawVault(vaultMode) } : {}),
+        ...(selectedQuiz === "culture" ? { population_year: populations.year, chronologyOrder: drawChronology(), vaultOrder: drawVault(vaultMode), meadowOrder: drawMeadow() } : {}),
         ...(selectedQuiz === "pokemon" ? { priceOrder: selectPriceCards(quiz.priceCards) } : {}),
       };
       this.put("room", r.id, r);
@@ -796,7 +817,7 @@ export class Goku {
     }
     if (action === "answer") {
       if (!r.players[s.id]) fail("Solo giocatori");
-      if (p.round !== r.round || ((isVault(r) || isChronology(r) || p.manche === 3) && p.manche !== r.manche)) fail("Domanda non più attuale");
+      if (p.round !== r.round || ((isVault(r) || isTimeline(r) || p.manche === 3) && p.manche !== r.manche)) fail("Domanda non più attuale");
       const answer = r.answers[s.id] || {
         attempts: 0,
         done: false,
@@ -854,6 +875,20 @@ export class Goku {
           sum + (p.answer[index] === id ? chronologyPoints(r) : 0), 0);
         const result = { done: true, choice: p.answer };
         r.answers[s.id] = { ...result, points, requests: { [p.request_id]: result } };
+        this.recordPoll(r, s.id, now);
+        r.revision++;
+        this.settle(r);
+        this.put("room", r.id, r);
+        this.changed.add(r.id);
+        return result;
+      }
+      if (isMeadow(r)) {
+        const items = this.question(r).items;
+        if (!Array.isArray(p.answer) || p.answer.length > items.length ||
+            new Set(p.answer).size !== p.answer.length ||
+            !p.answer.every(id => items.some(item => item.id === id))) fail("Selezione non valida");
+        const result = { done: true, choice: p.answer };
+        r.answers[s.id] = { ...result, points: meadowPoints(items, p.answer), requests: { [p.request_id]: result } };
         this.recordPoll(r, s.id, now);
         r.revision++;
         this.settle(r);
@@ -938,13 +973,13 @@ export class Goku {
         this.advanceRound(r, now);
       } else if (
         (c === "start" && r.phase === "lobby") ||
-        (c === "next" && r.phase === "reveal" && !isChronology(r))
+        (c === "next" && r.phase === "reveal" && !isTimeline(r))
       ) {
         if (!Object.keys(r.players).length) fail("Attendi un giocatore");
         this.advanceRound(r, now);
       } else if (
         c === "pause" &&
-        ((r.phase === "question" && (isVault(r) || isChronology(r) || now >= r.starts_at)) || (quizOf(r) === "culture" && r.phase === "reveal" && now < r.deadline))
+        ((r.phase === "question" && (isVault(r) || isTimeline(r) || now >= r.starts_at)) || (quizOf(r) === "culture" && r.phase === "reveal" && now < r.deadline))
       ) {
         r.remaining_ms = Math.max(0, r.deadline - now);
         if (quizOf(r) === "culture") r.paused_from = r.phase;
@@ -952,7 +987,7 @@ export class Goku {
       } else if (c === "resume" && r.phase === "paused") {
         r.phase = r.paused_from || "question";
         r.deadline = now + r.remaining_ms;
-        if (r.phase === "question" && (isVault(r) || (isChronology(r) && r.remaining_ms > roundDuration(r)))) {
+        if (r.phase === "question" && (isVault(r) || (isTimeline(r) && r.remaining_ms > roundDuration(r)))) {
           r.starts_at = r.deadline - roundDuration(r);
         }
         delete r.paused_from;
@@ -996,7 +1031,7 @@ export class Goku {
   async handleDisconnect(room) {
     await this.ctx.blockConcurrencyWhile(async () => {
       const r = this.get("room", room);
-      const changed = r && isChronology(r) && this.settle(r);
+      const changed = r && isTimeline(r) && this.settle(r);
       await this.broadcast(room);
       if (changed) await this.schedule();
     });
