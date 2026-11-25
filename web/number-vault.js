@@ -373,7 +373,7 @@ export function tickVault(ms, introMs) {
   const aside = host && room.round % 2 === 0 && (beat === 'rain' && scattered ? 'LE STIME SONO OVUNQUE!' :
     beat === 'podium' && !scattered && champion ? 'ABBIAMO UN CAMPIONE DI PRECISIONE!' : '');
   content($('vault-phase'), paused ? 'In pausa' : aside || ({
-    announcement:'Preparati', intro:'Preparati', play:remaining ? (receipt ? 'In attesa della sala' : 'Tempo per rispondere') : 'Tempo scaduto',
+    announcement:'Preparati', intro:'Preparati', play:remaining ? (receipt ? 'In attesa della sala' : '') : 'Tempo scaduto',
     verify:'Verifichiamo…', rain:host ? 'Pioggia delle stime' : 'Rivelazione in arrivo',
     solution:'Soluzione', podium:'Podio della domanda', summary:'Classifica generale',
   })[beat]);

@@ -30,9 +30,7 @@ const MEADOW_REVEAL = 15000;
 const CHRONOLOGY_POINTS = 50;
 const CHRONOLOGY_CARD_INTERVAL = 2000;
 const CHRONOLOGY_INTRO = 3000 + 3 * CHRONOLOGY_CARD_INTERVAL;
-// The first round of Popolazione and Cronologia opens with a 3 s title card.
-const MANCHE_OPENING = 3000;
-const openingMs = r => r.round === 1 && (cultureStage(r)?.id === "population" || isChronology(r)) ? MANCHE_OPENING : 0;
+// Every manche opens on a "rules" screen (phase "intro") that waits for the host's "Avanti".
 // The solution stays on screen until the host presses "Avanti"; the ranking then lasts 10 s.
 const CHRONOLOGY_RANKING = 10000;
 const chronologyPoints = r => r.chronology_points ?? 30;
@@ -322,12 +320,19 @@ export class Goku {
       }
       r.round = r.settled = 0;
     }
+    if (quizOf(r) === "culture" && r.round === 0 && r.phase !== "intro") {
+      r.phase = "intro";
+      r.remaining_ms = 0;
+      r.deadline = null;
+      r.answers = {};
+      return;
+    }
     r.round++;
     r.phase = "question";
     delete r.chronology_view;
     if (isChronology(r)) r.chronology_points = CHRONOLOGY_POINTS;
     if (isVault(r)) delete r.vaultResult;
-    r.starts_at = now + openingMs(r) + (isVault(r) ? vaultIntro(r.round) : isChronology(r) ? CHRONOLOGY_INTRO : isMeadow(r) ? MEADOW_INTRO : r.manche === "price" ? 0 : 2000);
+    r.starts_at = now + (isVault(r) ? vaultIntro(r.round) : isChronology(r) ? CHRONOLOGY_INTRO : isMeadow(r) ? MEADOW_INTRO : r.manche === "price" ? 0 : 2000);
     r.remaining_ms = roundDuration(r);
     r.deadline = r.starts_at + r.remaining_ms;
     r.answers = {};
@@ -448,7 +453,7 @@ export class Goku {
   }
   snapshot(s, r, shared) {
     if (!this.readable(s, r)) fail("Stanza non accessibile");
-    if (isVault(r)) {
+    if (isVault(r) && r.phase !== "intro") {
       const common = shared ?? this.vaultShared(r);
       const answer = r.answers[s.id];
       const can_control = this.control(s, r);
@@ -490,7 +495,6 @@ export class Goku {
           category: chronology.category,
           total: CHRONOLOGY_ROUNDS,
           card_interval_ms: CHRONOLOGY_CARD_INTERVAL,
-          opening_ms: openingMs(r),
           points_per_match: chronologyPoints(r),
           items: cultureRevealed ? chronology.items : chronology.items.map(({ id, name }) => ({ id, name })),
           ...(cultureRevealed ? { correct: correctChronology(chronology.items), view: chronologyView(r), ranking_ms: CHRONOLOGY_RANKING } : {}),
@@ -515,8 +519,7 @@ export class Goku {
         ? {
             population: {
               year: populationsFor(r).year,
-              opening_ms: openingMs(r),
-              countries: question.map(({ id, iso2, name }) => ({ id, iso2, name })),
+                  countries: question.map(({ id, iso2, name }) => ({ id, iso2, name })),
               ...(cultureRevealed
                 ? {
                     values: question.map(({ population: value }) => value),
@@ -555,7 +558,7 @@ export class Goku {
     const keys = await Promise.all(sockets.map(ws => this.sessionKey(ws.deserializeAttachment()?.session)));
     const r = this.get("room", room);
     if (!r) return;
-    const shared = isVault(r) ? this.vaultShared(r) : undefined;
+    const shared = isVault(r) && r.phase !== "intro" ? this.vaultShared(r) : undefined;
     for (const [i, ws] of sockets.entries()) {
       const s = this.session(keys[i]);
       try {
@@ -1009,7 +1012,7 @@ export class Goku {
       }
       if (p.revision !== r.revision) fail("Stato cambiato: riprova");
       // Shift + N (skip_round) works in every manche; only "next" waits for the vault reveal.
-      if (isVault(r) && c === "next" &&
+      if (isVault(r) && c === "next" && r.phase !== "intro" &&
           (r.phase !== "reveal" || r.deadline - now > VAULT_REVEAL - VAULT_NEXT))
         fail("Attendi la fine della rivelazione");
       if (["start", "next"].includes(c) && quizOf(r) === "culture" && !cultureStage(r)) fail("Manche non disponibile");
@@ -1027,7 +1030,8 @@ export class Goku {
         this.advanceRound(r, now);
       } else if (
         (c === "start" && r.phase === "lobby") ||
-        (c === "next" && r.phase === "reveal" && !isTimeline(r))
+        (c === "next" && r.phase === "reveal" && !isTimeline(r)) ||
+        (c === "next" && r.phase === "intro")
       ) {
         if (!Object.keys(r.players).length) fail("Attendi un giocatore");
         this.advanceRound(r, now);

@@ -76,6 +76,8 @@ Nella schermata del conduttore, **Shift + N** passa alla domanda successiva in o
 
 Cultura generale comprende 10 confronti sulla popolazione, 5 round di Cronologia, 6 domande di Quanto ci vai vicino?, 5 round di Prato fiorito e il podio finale.
 
+Prima di ogni manche la stanza entra nella fase `intro`: una schermata mostra il gioco e le regole in breve e resta ferma, senza timer, finché il conduttore preme **Avanti** (comando `next`). Solo l’Host può chiuderla; **Termina partita** resta disponibile.
+
 - **Prato fiorito:** 5 categorie estratte dalle 12 di `worker/meadow.js`, 6 opzioni con una sola bomba. Ogni risposta giusta vale 40 punti, la bomba azzera il round. Il primo che invia tutte e 5 le giuste guadagna 40 punti bonus: al reveal il nastro «Il più veloce» mostra il suo nome sullo schermo del conduttore e sui telefoni, e resta durante la classifica.
 
 - **Popolazione:** a ogni nuova stanza il server estrae 10 coppie dal catalogo di 82 nazioni (`data/population-countries.json`, IDB 2025): nessuna nazione ripetuta, rapporto tra popolazioni 1,05–3, difficoltà mista e lato casuale. La stanza salva gli ID estratti (`population_pairs`); le stanze create prima continuano con le coppie fisse 2025 o 2019. Fonti in [POPULATION-DATA-SOURCE.md](data/POPULATION-DATA-SOURCE.md) e [FLAGS-SOURCE.md](data/FLAGS-SOURCE.md).

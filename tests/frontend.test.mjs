@@ -532,3 +532,59 @@ test('Cultura generale final podium groups ties on steps and splits points by ma
  assert.equal(legacy.$('ranking').hidden,false);
  await legacy.window.happyDOM.close();
 });
+
+test('every manche opens on a rules screen: game, short rules, and only the host can press Avanti',async()=>{
+ const now=Date.now();
+ const expected={1:['Popolazione',/150 punti/],2:['Cronologia',/50 punti/],3:['Quanto ci vai vicino?',/200 a domanda/],4:['Prato fiorito',/bomba/]};
+ for(const manche of [1,2,3,4]){
+  const room={room:{id:'intro-room',code:'123456',quiz:'culture',manche,manche_total:4,phase:'intro',round:0,revision:3,starts_at:now-1000,deadline:null},
+   server_now:now,remaining_ms:0,can_control:true,players:[],me:null,received:0};
+  const host=await boot('host/?room=intro-room',{room});
+  const [title,rule]=expected[manche];
+  assert.equal(host.$('culture-opening').hidden,false);
+  assert.equal(host.$('culture-opening-title').textContent,title);
+  assert.equal(host.$('culture-opening-step').textContent,`Manche ${manche} di 4`);
+  assert.ok(host.$('culture-opening-rules').children.length>=3);
+  assert.match(host.$('culture-opening-rules').textContent,rule);
+  assert.match(host.$('culture-opening-wait').textContent,/Premi Avanti/);
+  assert.equal(host.$('round').textContent,`Manche ${manche}/4`);
+  const next=host.window.document.querySelector('[data-command="next"]');
+  assert.equal(next.hidden,false);assert.equal(next.textContent,'Avanti');
+  assert.equal(host.window.document.querySelector('[data-command="pause"]').hidden,true);
+  assert.equal(host.$('skip-hint').hidden,true);
+  for(const id of ['meadow-stage','vault-stage','chronology-stage','culture-stage','results','question'])assert.equal(host.$(id).hidden,true,id);
+  next.click();await new Promise(r=>setImmediate(r));
+  assert.deepEqual(host.calls.filter(call=>call.action==='command').map(call=>call.payload.command),['next']);
+  // Once the host presses Avanti the screen goes away.
+  Object.assign(room.room,{phase:'question',round:1,revision:4});await host.notify();
+  assert.equal(host.$('culture-opening').hidden,true);
+  await host.window.happyDOM.close();
+ }
+ const room={room:{id:'intro-room',code:'123456',quiz:'culture',manche:4,manche_total:4,phase:'intro',round:0,revision:3,starts_at:null,deadline:null},
+  server_now:now,remaining_ms:0,can_control:false,players:[],me:{nickname:'Ash',score:0,done:false},received:0};
+ const player=await boot('play/?room=intro-room',{anonymous:true,room});
+ assert.equal(player.$('culture-opening').hidden,false);
+ assert.match(player.$('culture-opening-wait').textContent,/In attesa del conduttore/);
+ assert.equal(player.$('controls').hidden,true);
+ await player.window.happyDOM.close();
+});
+
+test('timers stand alone (no "Tempo per rispondere") and Prato fiorito is named once per screen',async()=>{
+ const now=Date.now(),options=['Ottawa','Atene','Copenaghen','Dublino','New York','Nairobi'].map((name,id)=>({id,name}));
+ const room={
+  room:{id:'meadow-room',code:'123456',quiz:'culture',manche:4,round:5,revision:1,manche_total:4,phase:'question',starts_at:now-1000,deadline:now+29000},
+  meadow:{category:'È una capitale',total:5,participants:1,points_per_safe:40,options},
+  server_now:now,duration_ms:30000,remaining_ms:29000,can_control:false,received:0,players:[],me:{done:false,points:0},
+ };
+ const h=await boot('play/?room=meadow-room',{anonymous:true,room});
+ // The podium table (hidden until the end) legitimately names every manche.
+ const shown=h.window.document.getElementById('room').cloneNode(true);shown.querySelector('#results').remove();
+ const visible=shown.textContent;
+ assert.equal(visible.includes('Tempo per rispondere'),false);
+ assert.equal(h.$('meadow-phase').textContent,'');
+ assert.equal(h.$('meadow-title'),null);
+ assert.equal(visible.split('Prato fiorito').length-1,1);
+ assert.equal(h.$('round').textContent,'Prato fiorito 5/5');
+ assert.equal(h.window.document.documentElement.outerHTML.includes('aria-label="Tempo per rispondere"'),false);
+ await h.window.happyDOM.close();
+});

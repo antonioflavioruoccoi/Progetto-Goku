@@ -238,7 +238,7 @@ export function tickChronology(state, ms, canAnswer, introMs) {
   setText($('phase'), paused ? (showRanking ? 'Classifica in pausa' : 'In pausa') :
     solution ? (host ? 'Ordine corretto · premi Avanti per la classifica' : 'In attesa del conduttore…') :
     showRanking ? `Classifica · ${room.round === chronology.total ? 'poi il podio' : 'poi il prossimo round'}` :
-    presenting ? 'Presentazione' : me?.done ? 'Risposta inviata' : 'Tempo per rispondere');
+    presenting ? 'Presentazione' : me?.done ? 'Risposta inviata' : '');
 
   enabled = canAnswer && !!state.me && !state.can_control;
   const time = Math.ceil(Math.min(ms, duration) / 1000);

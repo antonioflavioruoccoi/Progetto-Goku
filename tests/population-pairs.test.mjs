@@ -71,6 +71,7 @@ test('new culture rooms store drawn country IDs and serve them in order without 
   assert.equal(r.population_pairs.length, 10);
   assert.ok(r.population_pairs.flat().every(id => /^[A-Z]{3}$/.test(id)));
   rpc('admin', 'command', { room_id: r.id, revision: game.get('room', r.id).revision, command: 'start' });
+  rpc('admin', 'command', { room_id: r.id, revision: game.get('room', r.id).revision, command: 'next' });
   for (let round = 1; round <= 10; round++) {
     const current = game.get('room', r.id);
     const snapshot = rpc('p1', 'state', { room_id: r.id });

@@ -168,7 +168,7 @@ export function tickMeadow(state, ms, canAnswer, introMs) {
   }
   setText($('phase'), paused ? (showRanking ? 'Classifica in pausa' : 'In pausa') : reveal ?
     `${showRanking ? 'Classifica' : 'Il prato sboccia'} · ${room.round === meadow.total ? 'al podio' : 'prossimo round'}` :
-    presenting ? 'Presentazione' : me?.done ? 'Risposta inviata' : 'Tempo per rispondere');
+    presenting ? 'Presentazione' : me?.done ? 'Risposta inviata' : '');
   const sent = `${state.received}/${meadow.participants} risposte inviate`;
   setText($('count'), sent);
   setText($('sent'), reveal ? 'Risultati' : sent);

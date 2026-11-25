@@ -307,29 +307,37 @@ function renderPopulation(){
  score.dataset.result=me?.result||'';
  if(score.textContent!==points){score.textContent=points;score.classList.remove('population-score-pop');if(points){void score.offsetWidth;score.classList.add('population-score-pop');}}
 }
-// Manche opening card: icon, big centred title, one rule line (same layout as Quanto ci vai vicino?).
+// Rules screen shown before every manche (phase "intro"): game, short rules, waits for the host's "Avanti".
 const openings={
- population:{title:'Popolazione',rule:'10 confronti · Fino a 150 punti a risposta, più rispondi in fretta più punti fai.',icon:'globe'},
- chronology:{title:'Cronologia',rule:'5 round · Ordina 4 eventi dal più antico al più recente · 50 punti per posizione giusta.',icon:'hourglass'},
+ population:{title:'Popolazione',icon:'globe',rules:['10 confronti: quale dei due paesi ha più abitanti?','15 secondi per rispondere a ogni confronto.','Fino a 150 punti: più rispondi in fretta, più punti fai.']},
+ chronology:{title:'Cronologia',icon:'hourglass',rules:['5 round: ordina 4 eventi dal più antico al più recente.','30 secondi per ogni round.','50 punti per ogni posizione giusta.']},
+ vault:{title:'Quanto ci vai vicino?',icon:'target',rules:['6 domande con una risposta numerica: scrivi la tua stima.','20 secondi per ogni domanda.','Più la stima è vicina alla soluzione, più punti fai: fino a 200 a domanda.']},
+ meadow:{title:'Prato fiorito',icon:'flower',rules:['5 round: tocca le risposte giuste tra 6 opzioni.','Una è una bomba: se la prendi, il round vale 0.','40 punti per ogni fiore salvo. Tutte e 5 giuste per primo: +40.']},
 };
-function renderOpening(kind){
+const mancheStage=r=>['population','chronology','vault','meadow'][r.manche-1];
+function renderOpening(kind,r,host){
  const opening=$('culture-opening'),data=openings[kind];
  opening.hidden=!data;
  document.body.toggleAttribute('data-opening',!!data);
- if(!data||opening.dataset.kind===kind)return;
- opening.dataset.kind=kind;
- opening.style.setProperty('--opening-icon',`url('/assets/interface/${data.icon}.svg')`);
- $('culture-opening-title').textContent=data.title;
- $('culture-opening-rule').textContent=data.rule;
+ if(!data)return;
+ const key=`${kind}/${host}`;
+ if(opening.dataset.kind!==key){
+  opening.dataset.kind=key;
+  opening.style.setProperty('--opening-icon',`url('/assets/interface/${data.icon}.svg')`);
+  $('culture-opening-title').textContent=data.title;
+  $('culture-opening-rules').replaceChildren(...data.rules.map(rule=>text('li',rule)));
+  $('culture-opening-wait').textContent=host?'Premi Avanti quando tutti sono pronti.':'In attesa del conduttore…';
+ }
+ $('culture-opening-step').textContent=`Manche ${r.manche} di ${r.manche_total}`;
 }
-function renderRoom(){const r=state.room,host=state.can_control,active=['question','paused'].includes(r.phase),lobby=r.phase==='lobby',final=r.phase==='finished',clues=r.manche==='clues',culture=r.quiz==='culture',cultureRevealed=culture&&!!state.population?.values,population=!!state.population&&!final,chronology=state.chronology&&!final,meadow=state.meadow&&!final,vault=state.vault&&!final,vaultFinal=state.vault&&final,price=state.price,checkpoint=price&&r.phase==='reveal'&&price.round%3===0;document.body.className=(host?'host':'player')+' '+r.phase+(lobby?' live-shell':'')+(clues?' gameboy':'')+(culture?' culture-quiz':'')+(population?' population-quiz':'')+(chronology||meadow?' chronology-quiz':'')+(meadow?' meadow-quiz':'')+(price?' pokeprice':'')+(checkpoint?' price-checkpoint':'')+(vault?' vault-quiz':'')+(vaultFinal?' vault-finished':'')+(culture&&final?' culture-final':'');
+function renderRoom(){const r=state.room,host=state.can_control,active=['question','paused'].includes(r.phase),lobby=r.phase==='lobby',intro=r.phase==='intro',final=r.phase==='finished',clues=r.manche==='clues',culture=r.quiz==='culture',cultureRevealed=culture&&!!state.population?.values,population=!!state.population&&!final,chronology=state.chronology&&!final,meadow=state.meadow&&!final,vault=state.vault&&!final,vaultFinal=state.vault&&final,price=state.price,checkpoint=price&&r.phase==='reveal'&&price.round%3===0;document.body.className=(host?'host':'player')+' '+r.phase+(lobby?' live-shell':'')+(clues?' gameboy':'')+(culture?' culture-quiz':'')+(population?' population-quiz':'')+(chronology||meadow?' chronology-quiz':'')+(meadow?' meadow-quiz':'')+(price?' pokeprice':'')+(checkpoint?' price-checkpoint':'')+(vault?' vault-quiz':'')+(vaultFinal?' vault-finished':'')+(culture&&final?' culture-final':'');
  document.querySelector('h1').textContent=price?'PokéPrice':clues?'PokéIndizi':culture?'Cultura generale':'Pixelcard';
  show('pokemon-parade',clues);
  show('clue-stage',clues&&!final);show('question-prompt',!host&&!clues&&!price&&!culture);show('clue-reveal',clues&&!!state.solution_image);show('culture-stage',population);show('population-phase',population);show('population-progress',population);if(population)renderPopulation();
  if(clues){const unlocked=state.clues||[];if(JSON.stringify(unlocked)!==$('clues').dataset.content){$('clues').dataset.content=JSON.stringify(unlocked);$('clues').replaceChildren(...unlocked.map((c,i)=>text('p',`${i+1}. ${c}`,'clue-dialog')));}
  if(state.solution_image){$('clue-image').src=base.href+state.solution_image;$('clue-image').alt='Sprite di '+state.solution;$('clue-caption').textContent=`${state.solution}${state.me?' · '+(state.me.points||0)+' punti':''}`;}
  if(state.me?.result==='correct')$('feedback').textContent=`Hai vinto ${state.me.points} punti!`;}
- show('skip-hint',host&&!lobby&&!final);
+ show('skip-hint',host&&!lobby&&!intro&&!final);
  show('lobby',lobby);
  show('question',!price&&!chronology&&!meadow&&!vault&&(active||((host||clues||culture)&&r.phase==='reveal')||(clues&&final&&!!state.solution_image)));
  show('price-stage',!!price&&!final);
@@ -347,7 +355,7 @@ function renderRoom(){const r=state.room,host=state.can_control,active=['questio
  labelFullscreen();
  showPriceBackground(!!price&&!final);
  const results=!chronology&&!meadow&&!vault&&(final||checkpoint||(population?host||cultureRevealed:culture&&r.round>0||!price&&r.phase==='reveal'));
- show('results',results);show('controls',host&&!final);show('fullscreen',host);show('audio-control',!!vault||host&&!lobby&&!final&&!culture);show('revoked',route!=='play'&&!host);show('card-wrap',host&&!clues&&!price&&!culture);show('answer-form',!!state.me&&active&&!price&&!culture);show('population-match',population);show('paused',r.phase==='paused'&&!population);$('room-code').textContent=r.code;$('round').textContent=lobby?'Lobby':price?`Round ${price.round}/${price.total}`:clues?`PokéIndizi ${r.round-6}/6`:vault?`Manche ${r.manche}/${r.manche_total}`:culture&&final?'Partita conclusa':culture?cultureRound(r,state.chronology?.total):`Carta ${r.round}/6`;
+ show('results',results);show('controls',host&&!final);show('fullscreen',host);show('audio-control',!!vault||host&&!lobby&&!final&&!culture);show('revoked',route!=='play'&&!host);show('card-wrap',host&&!clues&&!price&&!culture);show('answer-form',!!state.me&&active&&!price&&!culture);show('population-match',population);show('paused',r.phase==='paused'&&!population);$('room-code').textContent=r.code;$('round').textContent=lobby?'Lobby':intro?`Manche ${r.manche}/${r.manche_total}`:price?`Round ${price.round}/${price.total}`:clues?`PokéIndizi ${r.round-6}/6`:vault?`Manche ${r.manche}/${r.manche_total}`:culture&&final?'Partita conclusa':culture?cultureRound(r,state.chronology?.total):`Carta ${r.round}/6`;
  const received=vault?'':`${state.received}/${chronology?.participants??state.players.length} risposte inviate`;
  if(population)populationText($('received'),received);else $('received').textContent=received;
  if(chronology)$('chronology-count').textContent=state.chronology.correct?'':$('received').textContent;
@@ -360,7 +368,7 @@ function renderRoom(){const r=state.room,host=state.can_control,active=['questio
  tick();
  },250);};img.onerror=()=>{cardRound=0;error('Impossibile caricare la carta.');};img.src=base.href+asset;}).catch(e=>{cardRound=0;error(e.message);});}
  if(!active&&r.round>0&&!culture)$('card').classList.add('revealed');
- for(const b of document.querySelectorAll('[data-command]')){const c=b.dataset.command;b.hidden=!(c==='end'||c==='start'&&lobby||c==='pause'&&(r.phase==='question'||(culture&&r.phase==='reveal'&&!(chronology&&state.chronology.view==='solution')))||c==='resume'&&r.phase==='paused'||c==='next'&&r.phase==='reveal'&&!chronology&&!meadow||c==='advance'&&!!chronology&&r.phase==='reveal'&&state.chronology.view==='solution');if(c==='next')b.textContent=vault?(r.round===6?(r.manche_total>3?'Avvia Prato fiorito':'Mostra podio'):'Prossima domanda'):price?(price.round===price.total?'Mostra podio':'Prossimo round'):culture?(r.round===10?'Avvia Cronologia':'Prossimo confronto'):r.round===6?'Avvia PokéIndizi':'Prossima domanda';}
+ for(const b of document.querySelectorAll('[data-command]')){const c=b.dataset.command;b.hidden=!(c==='end'||c==='start'&&lobby||c==='pause'&&(r.phase==='question'||(culture&&r.phase==='reveal'&&!(chronology&&state.chronology.view==='solution')))||c==='resume'&&r.phase==='paused'||c==='next'&&(intro||r.phase==='reveal'&&!chronology&&!meadow)||c==='advance'&&!!chronology&&r.phase==='reveal'&&state.chronology.view==='solution');if(c==='next')b.textContent=intro?'Avanti':vault?(r.round===6?(r.manche_total>3?'Avvia Prato fiorito':'Mostra podio'):'Prossima domanda'):price?(price.round===price.total?'Mostra podio':'Prossimo round'):culture?(r.round===10?'Avvia Cronologia':'Prossimo confronto'):r.round===6?'Avvia PokéIndizi':'Prossima domanda';}
  show('vault-pages',!culture&&!!vaultFinal&&state.players.length>vaultPageSize());
  if(!(culture&&final))renderCultureFinal(null);
  if(results){
@@ -423,16 +431,13 @@ function tick(){if(!state)return;
  const r=state.room,ms=left(),introMs=r.phase==='question'?Math.max(0,new Date(r.starts_at).getTime()-Date.now()-offset):0,pre=introMs>0;
  show('clue-intro',r.manche==='clues'&&r.round===7&&pre);
  const seconds=Math.ceil((pre?introMs:ms)/1000);
- const cultureIntro=r.phase==='paused'&&r.paused_from!=='reveal'&&state.chronology?Math.max(0,ms-state.duration_ms):introMs;
- const openingKind=r.phase!=='finished'&&(state.population?.opening_ms&&cultureIntro>2000?'population':
-  state.chronology?.opening_ms&&cultureIntro>3000+3*state.chronology.card_interval_ms?'chronology':'');
- if(r.quiz==='culture')renderOpening(openingKind);
+ if(r.quiz==='culture')renderOpening(r.phase==='intro'?mancheStage(r):'',r,state.can_control);
  if(state.population&&r.phase!=='finished'){
   populationText($('seconds'),`${seconds}s`);
-  const countdown=$('population-countdown'),counting=!state.can_control&&pre&&!openingKind;
+  const countdown=$('population-countdown'),counting=!state.can_control&&pre;
   countdown.hidden=!counting;
   if(counting&&countdown.lastElementChild.textContent!==String(seconds))countdown.lastElementChild.textContent=String(seconds);
-  populationText($('population-phase'),r.phase==='paused'?'In pausa':pre?'Preparati':state.population.values?'Rivelazione':'Tempo per rispondere');
+  populationText($('population-phase'),r.phase==='paused'?'In pausa':pre?'Preparati':state.population.values?'Rivelazione':'');
   $('question').toggleAttribute('data-urgent',r.phase==='question'&&!pre&&seconds<=5);
   const progress=$('population-progress');
   progress.toggleAttribute('data-hidden-progress',!!state.population.values);

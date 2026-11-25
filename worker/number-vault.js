@@ -163,7 +163,8 @@ export const VAULT_REVEAL = 8_000;
 export const VAULT_SOLUTION_AT = 3_000;
 export const VAULT_NEXT = 7_500;
 export const VAULT_MAX_POINTS = 200;
-const ANNOUNCEMENT_MS = 3_000;
+// The rules screen replaces the old 3 s announcement.
+const ANNOUNCEMENT_MS = 0;
 const preview = round => round === 1 ? 1_000 : 800;
 export const vaultIntro = round => (round === 1 ? ANNOUNCEMENT_MS : 0) + preview(round);
 const min = 1;
