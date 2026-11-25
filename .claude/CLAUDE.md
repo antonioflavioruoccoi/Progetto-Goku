@@ -1,29 +1,3 @@
-# Progetto Goku
+Tutte le istruzioni del progetto sono in [AGENTS.md](../AGENTS.md): leggilo per intero prima di lavorare. Non duplicare qui le regole.
 
-Stiamo creando un **quiz multiplayer online con licenza**.
-
-## Dove si trova tutto
-- Repository GitHub: `antonioflavioruoccoi/Progetto-Goku`
-- Cartella di lavoro: `/home/user/Progetto-Goku`
-- Tutti i file stanno nella cartella principale (nessuna sottocartella di codice): `index.html`, `style.css`, `game.js`, più immagini, audio e video.
-
-## Come lavorare
-- Usa sempre le **skill** disponibili: risparmiano token e riducono l'AI Slop.
-- Rendi tutto **molto catchy**: animazioni, immagini, giochi interattivi.
-- **Mobile first**: sfrutta al massimo il telefono (touch, gesture, schermo verticale, vibrazione).
-- Parla come un **quizzer professionista**: domande chiare, ritmo, tono da conduttore.
-- Sviluppa come un **UX senior designer**: semplice, leggibile, fluido.
-- Spiega tutto in italiano, in modo semplice: l'utente non sa programmare.
-
-## Regole di codice (riassunto)
-1. **Pensa prima di scrivere**: dichiara le ipotesi, chiedi se non è chiaro, proponi alternative più semplici.
-2. **Semplicità**: il minimo codice che risolve il problema, niente extra non richiesti.
-3. **Modifiche mirate**: tocca solo ciò che serve, mantieni lo stile esistente, segnala (senza cancellare) il codice morto altrui.
-4. **Obiettivi verificabili**: definisci come capire che funziona, poi controlla prima di dire "fatto".
-
-## Backup e pubblicazione
-- **Prima di una modifica grande** (task trasformativo importante sul sito): crea un backup. Il backup dura **72 ore**: il primo task dopo le 72 ore lo elimina.
-- **Dopo ogni modifica al sito**, se non ci sono errori, mandala online subito **senza chiedere**, salvo indicazione contraria.
-- **"Online" = push su Cloudflare**: le modifiche devono essere visibili sul sito pubblico.
-- Sito ufficiale: Worker Cloudflare `dr-goku` (https://dr-goku.antonioflavioruocco-i.workers.dev). Il codice multiplayer NON è in questa repo: non va mai sostituito. Si pubblicano solo i file elencati in `.claude/deploy-files.txt` con `python3 .claude/deploy.py` (`rollback` per tornare indietro).
-- Limite noto (25/11/2026): dal cloud il caricamento dei file fallisce ("Unauthorized"), perché il proxy sostituisce il permesso temporaneo di upload con la chiave API. Finché non è risolto, la pubblicazione va fatta da un computer con accesso a Cloudflare.
+@../AGENTS.md
