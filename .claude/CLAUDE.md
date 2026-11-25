@@ -20,3 +20,7 @@ Stiamo creando un **quiz multiplayer online con licenza**.
 2. **Semplicità**: il minimo codice che risolve il problema, niente extra non richiesti.
 3. **Modifiche mirate**: tocca solo ciò che serve, mantieni lo stile esistente, segnala (senza cancellare) il codice morto altrui.
 4. **Obiettivi verificabili**: definisci come capire che funziona, poi controlla prima di dire "fatto".
+
+## Backup e pubblicazione
+- **Prima di una modifica grande** (task trasformativo importante sul sito): crea un backup. Il backup dura **72 ore**, poi va cancellato.
+- **Dopo ogni modifica al sito**, se non ci sono errori, mandala online subito **senza chiedere**, salvo indicazione contraria.
