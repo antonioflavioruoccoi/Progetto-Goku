@@ -40,7 +40,8 @@ header p { color: white; font-size: 20px; line-height: 1.2; text-shadow: 0 2px 3
 .timer-row { min-height: 78px; display: flex; align-items: center; justify-content: center; gap: 10px; }
 button, input { font: inherit; }
 button { cursor: pointer; border-radius: 12px; padding: 9px 23px; }
-button:hover:enabled { background: #e9f6fc; }
+/* Solo con mouse: sui telefoni :hover resta "appiccicato" dopo il tocco. */
+@media (hover: hover) { button:hover:enabled { background: #e9f6fc; } }
 button:active:enabled { transform: translateY(2px); }
 button:disabled { cursor: default; }
 button:focus-visible, input:focus-visible { outline: 3px solid #3567a1; outline-offset: 4px; }

@@ -1,0 +1,4 @@
+Backup del sito online (Worker "dr-goku") fatto il 25/11/2026 PRIMA delle modifiche grafiche.
+SCADE il 28/11/2026: il primo task dopo quella data deve cancellare questa cartella.
+Contenuto: copia dei file del sito + codice del Worker (versione Cloudflare 94806dd4, n. 27).
+Cloudflare conserva comunque le versioni precedenti: si puo' tornare indietro dal pannello.

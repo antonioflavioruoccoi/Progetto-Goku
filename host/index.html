@@ -1,0 +1,160 @@
+<!doctype html><html lang="it"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Dr. Goku · Live</title>
+<script>
+  if (location.protocol === 'file:') location.replace('https://dr-goku.antonioflavioruocco-i.workers.dev/play/');
+</script>
+<link rel="stylesheet" href="../style.css"><link rel="stylesheet" href="../app.css"><script type="module" src="../app.js"></script></head><body class="live-shell"><video id="price-background" aria-hidden="true" muted loop playsinline preload="none" hidden
+  data-video="/assets/pokeprice/hilda-and-tepig-watching-castelia-city-pokemon-pixel-moewalls-com.mp4"
+  data-poster="/assets/pokeprice/castelia-poster.webp"></video><main id="app"><header><h1>Dr. Goku</h1><p id="subtitle">Quiz multiplayer</p></header><nav><a href="../">Quiz originale</a><a href="../play/">Gioca live</a><a href="../host/">Host</a><a href="../admin/">Admin</a><button id="logout" hidden>Esci</button></nav><p id="error" role="alert"></p><p id="notice" role="status"></p>
+<section id="auth" class="panel" hidden><h2>Accesso Admin</h2><form id="password-form"><label>Password amministratore<input id="password" type="password" required autocomplete="current-password"></label><button>Accedi</button></form></section>
+<section id="invite" class="panel" hidden><h2>Invito personale Host</h2><p>Riscatto automatico nel browser corrente. Il link è utilizzabile una sola volta.</p><button id="redeem">Riscatta invito</button></section>
+<section id="dashboard" hidden><section id="admin-tools" class="panel" hidden><h2>Invita un Host</h2><form id="license-form"><label>Nome della licenza<input name="name" maxlength="80" autocomplete="off" placeholder="Es. Serata Pokémon"></label><label>Durata in ore<input name="hours" type="number" min="0.01" step="0.01" max="8760" value="24" required></label><label>Numero totale di stanze<input name="max_rooms" type="number" min="1" max="10000" value="1" required></label><label><input name="quizzes" type="checkbox" value="pokemon" checked> Quiz Pokémon</label><label><input name="quizzes" type="checkbox" value="culture"> Cultura generale</label><button>Genera invito</button></form><div id="invite-result" hidden><label>Link personale (mostrato solo ora)<input id="invite-link" readonly></label><button id="copy-invite">Copia link</button><p>Condividilo manualmente. Se lo perdi, revoca e genera un nuovo invito.</p></div></section><section class="panel"><h2>Licenze Host</h2><div id="licenses"></div></section><section class="panel"><h2>Crea una stanza</h2><form id="create-form"><label>Quiz<select id="quiz"><option value="pokemon">Pokémon · 6 carte + 6 PokéIndizi + 12 PokéPrice</option><option value="culture">Cultura generale · 4 manche</option></select></label><label class="name-filter-label"><input id="name-filter" type="checkbox" checked> Blocca nickname inappropriati</label><label id="license-select-label">Licenza<select id="license-select"></select></label><button id="create-room">Crea stanza</button></form></section><section class="panel"><h2>Stanze</h2><div id="rooms"></div></section></section>
+<section id="join-panel" class="panel" hidden><h2>Entra nella partita</h2><form id="join-form"><label>Codice stanza<input id="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required placeholder="123456"></label><label>Nickname<input id="nickname" maxlength="24" required autocomplete="nickname"></label><button>Entra</button></form></section>
+<section id="room" hidden><div class="scoreboard"><span>PIN <strong id="room-code"></strong></span><span id="round"></span><button id="fullscreen">Schermo intero</button></div><div id="culture-opening" class="culture-opening" hidden><span class="culture-opening-icon" aria-hidden="true"></span><p id="culture-opening-step"></p><h2 id="culture-opening-title"></h2><ul id="culture-opening-rules"></ul><p id="culture-opening-wait" role="status"></p></div><section id="lobby" class="panel" hidden><h2>La partita sta per iniziare</h2><div id="lobby-pin"><span>PIN della stanza</span><strong id="big-code"></strong><a id="join-link"></a></div><canvas id="qr" aria-label="QR per partecipare"></canvas><div id="lobby-players"></div></section><section id="question" hidden><div class="timer-row"><span id="population-phase" role="status" hidden></span><div id="timer"><img src="../timerball.png" alt=""><span id="seconds">30s</span></div><span id="paused" hidden>IN PAUSA</span><span id="received"></span><div id="population-progress" aria-hidden="true" hidden><span></span></div></div><div id="card-wrap" class="scene" hidden><div id="card" class="card"><div class="face back"><img src="../da modificare.webp" alt="Dorso della carta"></div><div class="face front"><img id="pokemon" alt="Carta Pokémon"><canvas id="pixels" aria-label="Carta pixelata"></canvas></div></div></div><section id="clue-stage" hidden><img id="professor" src="../assets/pokeindizi/professor.png" alt="Professor Oak, Pokémon Rosso/Blu"><p id="clue-intro">Sono il Professor Oak! Seconda manche: PokéIndizi. Sei Pokémon, tre indizi ciascuno. I punti continuano!</p><div id="clues" aria-live="polite"></div></section><figure id="clue-reveal" hidden><img id="clue-image" alt=""><figcaption id="clue-caption"></figcaption></figure><p id="question-prompt">Guarda la carta sullo schermo del conduttore.</p><section id="culture-stage" class="culture-stage" hidden><h2 id="culture-prompt">Quale nazione ha più abitanti?<small id="population-year"></small></h2><div id="population-match" role="group" aria-label="Scegli quale nazione ha più abitanti"><button id="population-a" class="population-country" type="button"><span class="population-label"><img class="population-flag" alt=""><span class="population-name"></span></span><span class="population-value"></span></button><button id="population-b" class="population-country" type="button"><span class="population-label"><img class="population-flag" alt=""><span class="population-name"></span></span><span class="population-value"></span></button></div><div id="population-countdown" aria-live="polite" hidden><span>Preparati</span><strong></strong></div><div id="population-compare" hidden><div class="population-bar" aria-hidden="true"><span></span><span></span></div><div class="population-bar-labels"><span></span><span></span></div></div><p id="population-score" role="status" hidden></p><p id="population-feedback" role="status"></p></section><form id="answer-form" hidden><img src="../pokeball.webp" alt=""><input id="answer" maxlength="80" required autocomplete="off" spellcheck="false" placeholder="Indovina il Pokémon" aria-label="Nome Pokémon"><button id="submit">Invia</button></form><p id="feedback" role="status"></p></section><section id="price-stage" aria-label="PokéPrice" hidden>
+  <div class="price-meta">
+    <div id="price-timer" role="timer" aria-label="Tempo residuo"><span id="price-seconds"></span></div>
+    <div><p id="price-prompt"></p><p id="price-received"></p></div>
+  </div>
+  <div id="price-intro" hidden>
+    <h2>Quale carta ti spenna di più?</h2>
+    <p>12 confronti · 15 secondi per scegliere</p>
+    <p>Prezzo medio di vendita Cardmarket degli ultimi 30 giorni</p>
+  </div>
+  <div id="price-play">
+    <div class="price-match">
+      <article id="price-reference" class="price-card">
+        <div class="price-art"><img alt=""></div>
+        <div class="price-card-info"><h2></h2><p></p><strong></strong></div>
+      </article>
+      <span class="price-vs" aria-hidden="true">VS</span>
+      <article id="price-candidate" class="price-card">
+        <div class="price-art"><img alt=""></div>
+        <div class="price-card-info"><h2></h2><p></p><strong></strong></div>
+      </article>
+    </div>
+    <div class="price-response">
+      <div id="price-choices" aria-label="Scegli la risposta" hidden>
+        <button id="price-higher" type="button" aria-label="HIGHER, più alto">↑ HIGHER</button>
+        <button id="price-lower" type="button" aria-label="LOWER, più basso">↓ LOWER</button>
+      </div>
+      <p id="price-outcome" role="status"></p>
+      <span id="price-combo" hidden>COMBO +20</span>
+    </div>
+  </div>
+</section>
+<section id="chronology-stage" aria-labelledby="chronology-category" hidden>
+  <div id="chronology-meta">
+    <div><div id="chronology-phase" role="status"></div><div id="chronology-count"></div></div>
+    <div id="chronology-clock" role="timer" aria-label="Secondi rimanenti"><span id="chronology-seconds"></span><small>s</small></div>
+    <div id="chronology-progress" aria-hidden="true"><span></span></div>
+  </div>
+  <div id="chronology-board" class="chronology-board">
+    <div class="chronology-heading">
+      <h2 id="chronology-category"></h2>
+      <p id="chronology-instruction">Dal più antico al più recente</p>
+    </div>
+    <div id="chronology-items" class="chronology-items" role="group" aria-label="Elementi da ordinare"></div>
+  </div>
+  <div id="chronology-actions">
+    <p id="chronology-status" role="status"></p>
+    <button id="chronology-reset" type="button">Ricomincia</button>
+    <button id="chronology-send" type="button">Invia</button>
+  </div>
+  <section id="chronology-leaderboard" class="chronology-leaderboard" aria-labelledby="chronology-leaderboard-title" hidden>
+    <h2 id="chronology-leaderboard-title">Classifica</h2>
+    <ol class="chronology-ranking" aria-label="Classifica dei giocatori" tabindex="0"></ol>
+    <p id="chronology-ranking-empty" hidden>Nessun giocatore in classifica</p>
+  </section>
+</section>
+<section id="meadow-stage" aria-labelledby="meadow-category" hidden>
+  <div id="meadow-meta">
+    <div><div id="meadow-phase" role="status"></div><div id="meadow-count"></div></div>
+    <div id="meadow-clock" role="timer" aria-label="Secondi rimanenti"><span id="meadow-seconds"></span><small>s</small></div>
+    <div id="meadow-progress" aria-hidden="true"><span></span></div>
+  </div>
+  <p id="meadow-fastest" role="status" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg><span id="meadow-fastest-label">Il più veloce</span><strong id="meadow-fastest-name"></strong><span id="meadow-fastest-bonus"></span></p>
+  <div id="meadow-board">
+    <div class="meadow-heading">
+      <h2 id="meadow-category"></h2>
+      <p id="meadow-instruction"></p>
+    </div>
+    <ul id="meadow-options" role="list" aria-label="Opzioni"></ul>
+    <figure id="meadow-scene" role="img">
+      <div class="meadow-world"><div id="meadow-ground"></div></div>
+      <figcaption><strong id="meadow-round"></strong><span id="meadow-sent"></span></figcaption>
+    </figure>
+  </div>
+  <div id="meadow-actions">
+    <p id="meadow-status" role="status"></p>
+    <button id="meadow-clear" type="button">Togli tutto</button>
+    <button id="meadow-send" type="button">Invia</button>
+  </div>
+  <section id="meadow-leaderboard" class="chronology-leaderboard" aria-labelledby="meadow-leaderboard-title" hidden>
+    <h2 id="meadow-leaderboard-title">Classifica</h2>
+    <ol class="chronology-ranking" aria-label="Classifica dei giocatori" tabindex="0"></ol>
+    <p id="meadow-ranking-empty" hidden>Nessun giocatore in classifica</p>
+  </section>
+</section>
+<section id="vault-stage" aria-labelledby="vault-title" hidden>
+  <div class="vault-header">
+    <div class="vault-brand">
+      <strong id="vault-title">Per un pelo</strong>
+      <span id="vault-round"></span>
+    </div>
+    <div id="vault-audio"></div>
+  </div>
+  <div id="vault-clock" role="timer" aria-label="Secondi rimanenti">
+    <svg viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="19" /><circle cx="22" cy="22" r="19" pathLength="100" /></svg>
+    <span id="vault-seconds"></span>
+  </div>
+  <span id="vault-clock-live" class="vault-sr" role="status"></span>
+  <div class="vault-main">
+    <div id="vault-opening" hidden>
+      <span class="vault-opening-dial" aria-hidden="true"></span>
+      <h2>Per un pelo</h2>
+      <p id="vault-opening-rule"></p>
+    </div>
+    <div class="vault-prompt">
+      <p id="vault-category"></p>
+      <h2 id="vault-question"></h2>
+      <p id="vault-unit"></p>
+    </div>
+    <div id="vault-art" aria-hidden="true"></div>
+    <div id="vault-entry" hidden>
+      <div class="vault-display" id="vault-display" tabindex="0" aria-label="Stima in cifre" aria-describedby="vault-question vault-unit vault-status">
+        <strong id="vault-number">—</strong><span id="vault-display-unit" aria-hidden="true"></span>
+        <label id="vault-assisted-label" hidden><span class="vault-sr">Stima in cifre</span><input id="vault-assisted" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" aria-describedby="vault-question vault-unit vault-status"></label>
+        <button id="vault-assist" type="button" aria-pressed="false" title="Inserimento assistito">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h2m3 0h2m3 0h2M7 14h10"/></svg>
+          <span id="vault-assist-name" class="vault-sr">Inserimento assistito</span>
+        </button>
+      </div>
+      <p id="vault-status" role="status"></p>
+      <div id="vault-keypad" role="group" aria-label="Tastierino numerico"></div>
+      <button id="vault-send" type="button">Conferma</button>
+    </div>
+    <div id="vault-hold" hidden>
+      <span class="vault-lock" aria-hidden="true"></span>
+      <strong id="vault-hold-value"></strong>
+      <p id="vault-hold-status" role="status"></p>
+      <p id="vault-hold-joke"></p>
+    </div>
+    <section id="vault-answer" aria-label="Rivelazione" hidden>
+      <p id="vault-popup"></p>
+      <div class="vault-solution"><strong id="vault-solution" role="img"></strong> <span id="vault-solution-unit"></span></div>
+      <p id="vault-explanation"></p>
+      <a id="vault-source" target="_blank" rel="noopener noreferrer" hidden>Fonte</a>
+      <p id="vault-personal" role="status"></p>
+    </section>
+    <div id="vault-scale" hidden>
+      <svg id="vault-axis" role="img"></svg>
+      <p id="vault-scale-label"></p>
+    </div>
+    <div id="vault-ranking" hidden>
+      <ol id="vault-podium" aria-label="Podio della domanda"></ol>
+      <ol id="vault-leaders" aria-label="Classifica generale"></ol>
+      <p id="vault-total" role="status"></p>
+    </div>
+  </div>
+  <div id="vault-band"><span id="vault-phase" role="status"></span><span id="vault-presence"></span></div>
+</section>
+<section id="results" class="panel" hidden><h2 id="results-title"></h2><p id="solution"></p><p id="personal"></p><div id="confetti" aria-hidden="true" hidden></div><div id="podium"></div><ol id="ranking"></ol><div id="final-table-wrap" hidden><table id="final-table"><caption>Punti per manche</caption><thead><tr><th scope="col">#</th><th scope="col">Giocatore</th><th scope="col">Popolazione</th><th scope="col">Cronologia</th><th scope="col">Stime</th><th scope="col" id="final-meadow-col">Prato fiorito</th><th scope="col">Totale</th></tr></thead><tbody></tbody></table></div><div id="vault-pages" hidden><button type="button" id="vault-prev">Precedente</button><span id="vault-page"></span><button type="button" id="vault-next">Successiva</button></div></section><div id="controls" hidden><small id="skip-hint" hidden>Shift + N · Salta round</small><button data-command="start">Avvia partita</button><button data-command="pause">Pausa</button><button data-command="resume">Riprendi</button><button data-command="next">Prossima domanda</button><button data-command="advance" hidden>Avanti</button><button data-command="end">Termina partita</button></div><p id="revoked" hidden>Privilegi Host non disponibili. Contatta l’amministratore.</p><p><a id="back" href="./">Torna alla dashboard</a></p></section></main><audio id="music" src="../Pokemon FireRedLeafGreen- Pallet Town.mp3" loop preload="none"></audio><div class="audio-control" id="audio-control" hidden><button id="enable-audio" type="button" hidden>Attiva audio</button><label>Volume<input id="volume" type="range" min="0" max="100" value="70"></label></div><div id="pokemon-parade" aria-hidden="true" hidden><div class="parade-sprites"><img src="../assets/pokeindizi/background/12.png" width="56" height="56" alt="" decoding="async" loading="lazy"><img src="../assets/pokeindizi/background/45.png" width="56" height="56" alt="" decoding="async" loading="lazy"><img src="../assets/pokeindizi/background/59.png" width="56" height="56" alt="" decoding="async" loading="lazy"><img src="../assets/pokeindizi/background/103.png" width="56" height="56" alt="" decoding="async" loading="lazy"><img src="../assets/pokeindizi/background/127.png" width="56" height="56" alt="" decoding="async" loading="lazy"><img src="../assets/pokeindizi/background/39.png" width="56" height="56" alt="" decoding="async" loading="lazy"><img src="../assets/pokeindizi/background/54.png" width="56" height="56" alt="" decoding="async" loading="lazy"><img src="../assets/pokeindizi/background/25.png" width="56" height="56" alt="" decoding="async" loading="lazy"><img src="../assets/pokeindizi/background/94.png" width="56" height="56" alt="" decoding="async" loading="lazy"><img src="../assets/pokeindizi/background/26.png" width="56" height="56" alt="" decoding="async" loading="lazy"><img src="../assets/pokeindizi/background/115.png" width="56" height="56" alt="" decoding="async" loading="lazy"><img src="../assets/pokeindizi/background/131.png" width="56" height="56" alt="" decoding="async" loading="lazy"><img src="../assets/pokeindizi/background/149.png" width="56" height="56" alt="" decoding="async" loading="lazy"><img src="../assets/pokeindizi/background/15.png" width="56" height="56" alt="" decoding="async" loading="lazy"></div></div></body></html>
