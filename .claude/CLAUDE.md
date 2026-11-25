@@ -22,6 +22,6 @@ Stiamo creando un **quiz multiplayer online con licenza**.
 4. **Obiettivi verificabili**: definisci come capire che funziona, poi controlla prima di dire "fatto".
 
 ## Backup e pubblicazione
-- **Prima di una modifica grande** (task trasformativo importante sul sito): crea un backup. Il backup dura **72 ore**, poi va cancellato.
+- **Prima di una modifica grande** (task trasformativo importante sul sito): crea un backup. Il backup dura **72 ore**: il primo task dopo le 72 ore lo elimina.
 - **Dopo ogni modifica al sito**, se non ci sono errori, mandala online subito **senza chiedere**, salvo indicazione contraria.
 - **"Online" = push su Cloudflare**: le modifiche devono essere visibili sul sito pubblico.
