@@ -25,3 +25,5 @@ Stiamo creando un **quiz multiplayer online con licenza**.
 - **Prima di una modifica grande** (task trasformativo importante sul sito): crea un backup. Il backup dura **72 ore**: il primo task dopo le 72 ore lo elimina.
 - **Dopo ogni modifica al sito**, se non ci sono errori, mandala online subito **senza chiedere**, salvo indicazione contraria.
 - **"Online" = push su Cloudflare**: le modifiche devono essere visibili sul sito pubblico.
+- Sito ufficiale: Worker Cloudflare `dr-goku` (https://dr-goku.antonioflavioruocco-i.workers.dev). Il codice multiplayer NON è in questa repo: non va mai sostituito. Si pubblicano solo i file elencati in `.claude/deploy-files.txt` con `python3 .claude/deploy.py` (`rollback` per tornare indietro).
+- Limite noto (25/11/2026): dal cloud il caricamento dei file fallisce ("Unauthorized"), perché il proxy sostituisce il permesso temporaneo di upload con la chiave API. Finché non è risolto, la pubblicazione va fatta da un computer con accesso a Cloudflare.

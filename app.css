@@ -2649,3 +2649,106 @@ body.culture-quiz #vault-stage[data-role="player"] #vault-clock { font-size: 1.0
 @keyframes meadow-stamp { from { opacity: 0; transform: scale(1.6) rotate(-4deg); } 60% { opacity: 1; } }
 @keyframes meadow-zap { 40% { transform: scale(1.35) rotate(-8deg); } }
 @keyframes meadow-sheen { to { transform: translateX(110%); } }
+
+/* Schermate Gioca live / Host / Admin: restyle grafico (25/11/2026). Solo aspetto, nessuna logica. */
+.live-shell {
+  --red: #e3350d;
+  --deep: #0f2c3f;
+  --gold-shade: #b88f00;
+  background: radial-gradient(90% 38% at 50% 0, #2f7094 0%, transparent 70%), var(--stage);
+  -webkit-tap-highlight-color: transparent;
+}
+.live-shell #app { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+.live-shell #app > header { display: grid; justify-items: center; }
+.live-shell #app > header::before {
+  content: '';
+  width: 60px;
+  height: 60px;
+  margin-bottom: 6px;
+  background: url('/pokeball.webp') center / contain no-repeat;
+  filter: drop-shadow(0 5px 0 var(--deep));
+  transform-origin: 50% 90%;
+  animation: ball-shake 1.1s var(--motion) .25s 1;
+}
+@keyframes ball-shake {
+  20% { transform: rotate(-18deg); }
+  40% { transform: rotate(15deg); }
+  60% { transform: rotate(-9deg); }
+  80% { transform: rotate(5deg); }
+}
+.live-shell #app h1 { text-shadow: 0 3px 0 var(--gold-shade), 0 6px 0 var(--deep); }
+.live-shell #app nav {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  width: min(100%, 460px);
+  margin: 16px auto 8px;
+  padding: 4px;
+  gap: 4px;
+  border: 1px solid var(--surface-line);
+  border-radius: 14px;
+  background: var(--deep);
+  font-size: .85rem;
+  line-height: 1.1;
+}
+.live-shell #app nav :is(a, button) { min-height: 48px; border-radius: 10px; text-align: center; touch-action: manipulation; }
+.live-shell #app nav :is(a, button):active { background: var(--surface); color: white; }
+.live-shell #app :is(#join-panel, #auth, #invite, #dashboard .panel) {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #25576f, #1d4a63);
+  box-shadow: 0 6px 0 var(--deep), 0 20px 32px #0a1f2d66;
+}
+.live-shell #app :is(#join-panel, #auth, #invite, #dashboard .panel)::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 6px;
+  background: var(--red);
+}
+.live-shell #app :is(#join-panel, #auth, #invite, #dashboard .panel) h2 { padding-top: 6px; }
+.live-shell #app form :is(input:not([type='checkbox']), select) {
+  min-height: 52px;
+  padding: 10px 14px;
+  border: 2px solid var(--surface-line);
+  border-radius: 12px;
+  background: #fffdf5;
+  font-size: 1.125rem;
+}
+.live-shell #app form :is(input:not([type='checkbox']), select):focus {
+  border-color: var(--yellow);
+  box-shadow: 0 0 0 4px #ffcc0059;
+  outline: none;
+}
+.live-shell #app #code { font-size: 1.75rem; font-weight: 800; letter-spacing: .3em; text-align: center; }
+.live-shell #app #code::placeholder { font-weight: 500; opacity: .4; }
+.live-shell #app button {
+  min-height: 48px;
+  border-radius: 12px;
+  box-shadow: 0 3px 0 var(--deep);
+  touch-action: manipulation;
+  transition: transform .12s var(--motion), box-shadow .12s var(--motion), background-color .2s var(--motion);
+}
+.live-shell #app button:active:enabled { transform: translateY(3px); box-shadow: 0 0 0 var(--deep); }
+.live-shell #app :is(#join-form button, #password-form button, #create-room, #redeem, [data-command="start"]) {
+  box-shadow: 0 4px 0 var(--gold-shade);
+  font-size: 1.125rem;
+}
+.live-shell #app :is(#join-form button, #password-form button, #create-room, #redeem, [data-command="start"]):active:enabled {
+  box-shadow: 0 1px 0 var(--gold-shade);
+  transform: translateY(3px);
+}
+.live-shell #app #notice:not(:empty), .live-shell #app #error:not(:empty) {
+  width: min(100%, 460px);
+  margin: 14px auto;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border-left: 5px solid var(--yellow);
+  background: var(--surface);
+  color: white;
+  text-align: left;
+  text-shadow: none;
+}
+.live-shell #app #error:not(:empty) { border-left-color: var(--red); background: #fff0ec; color: #932c20; }
+.live-shell #app #dashboard .panel h2 { margin: 0 0 16px; padding-top: 6px; font-size: clamp(1.4rem, 5.5vw, 2rem); line-height: 1.1; text-align: left; }
