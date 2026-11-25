@@ -329,7 +329,7 @@ function renderRoom(){const r=state.room,host=state.can_control,active=['questio
  if(clues){const unlocked=state.clues||[];if(JSON.stringify(unlocked)!==$('clues').dataset.content){$('clues').dataset.content=JSON.stringify(unlocked);$('clues').replaceChildren(...unlocked.map((c,i)=>text('p',`${i+1}. ${c}`,'clue-dialog')));}
  if(state.solution_image){$('clue-image').src=base.href+state.solution_image;$('clue-image').alt='Sprite di '+state.solution;$('clue-caption').textContent=`${state.solution}${state.me?' · '+(state.me.points||0)+' punti':''}`;}
  if(state.me?.result==='correct')$('feedback').textContent=`Hai vinto ${state.me.points} punti!`;}
- show('skip-hint',host&&!lobby&&!final&&!vault);
+ show('skip-hint',host&&!lobby&&!final);
  show('lobby',lobby);
  show('question',!price&&!chronology&&!meadow&&!vault&&(active||((host||clues||culture)&&r.phase==='reveal')||(clues&&final&&!!state.solution_image)));
  show('price-stage',!!price&&!final);
@@ -467,7 +467,6 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 document.addEventListener('keydown', async event => {
  if (!event.shiftKey || event.key.toLowerCase() !== 'n' || event.ctrlKey || event.altKey || event.metaKey || event.repeat || event.isComposing || busy) return;
  if (event.target?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"]),[role="textbox"]')) return;
- if (state?.vault && (state.room.phase!=='reveal'||left()>500||!left())) return;
  if (route === 'play' || !state?.can_control || !['question','paused','reveal'].includes(state.room.phase)) return;
  event.preventDefault(); busy = true;
  try { await rpc('command',{room_id:roomId,revision:state.room.revision,command:'skip_round'}); await refresh(); }

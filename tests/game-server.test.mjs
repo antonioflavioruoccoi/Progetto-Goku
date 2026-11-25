@@ -489,7 +489,8 @@ test('skip_round moves only one round, crosses manche boundaries and settles sub
   }
   if(quiz==='culture'){
    assert.equal(get().manche,3);
-   assert.throws(()=>command('skip_round'),/Attendi la fine/);
+   command('skip_round');
+   assert.equal(get().manche,3);assert.equal(get().round,2);assert.equal(get().phase,'question');
    command('end');
   }
   assert.equal(get().phase,'finished');
@@ -597,7 +598,6 @@ test('Quanto ci vai vicino? locks answers and reveals as soon as everyone answer
   assert.equal(state.room.vaultOrder,undefined);
  }
  assert.equal(rpc('admin','dashboard').rooms[0].vaultOrder,undefined);
- assert.throws(()=>command('skip_round'),/Attendi la fine/);
  assert.throws(()=>command('next'),/Attendi la fine/);
  t.mock.timers.tick(19_999);
  assert.equal(snap('p1').room.phase,'question');
@@ -701,25 +701,29 @@ test('Prato fiorito follows Quanto ci vai vicino?, hides the bomb until reveal a
   assert.throws(()=>send('p1',[0,1,2,3,4,5,6]),/Selezione non valida/);
   assert.throws(()=>send('p1',['0']),/Selezione non valida/);
   assert.throws(()=>send('p1',[0],crypto.randomUUID(),3),/non più attuale/);
-  const plays={1:[safe.slice(0,3),safe,[...safe.slice(0,4),bomb]],2:[[],safe.slice(0,1),[bomb]]}[round]??[safe.slice(0,2),safe.slice(0,2),safe.slice(0,2)];
-  const expected={1:[120,200,0],2:[0,40,0]}[round]??[80,80,80];
+  // Round 3: two perfect answers, only the first (p1) gets the fastest bonus.
+  const plays={1:[safe.slice(0,3),safe,[...safe.slice(0,4),bomb]],2:[[],safe.slice(0,1),[bomb]],3:[safe,[...safe].reverse(),safe.slice(0,2)]}[round]??[safe.slice(0,2),safe.slice(0,2),safe.slice(0,2)];
+  const expected={1:[120,240,0],2:[0,40,0],3:[240,200,80]}[round]??[80,80,80];
+  const fastest={1:'p2',3:'p1'}[round]??null;
   const request=crypto.randomUUID();
   assert.deepEqual(send('p1',plays[0],request),{done:true,choice:plays[0]});
   assert.deepEqual(send('p1',plays[0],request),{done:true,choice:plays[0]});
   assert.throws(()=>send('p1',plays[0]),/già completato/);
   const waiting=snap('p1');
   assert.equal(waiting.me.points,0);assert.deepEqual(waiting.me.choice,plays[0]);
-  assert.doesNotMatch(JSON.stringify(waiting),/bomb/);
+  assert.doesNotMatch(JSON.stringify(waiting),/bomb|fastest"/);
   send('p2',plays[1]);send('p3',plays[2]);
   const revealed=snap('p1');
   assert.equal(revealed.room.phase,'reveal');
   assert.equal(revealed.meadow.bomb,bomb);assert.equal(revealed.meadow.reveal_ms,15000);
+  assert.equal(revealed.meadow.fastest,fastest);assert.equal(revealed.meadow.fastest_bonus,40);
+  assert.deepEqual(['p1','p2','p3'].map(name=>snap(name).me.fastest),['p1','p2','p3'].map(name=>name===fastest));
   assert.deepEqual(['p1','p2','p3'].map(name=>snap(name).me.points),expected);
   assert.throws(()=>command('next'),/non disponibile/);
   t.mock.timers.tick(15000);assert.equal(game.settle(get()),true);
  }
  assert.equal(get().phase,'finished');
- assert.deepEqual(['p1','p2','p3'].map(name=>snap(name).me.score),[120+0+240,200+40+240,0+0+240]);
+ assert.deepEqual(['p1','p2','p3'].map(name=>snap(name).me.score),[120+0+240+80+80,240+40+200+80+80,0+0+80+80+80]);
 });
 
 test('Cronologia: Shift + N during the solution skips once, and legacy timed reveals still advance', t => {

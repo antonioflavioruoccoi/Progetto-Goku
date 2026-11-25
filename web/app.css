@@ -894,13 +894,11 @@ body.pokeprice {
   color: var(--yellow);
   font-size: clamp(12px, 2vw, 18px);
   font-weight: 800;
-  letter-spacing: .13em;
-  text-transform: uppercase;
 }
 :is(#chronology-phase, #meadow-phase) { color: white; font-size: clamp(.875rem, 2vw, 1.25rem); font-weight: 700; }
 #chronology-stage[data-paused] #chronology-phase, #meadow-stage[data-paused] #meadow-phase { color: var(--yellow); }
 :is(#chronology-count, #meadow-count) { font-size: .875rem; margin-top: 2px; }
-.player :is(#chronology-count, #meadow-count) { display: none; }
+.player :is(#chronology-count, #meadow-count), .host #meadow-count { display: none; }
 :is(#chronology-clock, #meadow-clock) {
   color: white;
   font: 800 clamp(32px, 6svh, 68px)/.95 system-ui, sans-serif;
@@ -1187,6 +1185,10 @@ body.pokeprice {
 .meadow-detail { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .host .meadow-detail { font-size: .55em; }
 .host .meadow-name { overflow-wrap: break-word; }
+/* Citazioni e nomi lunghi: carattere più piccolo per stare nella casella. */
+.meadow-option[data-long] { font-size: .9375rem; line-height: 1.2; }
+.host .meadow-option[data-long] { grid-template-columns: 1.6em 1.9em minmax(0, 1fr) auto; padding-block: clamp(6px, 1.2svh, 14px); font-size: clamp(.95rem, 2.1svh, 1.45rem); line-height: 1.18; }
+.host .meadow-option[data-long] .meadow-detail { font-size: .8em; }
 .meadow-detail:not(:empty) { animation: chronology-pop .23s var(--motion); }
 .player .meadow-option:disabled { opacity: 1; }
 @media (hover: hover) { .player .meadow-option:enabled:hover { background: #e4f1f7; } }
@@ -1391,7 +1393,7 @@ body.pokeprice {
   box-shadow:none;
   transition:transform .1s ease,background-color .14s ease,border-color .14s ease;
 }
-:is(.vault-quiz, .vault-finished) button:hover:enabled { background:#3d4d71; }
+@media (hover: hover) { :is(.vault-quiz, .vault-finished) button:hover:enabled { background:#3d4d71; } }
 :is(.vault-quiz, .vault-finished) button:active:enabled { transform:translateY(2px) scale(.985); }
 :is(.vault-quiz, .vault-finished) :is(a,button,input,[tabindex]):focus-visible {
   outline:2px solid var(--vault-gold);
@@ -1421,23 +1423,8 @@ body.pokeprice {
   padding:clamp(12px,2.5dvh,28px) clamp(12px,3vw,52px);
   border:1px solid #536487;
   border-radius:clamp(12px,2.15vw,26px);
-  background:
-    radial-gradient(ellipse at 74% 24%,#394769 0%,transparent 51%),
-    radial-gradient(ellipse at 10% 105%,#212a4b 0%,transparent 60%),#151d33;
-  box-shadow:inset 0 0 0 4px #19233b,inset 0 0 0 5px #3b4b6b,0 12px 36px #080c1870;
+  background:#151d33;
   text-align:left;
-}
-#vault-stage::before {
-  content:'';
-  position:absolute;
-  inset:8px;
-  z-index:-1;
-  border:1px solid #65749157;
-  border-radius:inherit;
-  pointer-events:none;
-  background:
-    radial-gradient(circle, #c5a36b 0 2px,transparent 3px) left top / 12px 12px no-repeat,
-    radial-gradient(circle, #c5a36b 0 2px,transparent 3px) right bottom / 12px 12px no-repeat;
 }
 #vault-stage p, #vault-stage h2, #vault-stage ol { margin:0; }
 .vault-header { display:flex; min-width:0; gap:clamp(5px,1vw,20px); align-items:center; }
@@ -2029,7 +2016,7 @@ body.culture-quiz {
   --vault-aqua: var(--cg-accent);
   --vault-violet: var(--cg-muted);
   min-height: 100dvh;
-  background: radial-gradient(ellipse 90% 60% at 72% 0%, #1f2a4b 0%, transparent 70%) fixed, var(--cg-bg);
+  background: var(--cg-bg);
   color: var(--cg-ink);
   font: 500 1rem/1.3 var(--cg-text);
 }
@@ -2106,7 +2093,7 @@ body.culture-quiz #controls:hover #skip-hint, body.culture-quiz #controls:focus-
 body.culture-quiz #error:not(:empty) { background: var(--cg-bad-bg); color: #ffd9d9; border: 1px solid var(--cg-bad); }
 body.culture-quiz #notice:not(:empty) { background: var(--cg-panel); color: var(--cg-ink); border: 1px solid var(--cg-line); border-radius: 8px; padding: 6px 10px; }
 
-/* Cornice del palco, ripresa da "Quanto ci vai vicino?". */
+/* Cornice del palco: un bordo solo, fondo pieno (niente doppio filo, puntini o aloni). */
 body.culture-quiz.host :is(#question, #chronology-stage),
 body.culture-quiz.lobby #lobby,
 body.culture-final #app #results {
@@ -2114,24 +2101,7 @@ body.culture-final #app #results {
   isolation: isolate;
   border: 1px solid #536487;
   border-radius: clamp(12px, 2.15vw, 26px);
-  background:
-    radial-gradient(ellipse at 74% 24%, #394769 0%, transparent 51%),
-    radial-gradient(ellipse at 10% 105%, #212a4b 0%, transparent 60%), #151d33;
-  box-shadow: inset 0 0 0 4px #19233b, inset 0 0 0 5px #3b4b6b, 0 12px 36px #080c1870;
-}
-body.culture-quiz.host :is(#question, #chronology-stage)::before,
-body.culture-quiz.lobby #lobby::before,
-body.culture-final #app #results::before {
-  content: '';
-  position: absolute;
-  inset: 8px;
-  z-index: -1;
-  border: 1px solid #65749157;
-  border-radius: inherit;
-  pointer-events: none;
-  background:
-    radial-gradient(circle, #c5a36b 0 2px, transparent 3px) left top / 12px 12px no-repeat,
-    radial-gradient(circle, #c5a36b 0 2px, transparent 3px) right bottom / 12px 12px no-repeat;
+  background: #151d33;
 }
 
 /* ---------- Lobby ---------- */
@@ -2302,9 +2272,9 @@ body.culture-quiz.population-quiz #population-feedback:empty { display: none; }
   place-content: center;
   justify-items: center;
   gap: 8px;
-  background: radial-gradient(ellipse at 50% 40%, #222d50 0%, transparent 65%), var(--cg-bg);
+  background: var(--cg-bg);
 }
-#population-countdown span { color: var(--cg-muted); font-size: 1.1rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+#population-countdown span { color: var(--cg-muted); font-size: 1.1rem; font-weight: 700; }
 #population-countdown strong {
   color: var(--cg-accent);
   font-size: clamp(7rem, 42vw, 14rem);
@@ -2453,7 +2423,7 @@ body.culture-quiz #vault-stage[data-role="player"]:has(#vault-hold:not([hidden])
 body.culture-quiz .vault-display { border-color: var(--cg-line); }
 body.culture-quiz #vault-number { color: var(--cg-ink); }
 body.culture-quiz #vault-keypad button { background: var(--cg-panel); border-color: var(--cg-line); }
-body.culture-quiz #vault-keypad button:hover:enabled { background: var(--cg-panel-2); }
+@media (hover: hover) { body.culture-quiz #vault-keypad button:hover:enabled { background: var(--cg-panel-2); } }
 body.culture-quiz #vault-keypad button:disabled { color: var(--cg-off-ink); }
 /* Conduttore: "Fonte" sotto la spiegazione. */
 body.culture-quiz #vault-stage[data-role="host"] #vault-answer {
@@ -2494,7 +2464,7 @@ body.culture-quiz #vault-personal span {
   border-radius: 12px;
   background: var(--cg-panel);
 }
-body.culture-quiz #vault-personal small { color: var(--cg-muted); font-size: .8rem; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+body.culture-quiz #vault-personal small { color: var(--cg-muted); font-size: .8rem; font-weight: 700; }
 body.culture-quiz #vault-personal strong { color: var(--cg-ink); font-size: clamp(1.25rem, 5.5vw, 1.7rem); }
 body.culture-quiz #vault-personal span + span strong { color: var(--cg-accent); }
 body.culture-quiz #vault-stage[data-role="player"] #vault-total {
@@ -2574,7 +2544,7 @@ body.culture-final #podium[data-culture] {
 @keyframes cg-step { from { opacity: 0; transform: translateY(30px); } }
 #final-table-wrap { width: min(100%, 760px); overflow-x: auto; }
 #final-table { width: 100%; border-collapse: separate; border-spacing: 0 4px; font-size: clamp(.85rem, 2dvh, 1.1rem); }
-#final-table caption { margin-bottom: 4px; color: var(--cg-muted); font-size: .8rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+#final-table caption { margin-bottom: 4px; color: var(--cg-muted); font-size: .8rem; font-weight: 700; }
 #final-table th, #final-table td { padding: 7px 10px; text-align: right; white-space: nowrap; }
 #final-table thead th { color: var(--cg-muted); font-size: .8em; font-weight: 700; }
 #final-table :is(th, td):nth-child(2) { text-align: left; white-space: normal; overflow-wrap: anywhere; }
@@ -2636,3 +2606,45 @@ body.culture-quiz #vault-stage[data-role="player"] #vault-clock { font-size: 1.0
 .culture-quiz #meadow-scene { border-color: var(--cg-line); background: linear-gradient(var(--cg-panel-2), var(--cg-bg) 72%); }
 .culture-quiz #meadow-scene figcaption { border-color: var(--cg-line); background: var(--cg-bg); }
 .culture-quiz .meadow-bud-label { background: var(--cg-bg); }
+
+/* Più veloce: nastro premio tra il timer e il prato, compare con un timbro e resta sulla classifica. */
+#meadow-stage:has(#meadow-fastest:not([hidden])) { grid-template: "meta" auto "fastest" auto "board" minmax(0, 1fr) "actions" auto / minmax(0, 1fr); }
+.host #meadow-stage:has(#meadow-fastest:not([hidden])) { grid-template: "meta" auto "fastest" auto "board" minmax(0, 1fr) / minmax(0, 1fr); }
+#meadow-fastest {
+  grid-area: fastest;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: .55em;
+  justify-self: start;
+  max-width: 100%;
+  margin: 0;
+  padding: .45em 1em .45em .7em;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--cg-accent);
+  color: var(--cg-accent-ink);
+  font: 700 1rem/1.15 var(--cg-text);
+  animation: meadow-stamp .55s cubic-bezier(.2, 1.5, .4, 1) .9s backwards;
+}
+.host #meadow-fastest { font-size: clamp(1.1rem, 3.2svh, 2rem); }
+#meadow-fastest svg { flex: none; width: 1.25em; height: 1.25em; fill: currentColor; animation: meadow-zap .9s ease-out 1.3s 2; }
+#meadow-fastest-name { min-width: 0; overflow: hidden; font: 800 1.3em/1 var(--cg-title); letter-spacing: -.02em; text-overflow: ellipsis; white-space: nowrap; }
+#meadow-fastest-bonus { flex: none; padding: .15em .5em; border-radius: 999px; background: var(--cg-accent-ink); color: var(--cg-accent); font-weight: 800; font-variant-numeric: tabular-nums; }
+/* Un solo riflesso che attraversa il nastro, poi resta fermo. */
+#meadow-fastest::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, #fff8 50%, transparent 70%);
+  transform: translateX(-110%);
+  animation: meadow-sheen .9s ease-out 1.4s;
+  pointer-events: none;
+}
+#meadow-fastest-label { white-space: nowrap; }
+#meadow-stage[data-ranking] #meadow-fastest { justify-self: center; }
+#meadow-fastest[data-mine] { box-shadow: 0 0 0 3px var(--cg-bg), 0 0 0 5px var(--cg-accent); }
+#meadow-stage[data-paused] :is(#meadow-fastest, #meadow-fastest svg), #meadow-stage[data-paused] #meadow-fastest::after { animation-play-state: paused; }
+@keyframes meadow-stamp { from { opacity: 0; transform: scale(1.6) rotate(-4deg); } 60% { opacity: 1; } }
+@keyframes meadow-zap { 40% { transform: scale(1.35) rotate(-8deg); } }
+@keyframes meadow-sheen { to { transform: translateX(110%); } }

@@ -72,9 +72,11 @@ La verifica locale non dimostra l’eviction/ibernazione effettiva in produzione
 
 Dopo la sesta carta Pixelcard il server consolida i punti e avvia automaticamente 5 secondi di introduzione con Oak, poi sei PokéIndizi casuali senza ripetizioni dal dataset di dodici. PIN, identità e WebSocket restano gli stessi. Gli indizi si sbloccano a 30/20/10 secondi; dopo la seconda manche si passa a PokéPrice. I 12 confronti di PokéPrice precedono il podio cumulato.
 
-Nella schermata del conduttore, **Shift + N** passa al round successivo e consolida una sola volta i punti già ottenuti. In Quanto ci vai vicino? la scorciatoia è disponibile solo al termine della rivelazione. Si usa fuori dal campo di risposta e funziona anche nel quiz originale. Nel multiplayer il server verifica ruolo, licenza, fase e revisione.
+Nella schermata del conduttore, **Shift + N** passa alla domanda successiva in ogni manche (anche Quanto ci vai vicino? e Prato fiorito, durante la domanda o la rivelazione) e consolida una sola volta i punti già ottenuti. È gestita in un unico punto (`skip_round` nel server, un solo ascoltatore in `web/app.js`), quindi vale da sola per le manche future. Si usa fuori dal campo di risposta e funziona anche nel quiz originale. Nel multiplayer il server verifica ruolo, licenza, fase e revisione.
 
-Cultura generale comprende 10 confronti sulla popolazione, 5 round di Cronologia, 6 domande di Quanto ci vai vicino? e il podio finale.
+Cultura generale comprende 10 confronti sulla popolazione, 5 round di Cronologia, 6 domande di Quanto ci vai vicino?, 5 round di Prato fiorito e il podio finale.
+
+- **Prato fiorito:** 5 categorie estratte dalle 12 di `worker/meadow.js`, 6 opzioni con una sola bomba. Ogni risposta giusta vale 40 punti, la bomba azzera il round. Il primo che invia tutte e 5 le giuste guadagna 40 punti bonus: al reveal il nastro «Il più veloce» mostra il suo nome sullo schermo del conduttore e sui telefoni, e resta durante la classifica.
 
 - **Popolazione:** a ogni nuova stanza il server estrae 10 coppie dal catalogo di 82 nazioni (`data/population-countries.json`, IDB 2025): nessuna nazione ripetuta, rapporto tra popolazioni 1,05–3, difficoltà mista e lato casuale. La stanza salva gli ID estratti (`population_pairs`); le stanze create prima continuano con le coppie fisse 2025 o 2019. Fonti in [POPULATION-DATA-SOURCE.md](data/POPULATION-DATA-SOURCE.md) e [FLAGS-SOURCE.md](data/FLAGS-SOURCE.md).
 - **Cronologia:** ogni posizione corretta vale 50 punti. L'ordine corretto, con l'anno sotto ogni evento, resta sullo schermo senza timer finché il conduttore preme **Avanti**; poi la classifica dura 10 secondi e parte il round successivo. Avanti indica il round: doppi clic e richieste ripetute non saltano fasi.

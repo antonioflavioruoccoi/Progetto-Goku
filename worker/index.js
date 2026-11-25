@@ -11,7 +11,7 @@ import {
   PRICE_START, PRICE_ROUNDS, PRICE_DURATION,
   selectPriceCards, settlePrice, priceSnapshot,
 } from "./pokeprice.js";
-import { MEADOW_POINTS, MEADOW_ROUNDS, drawMeadow, meadowPoints } from "./meadow.js";
+import { MEADOW_FASTEST_BONUS, MEADOW_POINTS, MEADOW_ROUNDS, drawMeadow, meadowPerfect, meadowPoints } from "./meadow.js";
 const quizOf = r => r.quiz || "pokemon";
 const cultureStages = [
   { id: "population", count: populations.pairs.length, duration: 15000 },
@@ -503,7 +503,11 @@ export class Goku {
           total: MEADOW_ROUNDS,
           points_per_safe: MEADOW_POINTS,
           options: meadow.items.map(({ id, name }) => ({ id, name })),
-          ...(cultureRevealed ? { bomb: meadow.items.find(item => item.bomb).id, reveal_ms: MEADOW_REVEAL } : {}),
+          fastest_bonus: MEADOW_FASTEST_BONUS,
+          ...(cultureRevealed ? {
+            bomb: meadow.items.find(item => item.bomb).id, reveal_ms: MEADOW_REVEAL,
+            fastest: r.players[Object.keys(r.answers).find(id => r.answers[id].fastest)]?.nickname ?? null,
+          } : {}),
           participants,
         },
       } : {}),
@@ -535,6 +539,7 @@ export class Goku {
               streak: r.players[s.id].streak || 0,
               bonus: r.answers[s.id]?.bonus || 0,
             } : population || chronology || meadow ? { choice: r.answers[s.id]?.choice || null } : {}),
+            ...(meadow && cultureRevealed ? { fastest: !!r.answers[s.id]?.fastest } : {}),
           }
         : null,
       can_control: this.control(s, r),
@@ -913,7 +918,12 @@ export class Goku {
             new Set(p.answer).size !== p.answer.length ||
             !p.answer.every(id => items.some(item => item.id === id))) fail("Selezione non valida");
         const result = { done: true, choice: p.answer };
-        r.answers[s.id] = { ...result, points: meadowPoints(items, p.answer), requests: { [p.request_id]: result } };
+        // Requests run one at a time in the Durable Object: the first perfect answer wins the bonus.
+        const fastest = meadowPerfect(items, p.answer) && !Object.values(r.answers).some(a => a.fastest);
+        r.answers[s.id] = {
+          ...result, points: meadowPoints(items, p.answer) + (fastest ? MEADOW_FASTEST_BONUS : 0),
+          ...(fastest ? { fastest: true } : {}), requests: { [p.request_id]: result },
+        };
         this.recordPoll(r, s.id, now);
         r.revision++;
         this.settle(r);
@@ -998,7 +1008,8 @@ export class Goku {
         fail("Comando non disponibile");
       }
       if (p.revision !== r.revision) fail("Stato cambiato: riprova");
-      if (isVault(r) && ["next", "skip_round"].includes(c) &&
+      // Shift + N (skip_round) works in every manche; only "next" waits for the vault reveal.
+      if (isVault(r) && c === "next" &&
           (r.phase !== "reveal" || r.deadline - now > VAULT_REVEAL - VAULT_NEXT))
         fail("Attendi la fine della rivelazione");
       if (["start", "next"].includes(c) && quizOf(r) === "culture" && !cultureStage(r)) fail("Manche non disponibile");

@@ -52,14 +52,14 @@ test('Shift N skips one round in every multiplayer game, only for the host and o
  const h=await boot((host?'host':'play')+'/?room=r',{room});
  const press=async(target=h.window.document)=>{target.dispatchEvent(new h.window.KeyboardEvent('keydown',{key:'N',shiftKey:true,bubbles:true}));await new Promise(r=>setImmediate(r));};
  await press(h.$('answer'));assert.equal(h.calls.filter(c=>c.action==='command').length,0);
- for(const manche of ['cards','clues','price',1,2]){
+ for(const manche of ['cards','clues','price',1,2,3,4]){
   room.room.manche=manche;
   room.room.quiz=typeof manche==='number'?'culture':'pokemon';
   await h.notify();
   await press();
  }
  assert.deepEqual(h.calls.filter(c=>c.action==='command').map(c=>c.payload.command),
-  host?Array(5).fill('skip_round'):[]);
+  host?Array(7).fill('skip_round'):[]);
  await h.window.happyDOM.close();
  }
 });
@@ -442,6 +442,16 @@ test('Prato fiorito toggles flowers with aria-pressed, clears, sends a partial p
  assert.equal(buttons[4].querySelector('.meadow-flower').hasAttribute('data-boom'),true);
  assert.deepEqual(buttons.map(b=>b.querySelector('.meadow-detail').textContent),['','+40','','+40','Bomba','+40']);
  assert.match(h.$('meadow-status').textContent,/Prato salvo · \+120 punti/);
+ assert.equal(h.$('meadow-fastest').hidden,true);
+ Object.assign(room.meadow,{fastest:'Misty',fastest_bonus:40});room.room.revision++;
+ await h.notify();
+ assert.equal(h.$('meadow-fastest').hidden,false);
+ assert.deepEqual(['label','name','bonus'].map(k=>h.$('meadow-fastest-'+k).textContent),['Il più veloce','Misty','+40 bonus']);
+ room.me.fastest=true;room.room.revision++;
+ await h.notify();
+ assert.equal(h.$('meadow-fastest-label').textContent,'Sei tu il più veloce');assert.equal(h.$('meadow-fastest-name').hidden,true);
+ assert.match(h.$('meadow-status').textContent,/bonus compreso/);
+ delete room.me.fastest;delete room.meadow.fastest;
  room.meadow.bomb=3;room.me.points=0;room.room.revision++;
  await h.notify();
  assert.match(h.$('meadow-status').textContent,/Hai preso la bomba · 0 punti/);

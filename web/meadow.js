@@ -44,7 +44,7 @@ function paint() {
     button.querySelector('.meadow-flower').toggleAttribute('data-open', on);
   }
   const count = selected.length;
-  setText($('status'), count ? `${count} ${count === 1 ? 'fiore' : 'fiori'} · ${count * 40} punti se eviti la bomba` :
+  setText($('status'), count ? `${count} ${count === 1 ? 'fiore' : 'fiori'} · ${count * 40} punti se eviti la bomba${count === 5 ? ', +40 se sei il primo' : ''}` :
     'Tocca le risposte giuste, poi invia');
   $('clear').disabled = !enabled || !count;
   $('send').disabled = !enabled;
@@ -78,6 +78,7 @@ function buildRound(meadow, host) {
     if (!host) option.type = 'button';
     option.dataset.option = id;
     option.style.setProperty('--i', index);
+    option.toggleAttribute('data-long', name.length > 36);
     option.append(host ? element('span', 'meadow-number', String(index + 1)) : flower('meadow-option-flower'),
       element('span', 'meadow-name', name), element('span', 'meadow-detail'));
     if (host) option.prepend(flower('meadow-option-flower'));
@@ -108,8 +109,19 @@ export function renderMeadow(state, host) {
   stage.dataset.phase = reveal ? 'reveal' : locked ? 'waiting' : 'question';
   stage.toggleAttribute('data-paused', room.phase === 'paused');
   setText($('round'), `${room.round}/${meadow.total}`);
-  setText($('instruction'), host ? 'Quali sono giuste? Una sola è la bomba.' : 'Fai sbocciare le giuste. Una è una bomba: se la prendi, il round vale 0.');
+  setText($('instruction'), host ? `Quali sono giuste? Una sola è la bomba. Tutte e 5 per primo: +${meadow.fastest_bonus} bonus.` :
+    `Una è una bomba: se la prendi, il round vale 0. Tutte e 5 giuste per primo: +${meadow.fastest_bonus}.`);
   $('instruction').hidden = reveal;
+  // Premio al più veloce: compare al reveal e resta anche sulla classifica.
+  const fastest = reveal ? meadow.fastest : null, mine = !host && !!me?.fastest;
+  $('fastest').hidden = !fastest;
+  if (fastest) {
+    setText($('fastest-label'), mine ? 'Sei tu il più veloce' : 'Il più veloce');
+    setText($('fastest-name'), fastest);
+    $('fastest-name').hidden = mine;
+    setText($('fastest-bonus'), `+${meadow.fastest_bonus} bonus`);
+    $('fastest').toggleAttribute('data-mine', mine);
+  }
   $('clear').hidden = $('send').hidden = host || reveal || locked;
   const hit = locked && reveal && selected.includes(meadow.bomb);
   buttons.forEach((option, index) => {
@@ -129,7 +141,7 @@ export function renderMeadow(state, host) {
   if (!host) {
     if (reveal) {
       setText($('status'), !locked ? 'Risposta non inviata · 0 punti' : hit ? 'Hai preso la bomba · 0 punti' :
-        selected.length ? `Prato salvo · +${me.points} punti` : 'Nessun fiore piantato · 0 punti');
+        selected.length ? `Prato salvo · +${me.points} punti${me.fastest ? `, bonus compreso` : ''}` : 'Nessun fiore piantato · 0 punti');
     } else if (locked) setText($('status'), selected.length ? 'Fiori piantati. In attesa degli altri.' : 'Inviato senza fiori. In attesa degli altri.');
     else paint();
   }
