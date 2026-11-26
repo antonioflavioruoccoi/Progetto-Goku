@@ -3,7 +3,6 @@
 const el = (id) => document.getElementById(id);
 const stage = el("puzzle-stage");
 const board = el("puzzle-board");
-const tilesBox = el("puzzle-tiles");
 const image = el("puzzle-image");
 const form = el("puzzle-form");
 const input = el("puzzle-input");
@@ -11,8 +10,8 @@ const setText = (node, value) => { if (node.textContent !== value) node.textCont
 const calm = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 const vibrate = (pattern) => { try { navigator.vibrate?.(pattern); } catch {} };
 
-// Tessere a incastro: ogni pezzo scoperto e' il 30% piu' grande della sua casella e ha linguette e incavi.
-const PIECE = 1.3, TAB = 0.2;
+// Tessere a incastro: il corpo di ogni pezzo e' esattamente la sua casella, linguette e incavi sporgono del 20%.
+const TAB = 0.2;
 const piecesBox = Object.assign(document.createElement("div"), { id: "puzzle-pieces" });
 piecesBox.setAttribute("aria-hidden", "true");
 board.insertBefore(piecesBox, el("puzzle-burst"));
@@ -21,35 +20,49 @@ const hint = Object.assign(document.createElement("p"), { id: "puzzle-hint" });
 hint.innerHTML = "<strong>Chi o cosa c'è nell'immagine?</strong><span>Guarda lo schermo principale</span>";
 board.append(hint);
 
-// Contorno della tessera in un quadrato 140x140 (corpo 20..120): out = linguetta fuori, in = incavo.
-function piecePath(out) {
-  const k = out ? -1 : 1;
-  const side = (x0, y0, dx, dy, nx, ny) => {
-    const p = (t, h) => `${x0 + dx * t + nx * h * k} ${y0 + dy * t + ny * h * k}`;
+// Lati [sopra, destra, sotto, sinistra]: 1 = linguetta fuori, -1 = incavo, 0 = bordo dritto.
+// Ogni lato interno e' condiviso: la linguetta di un pezzo entra nell'incavo del vicino.
+const flipV = (r, c) => ((r * 31 + c * 17) % 7) % 2 ? 1 : -1;
+const flipH = (r, c) => ((r * 13 + c * 29) % 5) % 2 ? 1 : -1;
+const sidesOf = (r, c, rows, cols) => [r ? -flipH(r - 1, c) : 0, c < cols - 1 ? flipV(r, c) : 0, r < rows - 1 ? flipH(r, c) : 0, c ? -flipV(r, c - 1) : 0];
+
+// Contorno della tessera in un quadrato 140x140 (corpo 20..120).
+function piecePath(sides) {
+  const side = (s, x0, y0, dx, dy, nx, ny) => {
+    if (!s) return `L${x0 + dx} ${y0 + dy} `;
+    const p = (t, h) => `${x0 + dx * t - nx * h * s} ${y0 + dy * t - ny * h * s}`;
     return `L${p(.36, 0)} C${p(.42, 0)} ${p(.42, 6)} ${p(.38, 9)} C${p(.3, 15)} ${p(.4, 19)} ${p(.5, 19)} C${p(.6, 19)} ${p(.7, 15)} ${p(.62, 9)} C${p(.58, 6)} ${p(.58, 0)} ${p(.64, 0)} L${p(1, 0)} `;
   };
-  return "M20 20 " + side(20, 20, 100, 0, 0, 1) + side(120, 20, 0, 100, -1, 0) + side(120, 120, -100, 0, 0, -1) + side(20, 120, 0, -100, 1, 0) + "Z";
+  const [top, right, bottom, left] = sides;
+  return "M20 20 " + side(top, 20, 20, 100, 0, 0, 1) + side(right, 120, 20, 0, 100, -1, 0) + side(bottom, 120, 120, -100, 0, 0, -1) + side(left, 20, 120, 0, -100, 1, 0) + "Z";
 }
-const PATHS = [piecePath(true), piecePath(false)];
-const MASKS = PATHS.map((d) => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 140'><path d='${d}'/></svg>`)}")`);
+const shapes = new Map();
+function shapeOf(sides) {
+  const key = sides.join();
+  if (!shapes.has(key)) {
+    const d = piecePath(sides);
+    shapes.set(key, { d, mask: `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 140'><path d='${d}'/></svg>`)}")` });
+  }
+  return shapes.get(key);
+}
 
 function makePiece(cell) {
   const p = state.puzzle, r = Math.floor(cell / p.cols), c = cell % p.cols;
-  const kind = (r + c) % 2;
-  const size = PIECE * (1 + 2 * TAB); // lato della tessera in caselle
+  const shape = shapeOf(sidesOf(r, c, p.rows, p.cols));
+  const size = 1 + 2 * TAB; // lato della tessera in caselle
   const piece = document.createElement("div");
   piece.className = "puzzle-piece";
-  piece.style.cssText = `left:${((c + .5 - size / 2) / p.cols) * 100}%;top:${((r + .5 - size / 2) / p.rows) * 100}%;width:${(size / p.cols) * 100}%;height:${(size / p.rows) * 100}%`;
+  piece.style.cssText = `left:${((c - TAB) / p.cols) * 100}%;top:${((r - TAB) / p.rows) * 100}%;width:${(size / p.cols) * 100}%;height:${(size / p.rows) * 100}%`;
   const art = document.createElement("div");
   art.className = "puzzle-piece-art";
-  art.style.maskImage = art.style.webkitMaskImage = MASKS[kind];
+  art.style.maskImage = art.style.webkitMaskImage = shape.mask;
   const img = document.createElement("img");
   img.alt = "";
   img.src = image.src;
-  img.style.cssText = `width:${(p.cols / size) * 100}%;height:${(p.rows / size) * 100}%;left:${(-(c + .5 - size / 2) / size) * 100}%;top:${(-(r + .5 - size / 2) / size) * 100}%`;
+  img.style.cssText = `width:${(p.cols / size) * 100}%;height:${(p.rows / size) * 100}%;left:${(-(c - TAB) / size) * 100}%;top:${(-(r - TAB) / size) * 100}%`;
   art.append(img);
   piece.append(art);
-  piece.insertAdjacentHTML("beforeend", `<svg viewBox="0 0 140 140" preserveAspectRatio="none"><path d="${PATHS[kind]}"/></svg>`);
+  piece.insertAdjacentHTML("beforeend", `<svg viewBox="0 0 140 140" preserveAspectRatio="none"><path d="${shape.d}"/></svg>`);
   return piece;
 }
 
@@ -71,23 +84,15 @@ function snapIn(piece, cell) {
   board.animate([{ transform: "none" }, { transform: `translate(${c < p.cols / 2 ? 1 : -1}px, ${r < p.rows / 2 ? 1 : -1}px)`, offset: .5 }, { transform: "none" }], { duration: 140, delay: 700 });
 }
 
-let state = null, api = null, roundKey = "", tiles = [], opened = 0, sending = false, celebrated = "", lastFeedback = "";
+let state = null, api = null, roundKey = "", opened = 0, sending = false, celebrated = "", lastFeedback = "";
 
 function setupRound(s) {
   const p = s.puzzle;
   roundKey = `${s.room.id}/${s.room.round}`;
   image.src = "/" + p.image;
   board.style.setProperty("--ratio", p.ratio);
-  tilesBox.style.gridTemplate = `repeat(${p.rows}, 1fr) / repeat(${p.cols}, 1fr)`;
-  tiles = Array.from({ length: p.rows * p.cols }, (_, i) => {
-    const tile = document.createElement("span");
-    tile.style.setProperty("--spin", `${((i * 47) % 23) - 11}deg`);
-    tile.style.setProperty("--wait", `${((i * 31) % 17) * 22}ms`);
-    return tile;
-  });
-  tilesBox.replaceChildren(...tiles);
   piecesBox.replaceChildren();
-  piecesBox.removeAttribute("data-done");
+  board.removeAttribute("data-done");
   opened = 0;
   input.value = "";
   lastFeedback = "";
@@ -100,8 +105,7 @@ function openTiles(count, all) {
   const order = state.puzzle.order;
   if (all) {
     if (opened === Infinity) return;
-    tiles.forEach((tile) => tile.setAttribute("data-open", "all"));
-    piecesBox.setAttribute("data-done", "");
+    board.setAttribute("data-done", "");
     opened = Infinity;
     return;
   }

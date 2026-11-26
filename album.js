@@ -7,7 +7,6 @@ const input = el("album-input");
 const setText = (node, value) => { if (node.textContent !== value) node.textContent = value; };
 const calm = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 const vibrate = (pattern) => { try { navigator.vibrate?.(pattern); } catch {} };
-const LEVELS = ["difficile", "medio", "facile"];
 
 let state = null, api = null, roundKey = "", shownClues = 0, sending = false, lastFeedback = "", celebrated = "", pending = null;
 let seenBonus = new Set(), bonusQueue = [], bonusBusy = false;
@@ -15,17 +14,18 @@ let seenBonus = new Set(), bonusQueue = [], bonusBusy = false;
 function setupRound(s, host) {
   const a = s.album;
   roundKey = `${s.room.id}/${s.room.round}`;
+  // Libro subito chiuso: la nuova foto non si vede prima che la copertina si riapra (goAlbumTick lo riapre).
+  stage.setAttribute("data-intro", "");
   // Il telefono non mostra la foto: i giocatori guardano lo schermo principale.
   if (host) el("album-child").src = "/" + a.child;
   else el("album-child").removeAttribute("src");
   el("album-adult").removeAttribute("src");
   shownClues = 0;
-  el("album-clues").replaceChildren(...LEVELS.map((level, i) => {
+  el("album-clues").replaceChildren(...a.clue_at.map((_, i) => {
     const item = document.createElement("li");
     const label = document.createElement("small");
-    label.textContent = `Indizio ${i + 1} · ${level}`;
+    label.textContent = `${i + 1}° indizio`;
     const text = document.createElement("span");
-    text.textContent = `arriva al secondo ${a.clue_at[i] / 1000}`;
     item.append(label, text);
     item.dataset.waiting = "";
     return item;
