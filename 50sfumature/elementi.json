@@ -1,0 +1,20 @@
+{
+  "bandiera-italia.png": { "nome": "Bandiera dell'Italia", "categoria": "Bandiere", "zona": "la banda a sinistra", "colore": "#009246" },
+  "bandiera-brasile.png": { "nome": "Bandiera del Brasile", "categoria": "Bandiere", "zona": "lo sfondo", "colore": "#009440" },
+  "bandiera-canada.png": { "nome": "Bandiera del Canada", "categoria": "Bandiere", "zona": "le bande e la foglia d'acero", "colore": "#d52b1e" },
+  "bandiera-germania.png": { "nome": "Bandiera della Germania", "categoria": "Bandiere", "zona": "la banda in basso", "colore": "#ffce00" },
+  "bandiera-giappone.png": { "nome": "Bandiera del Giappone", "categoria": "Bandiere", "zona": "il disco al centro", "colore": "#bc002d" },
+  "bandiera-svezia.png": { "nome": "Bandiera della Svezia", "categoria": "Bandiere", "zona": "lo sfondo", "colore": "#005293" },
+  "logo-ikea.png": { "nome": "IKEA", "categoria": "Loghi", "zona": "l'ovale", "colore": "#fbd914" },
+  "logo-lego.png": { "nome": "LEGO", "categoria": "Loghi", "zona": "il quadrato di sfondo", "colore": "#e3000b" },
+  "logo-mcdonalds.png": { "nome": "McDonald's", "categoria": "Loghi", "zona": "gli archi della M", "colore": "#ffcc00" },
+  "logo-nutella.png": { "nome": "Nutella", "categoria": "Loghi", "zona": "le lettere «utella»", "colore": "#e2001a" },
+  "logo-spotify.png": { "nome": "Spotify", "categoria": "Loghi", "zona": "il cerchio", "colore": "#1ed760" },
+  "logo-starbucks.png": { "nome": "Starbucks", "categoria": "Loghi", "zona": "la sirena e l'anello", "colore": "#00643c" },
+  "cartone-bugs-bunny.png": { "nome": "Bugs Bunny", "categoria": "Cartoni", "zona": "il pelo", "colore": "#b5bbbf" },
+  "cartone-homer-simpson.png": { "nome": "Homer Simpson", "categoria": "Cartoni", "zona": "la pelle", "colore": "#fed90f" },
+  "cartone-spongebob.png": { "nome": "SpongeBob", "categoria": "Cartoni", "zona": "il corpo", "colore": "#fff579" },
+  "cartone-stitch.png": { "nome": "Stitch", "categoria": "Cartoni", "zona": "il corpo", "colore": "#5372a6" },
+  "cartone-titti.png": { "nome": "Titti", "categoria": "Cartoni", "zona": "le piume", "colore": "#ffe512" },
+  "cartone-garfield.png": { "nome": "Garfield", "categoria": "Cartoni", "zona": "il pelo", "colore": "#f59e36" }
+}

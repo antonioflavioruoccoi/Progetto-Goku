@@ -205,7 +205,7 @@ window.goAlbumTick = (s, remaining, untilStart) => {
   const next = a.clue_at.findIndex((at) => at > elapsed);
   const worth = seconds * a.points_per_second + (next === 0 ? a.bonus : 0);
   setText(el("album-phase"), s.room.phase === "paused" ? "In pausa"
-    : revealed ? (s.room.round === a.total ? "Ecco chi era · poi il podio" : "Ecco chi era · l'host preme Avanti")
+    : revealed ? (s.room.round === a.total ? (s.room.manche_total > 6 ? "Ecco chi era · poi 50 Sfumature" : "Ecco chi era · poi il podio") : "Ecco chi era · l'host preme Avanti")
     : intro ? (s.room.round === 1 ? "Si apre l'album…" : turned === roundKeyOf(s) ? "Si volta pagina…" : "Preparati…")
     : next >= 0 ? `Indizio ${next + 1} tra ${Math.ceil((a.clue_at[next] - elapsed) / 1000)} s · vale ${worth} punti`
     : `Ultimi secondi · vale ${worth} punti`);

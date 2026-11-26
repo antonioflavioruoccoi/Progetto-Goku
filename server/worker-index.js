@@ -1604,6 +1604,78 @@ var drawAlbum = /* @__PURE__ */ __name(() => ALBUM_VIPS.length >= ALBUM_ROUNDS ?
 var albumElapsed = /* @__PURE__ */ __name((remaining) => ALBUM_DURATION - remaining, "albumElapsed");
 var albumCluesShown = /* @__PURE__ */ __name((r, remaining, revealed) => revealed ? 3 : Date.now() < r.starts_at && r.phase === "question" ? 0 : ALBUM_CLUE_AT.filter((at) => albumElapsed(remaining) >= at).length, "albumCluesShown");
 
+// worker/shades.js (manche 7 "50 Sfumature"). I dati li scrive server/build-sfumature.py da 50sfumature/elementi.json
+// shades-data:start
+var SHADES_ITEMS = [{"name": "Bandiera dell'Italia", "category": "Bandiere", "part": "la banda a sinistra", "image": "assets/sfumature/b8785c1a7b61f2f14ede.png", "mask": "assets/sfumature/b8785c1a7b61f2f14ede-m.png", "ratio": 1.4988, "color": "#009246"}, {"name": "Bandiera del Brasile", "category": "Bandiere", "part": "lo sfondo", "image": "assets/sfumature/5695f0ac301eac5e5e64.png", "mask": "assets/sfumature/5695f0ac301eac5e5e64-m.png", "ratio": 1.4286, "color": "#009440"}, {"name": "Bandiera del Canada", "category": "Bandiere", "part": "le bande e la foglia d'acero", "image": "assets/sfumature/71292a3b8faed566c861.png", "mask": "assets/sfumature/71292a3b8faed566c861-m.png", "ratio": 2.0, "color": "#d52b1e"}, {"name": "Bandiera della Germania", "category": "Bandiere", "part": "la banda in basso", "image": "assets/sfumature/7f17b6b20490038efedb.png", "mask": "assets/sfumature/7f17b6b20490038efedb-m.png", "ratio": 1.6667, "color": "#ffce00"}, {"name": "Bandiera del Giappone", "category": "Bandiere", "part": "il disco al centro", "image": "assets/sfumature/1d5238051718c5622593.png", "mask": "assets/sfumature/1d5238051718c5622593-m.png", "ratio": 1.4988, "color": "#bc002d"}, {"name": "Bandiera della Svezia", "category": "Bandiere", "part": "lo sfondo", "image": "assets/sfumature/63154e61414b1790d607.png", "mask": "assets/sfumature/63154e61414b1790d607-m.png", "ratio": 1.6, "color": "#005293"}, {"name": "IKEA", "category": "Loghi", "part": "l'ovale", "image": "assets/sfumature/65cc9ae4385c920fc460.png", "mask": "assets/sfumature/65cc9ae4385c920fc460-m.png", "ratio": 2.5, "color": "#fbd914"}, {"name": "LEGO", "category": "Loghi", "part": "il quadrato di sfondo", "image": "assets/sfumature/b1e55aef8c32b09b6b52.png", "mask": "assets/sfumature/b1e55aef8c32b09b6b52-m.png", "ratio": 1.0, "color": "#e4000b"}, {"name": "McDonald's", "category": "Loghi", "part": "gli archi della M", "image": "assets/sfumature/f8152c80944c1bb70a89.png", "mask": "assets/sfumature/f8152c80944c1bb70a89-m.png", "ratio": 1.1429, "color": "#ffcc00"}, {"name": "Nutella", "category": "Loghi", "part": "le lettere «utella»", "image": "assets/sfumature/671e37ad476365bd850e.png", "mask": "assets/sfumature/671e37ad476365bd850e-m.png", "ratio": 3.8323, "color": "#e3001a"}, {"name": "Spotify", "category": "Loghi", "part": "il cerchio", "image": "assets/sfumature/e817bcae168ccf04e671.png", "mask": "assets/sfumature/e817bcae168ccf04e671-m.png", "ratio": 0.9688, "color": "#1ed860"}, {"name": "Starbucks", "category": "Loghi", "part": "la sirena e l'anello", "image": "assets/sfumature/c77d55c94f0b142d123f.png", "mask": "assets/sfumature/c77d55c94f0b142d123f-m.png", "ratio": 0.9875, "color": "#00643c"}, {"name": "Bugs Bunny", "category": "Cartoni", "part": "il pelo", "image": "assets/sfumature/ffbf14a1a0054c4cabde.png", "mask": "assets/sfumature/ffbf14a1a0054c4cabde-m.png", "ratio": 0.625, "color": "#b6bcbf"}, {"name": "Homer Simpson", "category": "Cartoni", "part": "la pelle", "image": "assets/sfumature/bf97d2e6928296e839d5.png", "mask": "assets/sfumature/bf97d2e6928296e839d5-m.png", "ratio": 0.4875, "color": "#fdd90f"}, {"name": "SpongeBob", "category": "Cartoni", "part": "il corpo", "image": "assets/sfumature/fc7d5a1e6e2444d527b8.png", "mask": "assets/sfumature/fc7d5a1e6e2444d527b8-m.png", "ratio": 0.7734, "color": "#fff579"}, {"name": "Stitch", "category": "Cartoni", "part": "il corpo", "image": "assets/sfumature/57b6dd3e6358c7eb3919.png", "mask": "assets/sfumature/57b6dd3e6358c7eb3919-m.png", "ratio": 0.7234, "color": "#5372a6"}, {"name": "Titti", "category": "Cartoni", "part": "le piume", "image": "assets/sfumature/1ed0cf80a0335b7be06b.png", "mask": "assets/sfumature/1ed0cf80a0335b7be06b-m.png", "ratio": 0.5563, "color": "#ffe512"}, {"name": "Garfield", "category": "Cartoni", "part": "il pelo", "image": "assets/sfumature/d12f8d9e5b55c0228e2e.png", "mask": "assets/sfumature/d12f8d9e5b55c0228e2e-m.png", "ratio": 1.6754, "color": "#f59e36"}];
+// shades-data:end
+var SHADES_ROUNDS = 6;
+var SHADES_DURATION = 6e4;
+var SHADES_INTRO = 3e3;
+var SHADES_MAX = 200;
+// 2 elementi per categoria (loghi, cartoni, bandiere) in ordine casuale, senza ripetizioni
+var drawShades = /* @__PURE__ */ __name(() => {
+  if (SHADES_ITEMS.length < SHADES_ROUNDS) return void 0;
+  const ids = SHADES_ITEMS.map((_, i) => i);
+  const groups = [...new Set(SHADES_ITEMS.map((item) => item.category))].map((c) => ids.filter((i) => SHADES_ITEMS[i].category === c));
+  const per = SHADES_ROUNDS / groups.length;
+  return pick(Number.isInteger(per) && groups.every((g) => g.length >= per) ? groups.flatMap((g) => pick(g, per)) : ids, SHADES_ROUNDS);
+}, "drawShades");
+var hexRgb = /* @__PURE__ */ __name((hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)), "hexRgb");
+function hsvRgb({ h, s, v }) {
+  const f = /* @__PURE__ */ __name((n) => {
+    const k = (n + h / 60) % 6;
+    return Math.round(v / 100 * (1 - s / 100 * Math.max(0, Math.min(k, 4 - k, 1))) * 255);
+  }, "f");
+  return [f(5), f(3), f(1)];
+}
+__name(hsvRgb, "hsvRgb");
+function rgbHsv([r, g, b]) {
+  const max = Math.max(r, g, b), d = max - Math.min(r, g, b);
+  const h = !d ? 0 : max === r ? (g - b) / d % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return { h: (h * 60 + 360) % 360, s: max ? d / max * 100 : 0, v: max / 2.55 };
+}
+__name(rgbHsv, "rgbHsv");
+function rgbLab(rgb) {
+  const [r, g, b] = rgb.map((c) => (c /= 255) <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+  const xyz = [(r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047, r * 0.2126 + g * 0.7152 + b * 0.0722, (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883];
+  const [x, y, z] = xyz.map((t) => t > 216 / 24389 ? Math.cbrt(t) : (24389 / 27 * t + 16) / 116);
+  return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
+}
+__name(rgbLab, "rgbLab");
+// Distanza CIEDE2000 tra due colori Lab: quanto due colori sembrano diversi all'occhio umano
+function ciede2000([L1, a1, b1], [L2, a2, b2]) {
+  const rad = Math.PI / 180, C1 = Math.hypot(a1, b1), C2 = Math.hypot(a2, b2), Cm = (C1 + C2) / 2;
+  const G = 0.5 * (1 - Math.sqrt(Cm ** 7 / (Cm ** 7 + 25 ** 7)));
+  const p1 = a1 * (1 + G), p2 = a2 * (1 + G), c1 = Math.hypot(p1, b1), c2 = Math.hypot(p2, b2);
+  const h1 = (Math.atan2(b1, p1) / rad + 360) % 360, h2 = (Math.atan2(b2, p2) / rad + 360) % 360;
+  let dh = c1 * c2 ? h2 - h1 : 0;
+  if (dh > 180) dh -= 360;
+  else if (dh < -180) dh += 360;
+  const dH = 2 * Math.sqrt(c1 * c2) * Math.sin(dh / 2 * rad), Lm = (L1 + L2) / 2, cm = (c1 + c2) / 2;
+  const hm = !(c1 * c2) ? h1 + h2 : Math.abs(h1 - h2) <= 180 ? (h1 + h2) / 2 : (h1 + h2 + (h1 + h2 < 360 ? 360 : -360)) / 2;
+  const T = 1 - 0.17 * Math.cos((hm - 30) * rad) + 0.24 * Math.cos(2 * hm * rad) + 0.32 * Math.cos((3 * hm + 6) * rad) - 0.2 * Math.cos((4 * hm - 63) * rad);
+  const SL = 1 + 0.015 * (Lm - 50) ** 2 / Math.sqrt(20 + (Lm - 50) ** 2), SC = 1 + 0.045 * cm, SH = 1 + 0.015 * cm * T;
+  const RT = -2 * Math.sqrt(cm ** 7 / (cm ** 7 + 25 ** 7)) * Math.sin(60 * Math.exp(-(((hm - 275) / 25) ** 2)) * rad);
+  return Math.sqrt(((L2 - L1) / SL) ** 2 + ((c2 - c1) / SC) ** 2 + (dH / SH) ** 2 + RT * ((c2 - c1) / SC) * (dH / SH));
+}
+__name(ciede2000, "ciede2000");
+// Voto 0-10 come in Colortoon (CIEDE2000 + piccola correzione sulla tonalita'), poi precisione % e punti 0-200
+function shadesScore(guess, targetHex) {
+  const target = hexRgb(targetHex), t = rgbHsv(target);
+  const dE = ciede2000(rgbLab(hsvRgb(guess)), rgbLab(target));
+  const base = 10 / (1 + (dE / 25.25) ** 1.55);
+  const hueDiff = Math.min(Math.abs(guess.h - t.h), 360 - Math.abs(guess.h - t.h));
+  // Con un grigio o il nero la tonalita' non si vede: allora conta solo la distanza CIEDE2000
+  const sat = Math.min(guess.s * guess.v, t.s * t.v) / 100;
+  const recovery = (10 - base) * Math.max(0, 1 - (hueDiff / 25) ** 1.5) * Math.min(1, sat / 30) * 0.25;
+  const penalty = base * Math.max(0, (hueDiff - 30) / 150) * Math.min(1, sat / 40) * 0.15;
+  const score = Math.min(10, Math.max(0, base + recovery - penalty));
+  return { accuracy: Math.round(score * 10), points: Math.round(score / 10 * SHADES_MAX) };
+}
+__name(shadesScore, "shadesScore");
+var shadesHex = /* @__PURE__ */ __name((hsv) => "#" + hsvRgb(hsv).map((c) => c.toString(16).padStart(2, "0")).join(""), "shadesHex");
+var validHsv = /* @__PURE__ */ __name((c) => !!c && [c.h, c.s, c.v].every(Number.isInteger) && c.h >= 0 && c.h <= 359 && c.s >= 0 && c.s <= 100 && c.v >= 0 && c.v <= 100, "validHsv");
+
 // worker/index.js
 var quizOf = /* @__PURE__ */ __name((r) => r.quiz || "pokemon", "quizOf");
 var cultureStages = [
@@ -1612,7 +1684,8 @@ var cultureStages = [
   { id: "puzzle", count: PUZZLE_ROUNDS, duration: 6e4 },
   { id: "meadow", count: MEADOW_ROUNDS, duration: 3e4 },
   { id: "vault", count: VAULT_ROUNDS, duration: VAULT_DURATION },
-  { id: "album", count: ALBUM_ROUNDS, duration: ALBUM_DURATION }
+  { id: "album", count: ALBUM_ROUNDS, duration: ALBUM_DURATION },
+  { id: "shades", count: SHADES_ROUNDS, duration: SHADES_DURATION }
 ];
 // Stanze create prima dell'inversione delle manche 3 e 5 (26/11/2026): finiscono la partita nel vecchio ordine
 var legacyCultureStages = [0, 1, 4, 3, 2, 5].map((i) => cultureStages[i]);
@@ -1624,6 +1697,7 @@ var isMeadow = /* @__PURE__ */ __name((r) => cultureStage(r)?.id === "meadow", "
 var isPuzzle = /* @__PURE__ */ __name((r) => cultureStage(r)?.id === "puzzle", "isPuzzle");
 var puzzleItem = /* @__PURE__ */ __name((r) => PUZZLE_IMAGES[r.puzzleOrder[r.round - 1]], "puzzleItem");
 var isAlbum = /* @__PURE__ */ __name((r) => cultureStage(r)?.id === "album", "isAlbum");
+var isShades = /* @__PURE__ */ __name((r) => cultureStage(r)?.id === "shades", "isShades");
 var isTimeline = /* @__PURE__ */ __name((r) => isChronology(r) || isMeadow(r), "isTimeline");
 var MEADOW_INTRO = 3e3;
 var MEADOW_REVEAL = 15e3;
@@ -1856,7 +1930,7 @@ var Goku = class {
     return s && r && (s.role === "admin" || s.id === r.host_id || r.players[s.id]);
   }
   publicRoom(r) {
-    const { players, answers, order, population_pairs, clueOrder, priceOrder, chronologyOrder, chronology_points, vaultOrder, meadowOrder, puzzleOrder, albumOrder, vaultResult, polling, settled, culture_order, ...publicData } = r;
+    const { players, answers, order, population_pairs, clueOrder, priceOrder, chronologyOrder, chronology_points, vaultOrder, meadowOrder, puzzleOrder, albumOrder, shadesOrder, vaultResult, polling, settled, culture_order, ...publicData } = r;
     publicData.quiz ||= "pokemon";
     publicData.manche ||= publicData.quiz === "culture" ? 1 : "cards";
     if (publicData.quiz === "culture") {
@@ -1896,7 +1970,7 @@ var Goku = class {
     delete r.chronology_view;
     if (isChronology(r)) r.chronology_points = CHRONOLOGY_POINTS;
     if (isVault(r)) delete r.vaultResult;
-    r.starts_at = now + (isVault(r) ? vaultIntro(r.round) : isChronology(r) ? CHRONOLOGY_INTRO : isMeadow(r) ? MEADOW_INTRO : isPuzzle(r) ? PUZZLE_INTRO : isAlbum(r) ? ALBUM_INTRO : r.manche === "price" ? 0 : 2e3);
+    r.starts_at = now + (isVault(r) ? vaultIntro(r.round) : isChronology(r) ? CHRONOLOGY_INTRO : isMeadow(r) ? MEADOW_INTRO : isPuzzle(r) ? PUZZLE_INTRO : isAlbum(r) ? ALBUM_INTRO : isShades(r) ? SHADES_INTRO : r.manche === "price" ? 0 : 2e3);
     r.remaining_ms = roundDuration(r);
     r.deadline = r.starts_at + r.remaining_ms;
     r.answers = {};
@@ -1918,13 +1992,13 @@ var Goku = class {
   settle(r, force = false, now = Date.now()) {
     let changed = false;
     const complete = /* @__PURE__ */ __name(() => {
-      const ids = isTimeline(r) || isPuzzle(r) || isAlbum(r) ? this.chronologyParticipants(r) : Object.keys(r.players);
+      const ids = isTimeline(r) || isPuzzle(r) || isAlbum(r) || isShades(r) ? this.chronologyParticipants(r) : Object.keys(r.players);
       return ids.length > 0 && ids.every((id) => r.answers[id]?.done);
     }, "complete");
     const allAnswered = r.phase === "question" && now >= r.starts_at && now < r.deadline && complete();
     if (r.phase === "question" && (r.deadline <= now || allAnswered)) {
       if (quizOf(r) === "culture") {
-        if (isChronology(r) || isAlbum(r)) {
+        if (isChronology(r) || isAlbum(r) || isShades(r)) {
           if (isChronology(r)) r.chronology_view = "solution";
           r.remaining_ms = 0;
           r.deadline = null;
@@ -2011,6 +2085,7 @@ var Goku = class {
     if (isMeadow(r)) return r.meadowOrder[r.round - 1];
     if (isPuzzle(r)) return puzzleItem(r);
     if (isAlbum(r)) return ALBUM_VIPS[r.albumOrder[r.round - 1]];
+    if (isShades(r)) return SHADES_ITEMS[r.shadesOrder[r.round - 1]];
     if (quizOf(r) === "culture") return r.population_pairs ? populationsFor(r).pairs[r.round - 1] : populationsFor(r).pairs[r.order[r.round - 1]];
     return r.manche === "clues" ? quiz_default.clues[r.clueOrder[r.round - 7]] : quiz_default.cards[r.order[r.round - 1]];
   }
@@ -2062,6 +2137,7 @@ var Goku = class {
     const meadow = isMeadow(r) && question;
     const puzzle = isPuzzle(r) && question;
     const album = isAlbum(r) && question;
+    const shades = isShades(r) && question;
     const participants = (chronology || meadow) && (/* @__PURE__ */ new Set([
       ...this.chronologyParticipants(r, connected),
       ...Object.keys(r.answers).filter((id) => r.answers[id].done)
@@ -2072,7 +2148,7 @@ var Goku = class {
       room: this.publicRoom(r),
       server_now: Date.now(),
       remaining_ms: remaining,
-      ...price ? { duration_ms: PRICE_DURATION, price: priceSnapshot(r, revealed) } : population || chronology || meadow || puzzle || album ? { duration_ms: roundDuration(r) } : {},
+      ...price ? { duration_ms: PRICE_DURATION, price: priceSnapshot(r, revealed) } : population || chronology || meadow || puzzle || album || shades ? { duration_ms: roundDuration(r) } : {},
       ...chronology ? {
         chronology: {
           category: chronology.category,
@@ -2130,6 +2206,22 @@ var Goku = class {
           ...cultureRevealed ? { answer: album.name, adult: album.adult } : {}
         }
       } : {},
+      ...shades ? {
+        shades: {
+          total: SHADES_ROUNDS,
+          name: shades.name,
+          category: shades.category,
+          part: shades.part,
+          image: shades.image,
+          mask: shades.mask,
+          ratio: shades.ratio,
+          max: SHADES_MAX,
+          ...cultureRevealed ? {
+            color: shades.color,
+            picks: Object.entries(r.answers).filter(([id, a]) => a.choice && r.players[id]).map(([id, a]) => ({ user_id: id, nickname: r.players[id].nickname, color: shadesHex(a.choice), accuracy: a.accuracy, points: a.points })).sort((a, b) => b.points - a.points || a.nickname.localeCompare(b.nickname))
+          } : {}
+        }
+      } : {},
       ...population ? {
         population: {
           year: populationsFor(r).year,
@@ -2146,7 +2238,7 @@ var Goku = class {
         attempts: r.answers[s.id]?.attempts || 0,
         done: r.answers[s.id]?.done || false,
         result: r.answers[s.id]?.result,
-        points: !(chronology || meadow) || cultureRevealed ? r.answers[s.id]?.points || 0 : 0,
+        points: !(chronology || meadow || shades) || cultureRevealed ? r.answers[s.id]?.points || 0 : 0,
         ...price ? {
           choice: r.answers[s.id]?.choice || null,
           streak: r.players[s.id].streak || 0,
@@ -2154,7 +2246,8 @@ var Goku = class {
         } : population || chronology || meadow ? { choice: r.answers[s.id]?.choice || null } : {},
         ...meadow && cultureRevealed ? { fastest: !!r.answers[s.id]?.fastest } : {},
         ...puzzle ? { first: !!r.answers[s.id]?.first } : {},
-        ...album ? { bonus: !!r.answers[s.id]?.bonus } : {}
+        ...album ? { bonus: !!r.answers[s.id]?.bonus } : {},
+        ...shades ? { choice: r.answers[s.id]?.choice || null, accuracy: cultureRevealed ? r.answers[s.id]?.accuracy ?? null : null } : {}
       } : null,
       can_control: this.control(s, r),
       received: Object.values(r.answers).filter((a) => a.done).length,
@@ -2385,7 +2478,7 @@ var Goku = class {
         players: {},
         answers: {},
         name_filter: p.name_filter !== false,
-        ...selectedQuiz === "culture" ? { culture_order: 2, population_year: populationYear, population_pairs: drawPopulationPairs(), chronologyOrder: drawChronology(), vaultOrder: drawVault(), meadowOrder: drawMeadow(), puzzleOrder: drawPuzzle(), albumOrder: drawAlbum() } : {},
+        ...selectedQuiz === "culture" ? { culture_order: 2, population_year: populationYear, population_pairs: drawPopulationPairs(), chronologyOrder: drawChronology(), vaultOrder: drawVault(), meadowOrder: drawMeadow(), puzzleOrder: drawPuzzle(), albumOrder: drawAlbum(), shadesOrder: drawShades() } : {},
         ...selectedQuiz === "pokemon" ? { order, priceOrder: selectPriceCards(quiz_default.priceCards) } : {}
       };
       this.put("room", r2.id, r2);
@@ -2430,7 +2523,7 @@ var Goku = class {
     }
     if (action === "answer") {
       if (!r.players[s.id]) fail("Solo giocatori");
-      if (p.round !== r.round || (isVault(r) || isTimeline(r) || isPuzzle(r) || isAlbum(r) || p.manche === 3) && p.manche !== r.manche) fail("Domanda non pi\xF9 attuale");
+      if (p.round !== r.round || (isVault(r) || isTimeline(r) || isPuzzle(r) || isAlbum(r) || isShades(r) || p.manche === 3) && p.manche !== r.manche) fail("Domanda non pi\xF9 attuale");
       const answer = r.answers[s.id] || {
         attempts: 0,
         done: false,
@@ -2501,6 +2594,19 @@ var Goku = class {
           ...fastest ? { fastest: true } : {},
           requests: { [p.request_id]: result2 }
         };
+        this.recordPoll(r, s.id, now);
+        r.revision++;
+        this.settle(r);
+        this.put("room", r.id, r);
+        this.changed.add(r.id);
+        return result2;
+      }
+      if (isShades(r)) {
+        if (!validHsv(p.answer)) fail("Colore non valido");
+        const choice = { h: p.answer.h, s: p.answer.s, v: p.answer.v };
+        const { accuracy, points } = shadesScore(choice, this.question(r).color);
+        const result2 = { done: true };
+        r.answers[s.id] = { ...answer, done: true, choice, accuracy, points, requests: { [p.request_id]: result2 } };
         this.recordPoll(r, s.id, now);
         r.revision++;
         this.settle(r);
@@ -2698,7 +2804,7 @@ var Goku = class {
   async handleDisconnect(room) {
     await this.ctx.blockConcurrencyWhile(async () => {
       const r = this.get("room", room);
-      const changed = r && (isTimeline(r) || isPuzzle(r) || isAlbum(r)) && this.settle(r);
+      const changed = r && (isTimeline(r) || isPuzzle(r) || isAlbum(r) || isShades(r)) && this.settle(r);
       await this.broadcast(room);
       if (changed) await this.schedule();
     });
@@ -2708,6 +2814,7 @@ export {
   Goku,
   addPoints,
   albumMatch,
+  shadesScore,
   index_default as default
 };
 //# sourceMappingURL=index.js.map
