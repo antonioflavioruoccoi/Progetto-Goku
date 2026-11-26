@@ -1,0 +1,3 @@
+import fs from 'node:fs/promises';import {quizData} from './quiz-data.mjs';
+const {cards,names}=await quizData();const q=s=>"'"+s.replaceAll("'","''")+"'";
+await fs.writeFile('supabase/seed.sql',`-- Generated from the existing game.js and Pokédex. Server-only seed, never expose as static content.\ninsert into goku_private.cards(id,name,image) values\n${cards.map((c,i)=>`(${i+1},${q(c.name)},${q(c.opaque)})`).join(',\n')}\non conflict(id) do update set name=excluded.name,image=excluded.image;\ninsert into goku_private.pokedex(name) values\n${names.map(n=>`(${q(n)})`).join(',\n')}\non conflict do nothing;\n`);
