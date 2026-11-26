@@ -1,0 +1,230 @@
+/* Manche 6 "Album dei ricordi": libro di carta sullo sfondo della Cultura generale. Logica in album.js. */
+@font-face {
+  font-family: "Caveat";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("/assets/fonts/caveat-latin.woff2") format("woff2");
+}
+
+#album-stage {
+  --paper: #f5eedf;
+  --paper-edge: #e4d8bf;
+  --paper-ink: #2a2733;
+  --paper-muted: #6a5f6e;
+  --paper-good: #1d7246;
+  --paper-bad: #a8323a;
+  --leather: #5c2231;
+  --hand: "Caveat", "Segoe Print", cursive;
+  --album-ease: cubic-bezier(.16, 1, .3, 1);
+  grid-area: stage;
+  position: relative;
+  display: grid;
+  grid-template: "hud" auto "book" minmax(0, 1fr) / minmax(0, 1fr);
+  gap: clamp(10px, 1.6svh, 18px);
+  min-height: 0;
+  text-align: left;
+}
+
+/* HUD */
+#album-hud { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 6px 12px; }
+#album-title { margin: 0; font: 800 clamp(1.35rem, 6vw, 2.2rem)/1 var(--cg-title); letter-spacing: -.03em; color: var(--cg-ink); }
+#album-round { color: var(--cg-accent); font-size: .6em; letter-spacing: .02em; }
+#album-phase { margin: 4px 0 0; color: var(--cg-muted); font-size: clamp(.85rem, 2vw, 1.1rem); font-weight: 700; }
+#album-stage[data-paused] #album-phase { color: var(--cg-accent); }
+#album-clock { color: var(--cg-ink); font: 800 clamp(32px, 6svh, 68px)/.95 var(--cg-title); font-variant-numeric: tabular-nums; letter-spacing: -.04em; }
+#album-clock small { margin-left: 4px; color: var(--cg-muted); font-size: .36em; letter-spacing: 0; }
+#album-seconds span { display: inline-block; animation: chronology-pop .18s var(--cg-motion); }
+#album-stage[data-urgent] #album-clock { color: var(--cg-accent); }
+#album-stage[data-urgent] #album-seconds span { animation: chronology-count .38s var(--cg-motion); }
+#album-progress { position: relative; grid-column: 1 / -1; height: 4px; border-radius: 3px; background: var(--cg-line-soft); }
+#album-progress span { display: block; height: 100%; border-radius: inherit; background: var(--cg-accent); transform-origin: left; transition: transform .1s linear; }
+/* Segnalibri: dove arrivano i 3 indizi (secondi 15, 25, 35 su 45) */
+#album-progress i { position: absolute; top: -4px; left: calc(100% - var(--at)); width: 2px; height: 12px; border-radius: 1px; background: var(--cg-ink); opacity: .55; }
+#album-stage:is([data-intro], [data-phase="reveal"]) :is(#album-clock, #album-progress) { visibility: hidden; }
+
+/* Libro */
+#album-book {
+  grid-area: book;
+  position: relative;
+  align-self: center;
+  justify-self: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  width: min(100%, 520px);
+  min-height: min(100%, 460px);
+  perspective: 1800px;
+  color: var(--paper-ink);
+}
+.host #album-book {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  aspect-ratio: 1.5;
+  width: min(100%, calc((100svh - 230px) * 1.5));
+  min-height: 0;
+}
+.album-page, .album-face {
+  position: relative;
+  padding: clamp(16px, 3.2vw, 34px);
+  background: var(--paper);
+  box-shadow: 0 1px 0 var(--paper-edge), 0 22px 44px -12px #000a;
+}
+#album-left { display: none; border-radius: 14px 4px 4px 14px; background: linear-gradient(to left, #d9cbb0 0, var(--paper) 9%); }
+.host #album-left { display: grid; place-items: center; }
+#album-right { grid-column: -2 / -1; grid-row: 1; display: grid; align-content: center; gap: 10px; border-radius: 4px 14px 14px 4px; }
+.player #album-right { border-radius: 14px; }
+.host #album-right { background: linear-gradient(to right, #d9cbb0 0, var(--paper) 9%); }
+
+/* Pagina che si volta: davanti indizi e risposta, dietro (sullo schermo grande) la foto da adulto */
+#album-leaf {
+  grid-column: -2 / -1;
+  grid-row: 1;
+  position: relative;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  transition: transform 1.1s var(--album-ease), opacity .5s ease-out;
+}
+.album-face { position: absolute; inset: 0; display: grid; align-content: start; gap: 12px; backface-visibility: hidden; border-radius: 4px 14px 14px 4px; }
+#album-front { position: relative; inset: auto; min-height: 100%; }
+.host #album-front { background: linear-gradient(to right, #d9cbb0 0, var(--paper) 9%); }
+.player .album-face { border-radius: 14px; }
+#album-back { transform: rotateY(180deg); place-items: center; align-content: center; border-radius: 14px 4px 4px 14px; background: linear-gradient(to left, #d9cbb0 0, var(--paper) 9%); }
+.player #album-back { display: none; }
+#album-stage[data-phase="reveal"] #album-leaf { transform: rotateY(-180deg); }
+.player #album-stage[data-phase="reveal"] #album-leaf { transform: rotateY(-110deg); opacity: 0; pointer-events: none; }
+
+/* Copertina: chiusa durante la preparazione del round, poi si apre */
+#album-cover {
+  grid-column: -2 / -1;
+  grid-row: 1;
+  z-index: 2;
+  display: grid;
+  place-content: center;
+  gap: 10px;
+  padding: 24px;
+  border-radius: 6px 16px 16px 6px;
+  background: radial-gradient(120% 90% at 30% 20%, #7a2f42, var(--leather) 60%, #3f1621);
+  box-shadow: inset 0 0 0 10px #0000, inset 0 0 0 12px #e8cb7766, 0 22px 44px -12px #000c;
+  color: var(--cg-accent);
+  text-align: center;
+  transform-origin: left center;
+  transform: rotateY(-178deg);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 1.2s var(--album-ease), opacity .35s ease-in .55s;
+}
+#album-cover strong { font: 700 clamp(2rem, 6vw, 3.6rem)/1 var(--hand); text-shadow: 0 1px 0 #0006; text-wrap: balance; }
+#album-cover span { font: 700 .95rem var(--cg-title); color: #f1dfae; opacity: .85; }
+#album-stage[data-intro] #album-cover { transform: none; opacity: 1; transition: none; }
+#album-stage[data-intro] :is(#album-left, #album-leaf) { opacity: 0; }
+#album-left { transition: opacity .6s ease-out .45s; }
+
+/* Foto con angolini */
+#album-child-frame, #album-back figure {
+  position: relative;
+  margin: 0;
+  padding: 10px 10px 8px;
+  width: min(100%, 330px);
+  background: #fff;
+  box-shadow: 0 2px 3px #0002, 0 14px 24px -10px #0006;
+  transform: rotate(-2.2deg);
+}
+#album-back figure { transform: rotate(1.8deg); }
+#album-child-frame::before, #album-child-frame::after, #album-back figure::before, #album-back figure::after {
+  content: ""; position: absolute; width: 26px; height: 26px; background: #2a2733;
+}
+#album-child-frame::before, #album-back figure::before { top: -4px; left: -4px; clip-path: polygon(0 0, 100% 0, 0 100%); }
+#album-child-frame::after, #album-back figure::after { right: -4px; bottom: -4px; clip-path: polygon(100% 0, 100% 100%, 0 100%); }
+#album-child, #album-adult { display: block; width: 100%; aspect-ratio: 4 / 5; object-fit: cover; object-position: center 25%; background: var(--paper-edge); -webkit-user-drag: none; }
+#album-child-frame figcaption, #album-back figcaption { padding-top: 6px; font: 700 clamp(1.3rem, 2.4vw, 1.9rem)/1.1 var(--hand); text-align: center; color: var(--paper-ink); }
+
+/* Indizi scritti a mano */
+#album-clues { display: grid; gap: clamp(8px, 1.6svh, 16px); margin: 0; padding: 0; list-style: none; counter-reset: clue; }
+#album-clues li { display: grid; gap: 2px; padding-bottom: 8px; border-bottom: 1px solid var(--paper-edge); }
+#album-clues small { font: 700 .78rem/1.2 var(--cg-text); color: var(--paper-muted); }
+#album-clues span { font: 600 clamp(1.3rem, 2.6vw, 1.75rem)/1.15 var(--hand); color: var(--paper-ink); text-wrap: pretty; }
+#album-clues li[data-waiting] span { font: 600 .95rem/1.3 var(--cg-text); color: var(--paper-muted); opacity: .7; }
+#album-clues li.album-write span { animation: album-write .9s var(--album-ease) both; }
+@keyframes album-write { from { clip-path: inset(0 100% 0 0); filter: blur(2px); } to { clip-path: inset(0 0 0 0); filter: none; } }
+
+/* Risposta dentro il libro */
+#album-stage #album-form { padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
+#album-form { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: end; gap: 8px; margin: 4px 0 0; }
+#album-form[hidden] { display: none; }
+#album-form label { font: 700 1.6rem/1 var(--hand); color: var(--paper-ink); padding-bottom: 8px; }
+#album-input {
+  min-width: 0; min-height: 48px; padding: 0 4px; border: 0; border-bottom: 2px solid var(--paper-ink); border-radius: 0;
+  background: transparent; color: var(--paper-ink); font: 700 1.6rem/1 var(--hand); caret-color: var(--leather);
+}
+#album-input::placeholder { color: var(--paper-muted); opacity: .8; }
+#album-input:focus { outline: none; border-bottom-color: var(--leather); box-shadow: 0 3px 0 -1px var(--leather); }
+#album-input::selection { background: #e8cb7799; }
+#album-send {
+  min-height: 48px; padding: 0 18px; border: 0; border-radius: 12px;
+  background: var(--leather); color: #f7e8c4; font: 800 1.05rem var(--cg-title); cursor: pointer;
+  transition: transform .12s ease-out, background .2s;
+}
+#album-stage #album-send { border: 0; box-shadow: 0 2px 0 #3a121d; }
+#album-send:hover:enabled { background: #6f2a3c; }
+#album-send:focus-visible { outline: 3px solid var(--cg-accent); outline-offset: 2px; }
+#album-send:active:enabled { transform: scale(.96); }
+#album-send:disabled, #album-input:disabled { opacity: .5; }
+#album-form.album-shake { animation: album-shake .4s; }
+@keyframes album-shake { 20%, 60% { transform: translateX(-7px); } 40%, 80% { transform: translateX(7px); } }
+#album-tries-row { display: flex; align-items: center; gap: 10px; color: var(--paper-muted); font-weight: 700; font-size: .9rem; }
+#album-tries-row[hidden] { display: none; }
+#album-tries { display: flex; gap: 6px; }
+#album-tries span { width: 12px; height: 12px; border-radius: 50%; background: var(--leather); transition: background .3s, transform .3s var(--album-ease); }
+#album-tries span[data-used] { background: var(--paper-edge); transform: scale(.75); }
+#album-feedback { margin: 0; min-height: 1.3em; color: var(--paper-muted); font-weight: 700; }
+#album-feedback[data-tone="good"] { color: var(--paper-good); }
+#album-feedback[data-tone="bad"] { color: var(--paper-bad); }
+
+/* Timbro "Indovinato" sul telefono di chi ha risposto giusto */
+#album-stage[data-solved] #album-front::after {
+  content: "Indovinato!"; position: absolute; top: 18px; right: 16px; padding: 4px 12px;
+  border: 3px solid var(--paper-good); border-radius: 8px; color: var(--paper-good);
+  font: 800 1.1rem var(--cg-title); transform: rotate(8deg); opacity: .85;
+  animation: album-thud .45s var(--album-ease) both;
+}
+
+/* Rivelazione */
+#album-answer { margin: 0; font: 700 clamp(2rem, 5vw, 3.2rem)/1 var(--hand); color: var(--leather); text-wrap: balance; }
+#album-mine { margin: 0; font-weight: 800; color: var(--paper-ink); }
+#album-mine:empty { display: none; }
+#album-count { margin: 0; color: var(--paper-muted); font-size: .9rem; }
+#album-ranking { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+#album-ranking li {
+  display: flex; justify-content: space-between; gap: 10px; padding: 7px 12px; border-radius: 10px; background: #ebe1cc;
+  font-variant-numeric: tabular-nums;
+  animation: album-rise .45s var(--album-ease) backwards; animation-delay: calc(.9s + var(--i) * 70ms);
+}
+#album-ranking li[aria-current] { box-shadow: inset 0 0 0 2px var(--leather); }
+#album-stage:not([data-phase="reveal"]) #album-right > :not(#album-count) { visibility: hidden; }
+@keyframes album-rise { from { transform: translateY(8px); opacity: 0; } }
+
+/* Bonus "Senza indizi!": annunciato su tutti gli schermi */
+#album-bonus { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 5; }
+.album-stamp {
+  display: grid; gap: 4px; justify-items: center; padding: 16px 30px; border-radius: 18px;
+  background: var(--cg-accent); color: var(--cg-accent-ink);
+  box-shadow: 0 0 0 5px var(--cg-bg), 0 0 0 8px var(--cg-accent), 0 24px 50px -10px #000c;
+  transform: rotate(-6deg);
+  animation: album-stamp 2.6s var(--album-ease) forwards;
+}
+.album-stamp strong { font: 800 clamp(1.8rem, 7vw, 3.4rem)/1 var(--cg-title); letter-spacing: -.03em; }
+.album-stamp span { font: 800 clamp(1rem, 3vw, 1.4rem)/1.2 var(--cg-title); }
+@keyframes album-stamp {
+  0% { transform: rotate(-14deg) scale(1.9); opacity: 0; filter: blur(6px); }
+  12% { transform: rotate(-6deg) scale(.94); opacity: 1; filter: none; }
+  18% { transform: rotate(-6deg) scale(1.03); }
+  24%, 82% { transform: rotate(-6deg) scale(1); opacity: 1; }
+  100% { transform: rotate(-6deg) translateY(-18px) scale(.96); opacity: 0; }
+}
+@keyframes album-thud { from { transform: rotate(8deg) scale(1.8); opacity: 0; } 60% { transform: rotate(8deg) scale(.95); opacity: .9; } }
+
+@media (prefers-reduced-motion: reduce) {
+  /* Niente rotazioni: la pagina e la copertina cambiano in dissolvenza, senza movimento */
+  #album-leaf, #album-cover, #album-left { transition: opacity .3s; transition-delay: 0s; }
+  #album-cover { transform: none; }
+  #album-clues li.album-write span, .album-stamp, #album-ranking li, #album-stage[data-solved] #album-front::after { animation-duration: .01s; animation-delay: 0s; }
+}

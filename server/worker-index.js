@@ -1546,7 +1546,7 @@ var meadowPoints = /* @__PURE__ */ __name((items, choice) => items.some((item) =
 
 
 // worker/puzzle.js (manche 5)
-var PUZZLE_IMAGES = [{"name": "Baby Yoda (Grogu)", "answers": ["Baby Yoda", "Grogu", "Din Grogu", "Il Bambino", "The Child"], "image": "assets/puzzle/ef16e38490905e14703c.webp", "ratio": 2.3333, "cols": 6, "rows": 6, "order": [34, 23, 24, 32, 29, 18, 31, 25, 17, 22, 33, 28, 19, 35, 26, 12, 20, 27, 11, 21, 13, 10, 8, 16, 9, 14, 15]}, {"name": "Roberto Benigni", "answers": ["Roberto Benigni", "Benigni"], "image": "assets/puzzle/509836421ab2dbb113f2.webp", "ratio": 1.7762, "cols": 6, "rows": 6, "order": [30, 35, 24, 29, 18, 23, 31, 34, 0, 5, 25, 28, 1, 6, 11, 19, 22, 32, 33, 2, 3, 12, 17, 7, 16, 26, 27, 13, 9, 8, 20, 14, 21, 15]}, {"name": "La Dama con l'ermellino", "answers": ["Dama con l'ermellino", "Dama con ermellino", "Dama dell'ermellino"], "image": "assets/puzzle/249874478dcec223a8f9.webp", "ratio": 0.727, "cols": 6, "rows": 6, "order": [30, 24, 19, 34, 28, 22, 31, 25, 16, 32, 20, 27, 33, 26, 21, 8, 14, 9, 15]}, {"name": "Joker", "answers": ["Joker", "Il Joker", "Joaquin Phoenix", "Arthur Fleck"], "image": "assets/puzzle/695583b7cbf174b434b0.webp", "ratio": 1.7762, "cols": 6, "rows": 6, "order": [34, 32, 26, 20, 27, 7, 16, 33, 21, 9, 14, 15, 8, 3, 2]}, {"name": "Marcello Mastroianni", "answers": ["Marcello Mastroianni", "Mastroianni"], "image": "assets/puzzle/f993435276761b943f77.webp", "ratio": 1.7762, "cols": 6, "rows": 6, "order": [35, 31, 29, 34, 4, 28, 32, 22, 2, 10, 26, 33, 3, 27, 20, 8, 9, 21, 16, 14, 15]}, {"name": "Miles Morales (Spider-Man)", "answers": ["Miles Morales", "Miles", "Spider-Man", "Spiderman", "Uomo Ragno", "Spider-Man Miles Morales"], "image": "assets/puzzle/b03f4b10696d9e134cd5.webp", "ratio": 1.7762, "cols": 6, "rows": 6, "order": [2, 34, 28, 33, 22, 10, 26, 16, 3, 20, 27, 21, 14, 15, 9, 8]}, {"name": "La Gioconda (Monna Lisa)", "answers": ["Gioconda", "Monna Lisa", "Mona Lisa"], "image": "assets/puzzle/d2ba0758bd6cba46132a.webp", "ratio": 0.671, "cols": 6, "rows": 6, "order": [30, 35, 24, 29, 31, 34, 18, 23, 25, 28, 12, 17, 19, 22, 6, 11, 32, 33, 26, 27, 7, 10, 20, 21, 13, 16, 2, 3, 14, 15, 8, 9]}, {"name": "Sophia Loren", "answers": ["Sophia Loren", "Sofia Loren", "Loren"], "image": "assets/puzzle/c0757651c29649737c43.webp", "ratio": 0.808, "cols": 6, "rows": 6, "order": [30, 24, 34, 28, 31, 2, 22, 25, 32, 33, 7, 26, 3, 20, 27, 10, 21, 8, 14, 16, 9, 15]}, {"name": "Avengers: Endgame", "answers": ["Avengers Endgame", "Avengers", "Endgame", "Vendicatori"], "image": "assets/puzzle/8a33d493c69d6a949335.webp", "ratio": 1.7762, "cols": 6, "rows": 6, "order": [32, 33, 28, 26, 22, 10, 16, 27, 20, 3, 21, 9, 14, 8, 15, 2]}, {"name": "Balena", "answers": ["Balena", "Balene", "Megattera"], "image": "assets/puzzle/add3877510b6ab4e0d78.webp", "ratio": 1.7778, "cols": 6, "rows": 6, "order": [33, 27, 1, 4, 23, 11, 17, 2, 22, 3, 16, 10, 21, 14, 13, 9, 8, 6, 15, 7]}, {"name": "Bradipo", "answers": ["Bradipo"], "image": "assets/puzzle/b0bff1cd1754f86cbc6e.webp", "ratio": 1.3333, "cols": 6, "rows": 6, "order": [32, 35, 26, 18, 29, 23, 19, 17, 27, 13, 28, 22, 20, 10, 21, 16, 8, 14, 9, 15]}, {"name": "Farfalle", "answers": ["Farfalle", "Farfalla", "Farfalle monarca", "Monarca"], "image": "assets/puzzle/79b9565c8a4c3e0345e1.webp", "ratio": 1.7778, "cols": 6, "rows": 6, "order": [30, 35, 29, 32, 24, 23, 34, 17, 27, 31, 19, 28, 33, 14, 9, 25, 20, 16, 26, 22, 21, 15]}, {"name": "Il bacio di Klimt", "answers": ["Il bacio", "Bacio", "Il bacio di Klimt", "The Kiss"], "image": "assets/puzzle/b6eff5d88d7806730478.webp", "ratio": 0.999, "cols": 6, "rows": 6, "order": [30, 24, 34, 29, 22, 25, 31, 7, 13, 10, 33, 28, 19, 32, 16, 20, 26, 2, 27, 14, 21, 8, 15, 9, 3]}, {"name": "Koala", "answers": ["Koala"], "image": "assets/puzzle/8369fd6d86ba3a447a08.webp", "ratio": 1.0, "cols": 6, "rows": 6, "order": [30, 35, 24, 18, 31, 29, 2, 34, 25, 12, 32, 19, 5, 28, 33, 11, 26, 22, 13, 4, 27, 20, 8, 21, 14, 3, 10, 16, 9, 15]}, {"name": "L'Urlo di Munch", "answers": ["L'urlo", "Urlo", "L'urlo di Munch", "The Scream"], "image": "assets/puzzle/f91f1932a22f424cfe1a.webp", "ratio": 0.785, "cols": 6, "rows": 6, "order": [2, 3, 6, 11, 30, 35, 7, 10, 24, 29, 31, 34, 17, 18, 23, 8, 9, 16, 25, 28, 32, 33, 12, 13, 14, 15, 26, 27, 22, 19, 20, 21]}, {"name": "Maria De Filippi", "answers": ["Maria De Filippi", "De Filippi"], "image": "assets/puzzle/bc439e3644562152dd9b.webp", "ratio": 0.651, "cols": 6, "rows": 6, "order": [30, 35, 24, 29, 31, 34, 19, 25, 22, 28, 32, 33, 26, 20, 27, 10, 16, 21, 8, 14, 9, 15]}, {"name": "Marco Mengoni", "answers": ["Marco Mengoni", "Mengoni"], "image": "assets/puzzle/049e0618b00d8ae089a0.webp", "ratio": 1.0, "cols": 6, "rows": 6, "order": [30, 34, 25, 28, 22, 31, 13, 19, 32, 16, 26, 20, 27, 33, 21, 14, 2, 15, 3, 8, 9]}, {"name": "Mina", "answers": ["Mina", "Mina Mazzini"], "image": "assets/puzzle/f27825068685500a1756.webp", "ratio": 1.0, "cols": 6, "rows": 6, "order": [35, 4, 31, 29, 23, 34, 1, 6, 25, 32, 12, 18, 2, 28, 33, 19, 10, 22, 13, 3, 7, 8, 9, 20, 21, 16, 26, 27, 14, 15]}, {"name": "Notte stellata di Van Gogh", "answers": ["Notte stellata", "La notte stellata", "Starry Night"], "image": "assets/puzzle/2a6c4ba678b6c38f76d3.webp", "ratio": 1.6, "cols": 6, "rows": 6, "order": [30, 29, 23, 35, 0, 24, 11, 34, 18, 28, 17, 2, 26, 32, 21, 27, 22, 12, 3, 25, 16, 6, 31, 1, 10, 19, 20, 13, 4, 5, 7, 33, 15, 9, 8, 14]}, {"name": "Tigre", "answers": ["Tigre", "Tigri"], "image": "assets/puzzle/123170fcfc7a0b24a830.webp", "ratio": 0.8, "cols": 6, "rows": 6, "order": [32, 34, 25, 28, 33, 1, 4, 19, 26, 2, 10, 22, 27, 7, 13, 20, 8, 9, 16, 21, 14, 15]}, {"name": "Tom Cruise", "answers": ["Tom Cruise", "Cruise"], "image": "assets/puzzle/ca4f86e2fcf59395023b.webp", "ratio": 1.5748, "cols": 6, "rows": 6, "order": [32, 33, 25, 19, 26, 27, 20, 21, 2, 14, 15, 3, 8, 9]}, {"name": "Yu-Gi-Oh!", "answers": ["Yu-Gi-Oh", "Yugioh", "Yugi", "Yami Yugi"], "image": "assets/puzzle/f485c2afa80fb3a521d8.webp", "ratio": 2.0204, "cols": 6, "rows": 6, "order": [30, 35, 24, 29, 31, 18, 32, 34, 25, 5, 23, 26, 17, 11, 33, 28, 19, 3, 27, 13, 20, 14, 8, 4, 9, 10, 15, 21, 22, 16]}];
+var PUZZLE_IMAGES = [{"name": "Baby Yoda (Grogu)", "answers": ["Baby Yoda", "Grogu", "Din Grogu", "Il Bambino", "The Child"], "image": "assets/puzzle/ef16e38490905e14703c.webp", "ratio": 2.3333, "cols": 6, "rows": 6, "order": [34, 23, 24, 32, 29, 18, 31, 25, 17, 22, 33, 28, 19, 35, 26, 12, 20, 27, 11, 21, 13, 10, 8, 16, 9, 14, 15]}, {"name": "Roberto Benigni", "answers": ["Roberto Benigni", "Benigni"], "image": "assets/puzzle/509836421ab2dbb113f2.webp", "ratio": 1.7762, "cols": 6, "rows": 6, "order": [30, 35, 24, 29, 18, 23, 31, 34, 0, 5, 25, 28, 1, 6, 11, 19, 22, 32, 33, 2, 3, 12, 17, 7, 16, 26, 27, 13, 9, 8, 20, 14, 21, 15]}, {"name": "La Dama con l'ermellino", "answers": ["Dama con l'ermellino", "Dama con ermellino", "Dama dell'ermellino"], "image": "assets/puzzle/249874478dcec223a8f9.webp", "ratio": 0.727, "cols": 6, "rows": 6, "order": [30, 24, 19, 34, 28, 22, 31, 25, 16, 32, 20, 27, 33, 26, 21, 8, 14, 9, 15]}, {"name": "Joker", "answers": ["Joker", "Il Joker", "Joaquin Phoenix", "Arthur Fleck"], "image": "assets/puzzle/695583b7cbf174b434b0.webp", "ratio": 1.7762, "cols": 6, "rows": 6, "order": [34, 32, 26, 20, 27, 7, 16, 33, 21, 9, 14, 15, 8, 3, 2]}, {"name": "Marcello Mastroianni", "answers": ["Marcello Mastroianni", "Mastroianni"], "image": "assets/puzzle/f993435276761b943f77.webp", "ratio": 1.7762, "cols": 6, "rows": 6, "order": [35, 31, 29, 34, 4, 28, 32, 22, 2, 10, 26, 33, 3, 27, 20, 8, 9, 21, 16, 14, 15]}, {"name": "Miles Morales (Spider-Man)", "answers": ["Miles Morales", "Miles", "Spider-Man", "Spiderman", "Uomo Ragno", "Spider-Man Miles Morales"], "image": "assets/puzzle/b03f4b10696d9e134cd5.webp", "ratio": 1.7762, "cols": 6, "rows": 6, "order": [2, 34, 28, 33, 22, 10, 26, 16, 3, 20, 27, 21, 14, 15, 9, 8]}, {"name": "La Gioconda (Monna Lisa)", "answers": ["Gioconda", "Monna Lisa", "Mona Lisa"], "image": "assets/puzzle/d2ba0758bd6cba46132a.webp", "ratio": 0.671, "cols": 6, "rows": 6, "order": [30, 35, 24, 29, 31, 34, 18, 23, 25, 28, 12, 17, 19, 22, 6, 11, 32, 33, 26, 27, 7, 10, 20, 21, 13, 16, 2, 3, 14, 15, 8, 9]}, {"name": "Sophia Loren", "answers": ["Sophia Loren", "Sofia Loren", "Loren"], "image": "assets/puzzle/c0757651c29649737c43.webp", "ratio": 0.808, "cols": 6, "rows": 6, "order": [30, 24, 34, 28, 31, 2, 22, 25, 32, 33, 7, 26, 3, 20, 27, 10, 21, 8, 14, 16, 9, 15]}, {"name": "Avengers: Endgame", "answers": ["Avengers Endgame", "Avengers", "Endgame", "Vendicatori"], "image": "assets/puzzle/8a33d493c69d6a949335.webp", "ratio": 1.7762, "cols": 6, "rows": 6, "order": [32, 33, 28, 26, 22, 10, 16, 27, 20, 3, 21, 9, 14, 8, 15, 2]}, {"name": "Goku (Dragon Ball)", "answers": ["Goku", "Son Goku", "Kakarot", "Dragon Ball"], "image": "assets/puzzle/d54b03ea9f996f8f6211.webp", "ratio": 1.321, "cols": 6, "rows": 6, "order": [33, 25, 0, 10, 12, 1, 6, 7, 11, 13, 27, 24, 5, 9, 8, 2, 22, 20, 16, 21, 14, 15]}, {"name": "Pikachu", "answers": ["Pikachu", "Pokemon"], "image": "assets/puzzle/7029714ded97b689127e.webp", "ratio": 1.7762, "cols": 6, "rows": 6, "order": [6, 22, 12, 23, 17, 18, 1, 9, 4, 19, 21, 3, 2, 13, 26, 8, 32, 27, 20, 14, 15, 33]}, {"name": "Titanic", "answers": ["Titanic", "Jack e Rose"], "image": "assets/puzzle/cf86c316e90a4f12ed29.webp", "ratio": 2.3419, "cols": 6, "rows": 6, "order": [23, 25, 30, 32, 3, 7, 9, 1, 18, 22, 24, 20, 33, 26, 14, 2, 8, 13, 27, 15, 19, 21]}, {"name": "Il bacio di Klimt", "answers": ["Il bacio", "Bacio", "Il bacio di Klimt", "The Kiss"], "image": "assets/puzzle/b6eff5d88d7806730478.webp", "ratio": 0.999, "cols": 6, "rows": 6, "order": [30, 24, 34, 29, 22, 25, 31, 7, 13, 10, 33, 28, 19, 32, 16, 20, 26, 2, 27, 14, 21, 8, 15, 9, 3]}, {"name": "Avatar", "answers": ["Avatar", "Neytiri", "Na'vi", "Navi"], "image": "assets/puzzle/5bf2095e1c67238ee632.webp", "ratio": 1.7762, "cols": 6, "rows": 6, "order": [23, 19, 4, 13, 7, 25, 31, 28, 10, 34, 22, 16, 32, 9, 3, 26, 2, 20, 15, 21, 8, 14]}, {"name": "L'Urlo di Munch", "answers": ["L'urlo", "Urlo", "L'urlo di Munch", "The Scream"], "image": "assets/puzzle/f91f1932a22f424cfe1a.webp", "ratio": 0.785, "cols": 6, "rows": 6, "order": [2, 3, 6, 11, 30, 35, 7, 10, 24, 29, 31, 34, 17, 18, 23, 8, 9, 16, 25, 28, 32, 33, 12, 13, 14, 15, 26, 27, 22, 19, 20, 21]}, {"name": "Maria De Filippi", "answers": ["Maria De Filippi", "De Filippi"], "image": "assets/puzzle/bc439e3644562152dd9b.webp", "ratio": 0.651, "cols": 6, "rows": 6, "order": [30, 35, 24, 29, 31, 34, 19, 25, 22, 28, 32, 33, 26, 20, 27, 10, 16, 21, 8, 14, 9, 15]}, {"name": "Marco Mengoni", "answers": ["Marco Mengoni", "Mengoni"], "image": "assets/puzzle/049e0618b00d8ae089a0.webp", "ratio": 1.0, "cols": 6, "rows": 6, "order": [30, 34, 25, 28, 22, 31, 13, 19, 32, 16, 26, 20, 27, 33, 21, 14, 2, 15, 3, 8, 9]}, {"name": "Mina", "answers": ["Mina", "Mina Mazzini"], "image": "assets/puzzle/f27825068685500a1756.webp", "ratio": 1.0, "cols": 6, "rows": 6, "order": [35, 4, 31, 29, 23, 34, 1, 6, 25, 32, 12, 18, 2, 28, 33, 19, 10, 22, 13, 3, 7, 8, 9, 20, 21, 16, 26, 27, 14, 15]}, {"name": "Notte stellata di Van Gogh", "answers": ["Notte stellata", "La notte stellata", "Starry Night"], "image": "assets/puzzle/2a6c4ba678b6c38f76d3.webp", "ratio": 1.6, "cols": 6, "rows": 6, "order": [30, 29, 23, 35, 0, 24, 11, 34, 18, 28, 17, 2, 26, 32, 21, 27, 22, 12, 3, 25, 16, 6, 31, 1, 10, 19, 20, 13, 4, 5, 7, 33, 15, 9, 8, 14]}, {"name": "Il Padrino", "answers": ["Il Padrino", "Padrino", "The Godfather", "Don Vito Corleone", "Vito Corleone", "Don Corleone"], "image": "assets/puzzle/22bb7fe2c2e41eb56374.webp", "ratio": 1.3333, "cols": 6, "rows": 6, "order": [11, 22, 12, 2, 3, 27, 25, 24, 9, 13, 23, 10, 17, 26, 18, 8, 15, 20, 14, 21, 16, 19]}, {"name": "Tom Cruise", "answers": ["Tom Cruise", "Cruise"], "image": "assets/puzzle/ca4f86e2fcf59395023b.webp", "ratio": 1.5748, "cols": 6, "rows": 6, "order": [32, 33, 25, 19, 26, 27, 20, 21, 2, 14, 15, 3, 8, 9]}, {"name": "Yu-Gi-Oh!", "answers": ["Yu-Gi-Oh", "Yugioh", "Yugi", "Yami Yugi"], "image": "assets/puzzle/f485c2afa80fb3a521d8.webp", "ratio": 2.0204, "cols": 6, "rows": 6, "order": [30, 35, 24, 29, 31, 18, 32, 34, 25, 5, 23, 26, 17, 11, 33, 28, 19, 3, 27, 13, 20, 14, 8, 4, 9, 10, 15, 21, 22, 16]}];
 var PUZZLE_ROUNDS = 5;
 var PUZZLE_TILE_MS = 3e3;
 var PUZZLE_POINTS_PER_SECOND = 3;
@@ -1578,6 +1578,32 @@ var puzzleMatch = /* @__PURE__ */ __name((answer, accepted) => {
 var drawPuzzle = /* @__PURE__ */ __name(() => pick(PUZZLE_IMAGES.map((_, i) => i), PUZZLE_ROUNDS), "drawPuzzle");
 var puzzleDuration = /* @__PURE__ */ __name((item) => item.order.length * PUZZLE_TILE_MS, "puzzleDuration");
 
+// worker/album.js (manche 6 "Album dei ricordi"). I dati li scrive server/build-album.py da album-dei-ricordi/indizi.json
+// album-data:start
+var ALBUM_VIPS = [{"name": "Amadeus", "answers": ["Amadeus"], "clues": ["Il mio vero nome è Amedeo Sebastiani e sono nato a Ravenna.", "Ho iniziato come DJ a Radio Deejay.", "Ho condotto cinque Festival di Sanremo di fila, dal 2020 al 2024."], "child": "assets/album/8edc66f69a3e5bcab246.jpg", "adult": "assets/album/0905a1086e8753914fcd.jpg"}, {"name": "Antonino Cannavacciuolo", "answers": ["Antonino Cannavacciuolo", "Cannavacciuolo"], "clues": ["Sono nato a Vico Equense nel 1975.", "Il mio ristorante stellato è Villa Crespi, sul lago d'Orta.", "Sono il giudice più grosso di MasterChef Italia e conduco Cucine da incubo."], "child": "assets/album/3e3d01f5644e94c1db8f.webp", "adult": "assets/album/dbcbf132575a30d3c098.jpg"}, {"name": "Bill Clinton", "answers": ["Bill Clinton", "Clinton"], "clues": ["Sono nato a Hope, in Arkansas, nel 1946.", "Suono il sassofono e sono stato governatore dell'Arkansas.", "Sono stato il 42° presidente degli Stati Uniti, marito di Hillary."], "child": "assets/album/1c8a69b957a2524d51a5.webp", "adult": "assets/album/9729f06a245e037ce82c.jpg"}, {"name": "Carlo Conti", "answers": ["Carlo Conti", "Conti"], "clues": ["Sono nato a Firenze nel 1961 e ho iniziato in radio.", "Ho condotto L'Eredità e Tale e quale show.", "Ho presentato Sanremo dal 2015 al 2017 e sono tornato a condurlo nel 2025."], "child": "assets/album/380ffc5041d1497d969c.jpg", "adult": "assets/album/ca0970f53089f3a80aa3.avif"}, {"name": "Chiara Ferragni", "answers": ["Chiara Ferragni", "Ferragni"], "clues": ["Sono nata a Cremona nel 1987 e ho studiato alla Bocconi.", "Il mio blog si chiamava The Blonde Salad.", "Sono l'influencer più famosa d'Italia e ho sposato Fedez."], "child": "assets/album/88d321ae7ce3f2cc2129.webp", "adult": "assets/album/66ad7e6bb3283d9c97a8.webp"}, {"name": "Elettra Lamborghini", "answers": ["Elettra Lamborghini", "Lamborghini"], "clues": ["Sono nata a Bologna nel 1994, in una famiglia famosa per i trattori.", "Sono diventata famosa con il twerking e il reality Super Shore.", "Ho cantato Musica (e il resto scompare) a Sanremo e mio nonno fondò le auto con il toro."], "child": "assets/album/7cd81c40455cd614c462.jpg", "adult": "assets/album/d4a9d20206b057352d99.jpg"}, {"name": "Elisabetta Canalis", "answers": ["Elisabetta Canalis", "Canalis"], "clues": ["Sono nata a Sassari nel 1978.", "Sono stata una velina di Striscia la notizia.", "Sono stata la fidanzata di George Clooney."], "child": "assets/album/2c28514823c9c923c066.webp", "adult": "assets/album/533224ac99db4fc94500.jpg"}, {"name": "Fiorello", "answers": ["Fiorello"], "clues": ["Il mio primo nome è Rosario e sono nato a Catania nel 1960.", "Ho iniziato come animatore nei villaggi e sono esploso con il Karaoke.", "Ho fatto Viva Rai2! con il mio amico Amadeus: sono lo showman per eccellenza."], "child": "assets/album/9710d5d64a67b618b166.jpg", "adult": "assets/album/9e9c12ebd7abbca57f75.jpg"}, {"name": "Laura Pausini", "answers": ["Laura Pausini", "Pausini"], "clues": ["Sono nata a Faenza e cresciuta a Solarolo.", "Ho vinto un Grammy e un Golden Globe.", "Ho vinto Sanremo Giovani nel 1993 con La solitudine."], "child": "assets/album/770da1965b8787a22331.jpg", "adult": "assets/album/539855f364aa7718c2a2.jpg"}, {"name": "Raffaella Carrà", "answers": ["Raffaella Carrà", "Carrà"], "clues": ["Il mio vero cognome era Pelloni e sono nata a Bologna nel 1943.", "Ho scandalizzato la TV mostrando l'ombelico.", "Ho cantato Tanti auguri e A far l'amore comincia tu."], "child": "assets/album/e830a0547496a83e3c87.webp", "adult": "assets/album/56f21ebc6af5e93eeb21.jpg"}, {"name": "Selena Gomez", "answers": ["Selena Gomez", "Gomez"], "clues": ["Sono nata in Texas nel 1992 e porto il nome di una cantante tejana.", "Ho fondato Rare Beauty e recito in Only Murders in the Building.", "Sono diventata famosa con I maghi di Waverly su Disney Channel."], "child": "assets/album/8d2d0f4d00cf893157ab.webp", "adult": "assets/album/f762bfb18398e2fe8d7f.webp"}, {"name": "Stefano De Martino", "answers": ["Stefano De Martino", "De Martino"], "clues": ["Sono nato a Torre Annunziata nel 1989.", "Sono diventato famoso come ballerino ad Amici.", "Conduco Affari tuoi e sono stato sposato con Belén Rodríguez."], "child": "assets/album/9b656626bb5d7b5c7634.webp", "adult": "assets/album/5fd182c00084772d6db6.jpg"}, {"name": "Terence Hill", "answers": ["Terence Hill", "Hill"], "clues": ["Il mio vero nome è Mario Girotti e sono nato a Venezia.", "Al cinema facevo coppia fissa con Bud Spencer.", "Sono Don Matteo, il prete che indaga in bicicletta."], "child": "assets/album/566bc38d8fa67dc2fb52.jpg", "adult": "assets/album/7f37e64900402327acc5.webp"}, {"name": "Tiziano Ferro", "answers": ["Tiziano Ferro", "Ferro"], "clues": ["Sono nato a Latina nel 1980.", "Il mio primo album si chiamava Rosso relativo.", "Ho cantato Xdono e Sere nere."], "child": "assets/album/66b225c35469d33b00ca.jpg", "adult": "assets/album/c6361f45ece95fe2a564.webp"}, {"name": "Totò", "answers": ["Totò"], "clues": ["Il mio vero nome era Antonio de Curtis e sono nato nel Rione Sanità.", "Ho scritto la poesia 'A livella.", "Sono il principe della risata: «Siamo uomini o caporali?»"], "child": "assets/album/a615a6917c244ab3d949.jpg", "adult": "assets/album/01009d4fe6b2e9f0ffd9.jpg"}, {"name": "Vasco Rossi", "answers": ["Vasco Rossi", "Rossi"], "clues": ["Sono nato a Zocca, in provincia di Modena, nel 1952.", "Mi chiamano il Blasco.", "Ho cantato Albachiara e Vita spericolata."], "child": "assets/album/d6781897713ce4839138.jpg", "adult": "assets/album/c1c74370764ef3f0af61.jpg"}, {"name": "Will Smith", "answers": ["Will Smith", "Smith"], "clues": ["Sono nato a Filadelfia nel 1968 e ho iniziato come rapper.", "Ho vinto l'Oscar per Una famiglia vincente - King Richard.", "Ero Willy, il principe di Bel-Air, e ho girato Men in Black."], "child": "assets/album/d53a595bfcd56bc42362.webp", "adult": "assets/album/e49c6f1323ec596d8bef.jpg"}];
+// album-data:end
+var ALBUM_ROUNDS = 5;
+var ALBUM_DURATION = 45e3;
+var ALBUM_CLUE_AT = [15e3, 25e3, 35e3];
+var ALBUM_POINTS_PER_SECOND = 5;
+var ALBUM_BONUS = 50;
+var ALBUM_INTRO = 3e3;
+var ALBUM_ATTEMPTS = 3;
+var albumMatch = /* @__PURE__ */ __name((answer, accepted) => {
+  const guess = String(answer).replace(/^\s*mi\s+chiamo\s*/i, "");
+  const [full, ...surnames] = accepted;
+  if (puzzleMatch(guess, [full])) return true;
+  // Solo il cognome: nessun refuso se e' corto (Rossi, Conti, Hill), uno se e' lungo (Cannavacciuolo)
+  const key = puzzleKey(guess);
+  if (key && surnames.some((name) => puzzleDistance(key, puzzleKey(name)) <= (puzzleKey(name).length >= 8 ? 1 : 0))) return true;
+  // Nome d'arte di una parola scritto con il nome di battesimo davanti ("Rosario Fiorello")
+  const words = guess.trim().split(/\s+/);
+  return !/\s/.test(full.trim()) && words.length > 1 && puzzleMatch(words.slice(1).join(" "), [full]);
+}, "albumMatch");
+var drawAlbum = /* @__PURE__ */ __name(() => ALBUM_VIPS.length >= ALBUM_ROUNDS ? pick(ALBUM_VIPS.map((_, i) => i), ALBUM_ROUNDS) : void 0, "drawAlbum");
+var albumElapsed = /* @__PURE__ */ __name((remaining) => ALBUM_DURATION - remaining, "albumElapsed");
+var albumCluesShown = /* @__PURE__ */ __name((r, remaining, revealed) => revealed ? 3 : Date.now() < r.starts_at && r.phase === "question" ? 0 : ALBUM_CLUE_AT.filter((at) => albumElapsed(remaining) >= at).length, "albumCluesShown");
+
 // worker/index.js
 var quizOf = /* @__PURE__ */ __name((r) => r.quiz || "pokemon", "quizOf");
 var cultureStages = [
@@ -1585,7 +1611,8 @@ var cultureStages = [
   { id: "chronology", count: CHRONOLOGY_ROUNDS, duration: 3e4 },
   { id: "vault", count: VAULT_ROUNDS, duration: VAULT_DURATION },
   { id: "meadow", count: MEADOW_ROUNDS, duration: 3e4 },
-  { id: "puzzle", count: PUZZLE_ROUNDS, duration: 6e4 }
+  { id: "puzzle", count: PUZZLE_ROUNDS, duration: 6e4 },
+  { id: "album", count: ALBUM_ROUNDS, duration: ALBUM_DURATION }
 ];
 var cultureStage = /* @__PURE__ */ __name((r) => quizOf(r) === "culture" ? cultureStages[(r.manche || 1) - 1] : null, "cultureStage");
 var isVault = /* @__PURE__ */ __name((r) => cultureStage(r)?.id === "vault", "isVault");
@@ -1593,6 +1620,7 @@ var isChronology = /* @__PURE__ */ __name((r) => cultureStage(r)?.id === "chrono
 var isMeadow = /* @__PURE__ */ __name((r) => cultureStage(r)?.id === "meadow", "isMeadow");
 var isPuzzle = /* @__PURE__ */ __name((r) => cultureStage(r)?.id === "puzzle", "isPuzzle");
 var puzzleItem = /* @__PURE__ */ __name((r) => PUZZLE_IMAGES[r.puzzleOrder[r.round - 1]], "puzzleItem");
+var isAlbum = /* @__PURE__ */ __name((r) => cultureStage(r)?.id === "album", "isAlbum");
 var isTimeline = /* @__PURE__ */ __name((r) => isChronology(r) || isMeadow(r), "isTimeline");
 var MEADOW_INTRO = 3e3;
 var MEADOW_REVEAL = 15e3;
@@ -1825,10 +1853,10 @@ var Goku = class {
     return s && r && (s.role === "admin" || s.id === r.host_id || r.players[s.id]);
   }
   publicRoom(r) {
-    const { players, answers, order, population_pairs, clueOrder, priceOrder, chronologyOrder, chronology_points, vaultOrder, meadowOrder, puzzleOrder, vaultResult, polling, settled, ...publicData } = r;
+    const { players, answers, order, population_pairs, clueOrder, priceOrder, chronologyOrder, chronology_points, vaultOrder, meadowOrder, puzzleOrder, albumOrder, vaultResult, polling, settled, ...publicData } = r;
     publicData.quiz ||= "pokemon";
     publicData.manche ||= publicData.quiz === "culture" ? 1 : "cards";
-    if (publicData.quiz === "culture") publicData.manche_total = puzzleOrder ? cultureStages.length : meadowOrder ? 4 : vaultOrder ? 3 : 2;
+    if (publicData.quiz === "culture") publicData.manche_total = albumOrder ? 6 : puzzleOrder ? 5 : meadowOrder ? 4 : vaultOrder ? 3 : 2;
     return publicData;
   }
   advanceRound(r, now = Date.now()) {
@@ -1846,6 +1874,8 @@ var Goku = class {
         r.manche = 4;
       } else if (isMeadow(r) && r.puzzleOrder) {
         r.manche = 5;
+      } else if (isPuzzle(r) && r.albumOrder) {
+        r.manche = 6;
       } else {
         r.phase = "finished";
         return;
@@ -1864,7 +1894,7 @@ var Goku = class {
     delete r.chronology_view;
     if (isChronology(r)) r.chronology_points = CHRONOLOGY_POINTS;
     if (isVault(r)) delete r.vaultResult;
-    r.starts_at = now + (isVault(r) ? vaultIntro(r.round) : isChronology(r) ? CHRONOLOGY_INTRO : isMeadow(r) ? MEADOW_INTRO : isPuzzle(r) ? PUZZLE_INTRO : r.manche === "price" ? 0 : 2e3);
+    r.starts_at = now + (isVault(r) ? vaultIntro(r.round) : isChronology(r) ? CHRONOLOGY_INTRO : isMeadow(r) ? MEADOW_INTRO : isPuzzle(r) ? PUZZLE_INTRO : isAlbum(r) ? ALBUM_INTRO : r.manche === "price" ? 0 : 2e3);
     r.remaining_ms = roundDuration(r);
     r.deadline = r.starts_at + r.remaining_ms;
     r.answers = {};
@@ -1886,14 +1916,14 @@ var Goku = class {
   settle(r, force = false, now = Date.now()) {
     let changed = false;
     const complete = /* @__PURE__ */ __name(() => {
-      const ids = isTimeline(r) || isPuzzle(r) ? this.chronologyParticipants(r) : Object.keys(r.players);
+      const ids = isTimeline(r) || isPuzzle(r) || isAlbum(r) ? this.chronologyParticipants(r) : Object.keys(r.players);
       return ids.length > 0 && ids.every((id) => r.answers[id]?.done);
     }, "complete");
     const allAnswered = r.phase === "question" && now >= r.starts_at && now < r.deadline && complete();
     if (r.phase === "question" && (r.deadline <= now || allAnswered)) {
       if (quizOf(r) === "culture") {
-        if (isChronology(r)) {
-          r.chronology_view = "solution";
+        if (isChronology(r) || isAlbum(r)) {
+          if (isChronology(r)) r.chronology_view = "solution";
           r.remaining_ms = 0;
           r.deadline = null;
         } else {
@@ -1917,6 +1947,13 @@ var Goku = class {
       this.advanceRound(r, now);
       r.revision++;
       changed = true;
+    }
+    if (isAlbum(r) && r.phase === "question") {
+      const count = albumCluesShown(r, Math.max(0, Math.min(ALBUM_DURATION, r.deadline - Date.now())), false);
+      if (count !== (r.cluesShown || 0)) {
+        r.cluesShown = count;
+        changed = true;
+      }
     }
     if (r.manche === "clues" && r.phase === "question") {
       const count = Date.now() < r.starts_at ? 0 : r.deadline - Date.now() > 2e4 ? 1 : r.deadline - Date.now() > 1e4 ? 2 : 3;
@@ -1971,6 +2008,7 @@ var Goku = class {
     if (isChronology(r)) return r.chronologyOrder[r.round - 1];
     if (isMeadow(r)) return r.meadowOrder[r.round - 1];
     if (isPuzzle(r)) return puzzleItem(r);
+    if (isAlbum(r)) return ALBUM_VIPS[r.albumOrder[r.round - 1]];
     if (quizOf(r) === "culture") return r.population_pairs ? populationsFor(r).pairs[r.round - 1] : populationsFor(r).pairs[r.order[r.round - 1]];
     return r.manche === "clues" ? quiz_default.clues[r.clueOrder[r.round - 7]] : quiz_default.cards[r.order[r.round - 1]];
   }
@@ -2021,6 +2059,7 @@ var Goku = class {
     const chronology = isChronology(r) && question;
     const meadow = isMeadow(r) && question;
     const puzzle = isPuzzle(r) && question;
+    const album = isAlbum(r) && question;
     const participants = (chronology || meadow) && (/* @__PURE__ */ new Set([
       ...this.chronologyParticipants(r, connected),
       ...Object.keys(r.answers).filter((id) => r.answers[id].done)
@@ -2031,7 +2070,7 @@ var Goku = class {
       room: this.publicRoom(r),
       server_now: Date.now(),
       remaining_ms: remaining,
-      ...price ? { duration_ms: PRICE_DURATION, price: priceSnapshot(r, revealed) } : population || chronology || meadow || puzzle ? { duration_ms: roundDuration(r) } : {},
+      ...price ? { duration_ms: PRICE_DURATION, price: priceSnapshot(r, revealed) } : population || chronology || meadow || puzzle || album ? { duration_ms: roundDuration(r) } : {},
       ...chronology ? {
         chronology: {
           category: chronology.category,
@@ -2075,6 +2114,20 @@ var Goku = class {
           ...cultureRevealed ? { answer: puzzle.name, reveal_ms: PUZZLE_REVEAL } : {}
         }
       } : {},
+      ...album ? {
+        album: {
+          total: ALBUM_ROUNDS,
+          child: album.child,
+          clues: album.clues.slice(0, albumCluesShown(r, remaining, cultureRevealed)),
+          clue_at: ALBUM_CLUE_AT,
+          points_per_second: ALBUM_POINTS_PER_SECOND,
+          bonus: ALBUM_BONUS,
+          attempts: ALBUM_ATTEMPTS,
+          found: Object.values(r.answers).filter((a) => a.result === "correct").length,
+          bonus_players: Object.keys(r.answers).filter((id) => r.answers[id].bonus).map((id) => r.players[id]?.nickname).filter(Boolean),
+          ...cultureRevealed ? { answer: album.name, adult: album.adult } : {}
+        }
+      } : {},
       ...population ? {
         population: {
           year: populationsFor(r).year,
@@ -2098,7 +2151,8 @@ var Goku = class {
           bonus: r.answers[s.id]?.bonus || 0
         } : population || chronology || meadow ? { choice: r.answers[s.id]?.choice || null } : {},
         ...meadow && cultureRevealed ? { fastest: !!r.answers[s.id]?.fastest } : {},
-        ...puzzle ? { first: !!r.answers[s.id]?.first } : {}
+        ...puzzle ? { first: !!r.answers[s.id]?.first } : {},
+        ...album ? { bonus: !!r.answers[s.id]?.bonus } : {}
       } : null,
       can_control: this.control(s, r),
       received: Object.values(r.answers).filter((a) => a.done).length,
@@ -2122,7 +2176,7 @@ var Goku = class {
     }
   }
   async schedule() {
-    const deadlines = this.all("room").filter((r) => r.phase === "question" || quizOf(r) === "culture" && r.phase === "reveal" && r.deadline !== null).map((r) => r.phase === "question" && r.manche === "clues" ? [r.starts_at, r.deadline - 2e4, r.deadline - 1e4, r.deadline].find((time) => time > Date.now()) || r.deadline : r.deadline);
+    const deadlines = this.all("room").filter((r) => r.phase === "question" || quizOf(r) === "culture" && r.phase === "reveal" && r.deadline !== null).map((r) => r.phase === "question" && r.manche === "clues" ? [r.starts_at, r.deadline - 2e4, r.deadline - 1e4, r.deadline].find((time) => time > Date.now()) || r.deadline : r.phase === "question" && isAlbum(r) ? [...ALBUM_CLUE_AT.map((at) => r.deadline - ALBUM_DURATION + at), r.deadline].find((time) => time > Date.now()) || r.deadline : r.deadline);
     const next = deadlines.length ? Math.min(...deadlines) : null;
     if (await this.ctx.storage.getAlarm() !== next) {
       if (next) await this.ctx.storage.setAlarm(next);
@@ -2329,7 +2383,7 @@ var Goku = class {
         players: {},
         answers: {},
         name_filter: p.name_filter !== false,
-        ...selectedQuiz === "culture" ? { population_year: populationYear, population_pairs: drawPopulationPairs(), chronologyOrder: drawChronology(), vaultOrder: drawVault(), meadowOrder: drawMeadow(), puzzleOrder: drawPuzzle() } : {},
+        ...selectedQuiz === "culture" ? { population_year: populationYear, population_pairs: drawPopulationPairs(), chronologyOrder: drawChronology(), vaultOrder: drawVault(), meadowOrder: drawMeadow(), puzzleOrder: drawPuzzle(), albumOrder: drawAlbum() } : {},
         ...selectedQuiz === "pokemon" ? { order, priceOrder: selectPriceCards(quiz_default.priceCards) } : {}
       };
       this.put("room", r2.id, r2);
@@ -2374,7 +2428,7 @@ var Goku = class {
     }
     if (action === "answer") {
       if (!r.players[s.id]) fail("Solo giocatori");
-      if (p.round !== r.round || (isVault(r) || isTimeline(r) || isPuzzle(r) || p.manche === 3) && p.manche !== r.manche) fail("Domanda non pi\xF9 attuale");
+      if (p.round !== r.round || (isVault(r) || isTimeline(r) || isPuzzle(r) || isAlbum(r) || p.manche === 3) && p.manche !== r.manche) fail("Domanda non pi\xF9 attuale");
       const answer = r.answers[s.id] || {
         attempts: 0,
         done: false,
@@ -2445,6 +2499,34 @@ var Goku = class {
           ...fastest ? { fastest: true } : {},
           requests: { [p.request_id]: result2 }
         };
+        this.recordPoll(r, s.id, now);
+        r.revision++;
+        this.settle(r);
+        this.put("room", r.id, r);
+        this.changed.add(r.id);
+        return result2;
+      }
+      if (isAlbum(r)) {
+        if (typeof p.answer !== "string" || p.answer.trim().length < 1 || p.answer.length > 80) fail("Scrivi un nome (massimo 80 caratteri)");
+        if (answer.last && now - answer.last < 250) fail("Attendi prima di riprovare", 429);
+        answer.last = now;
+        const left = Math.max(0, r.deadline - now);
+        if (albumMatch(p.answer, this.question(r).answers)) {
+          const bonus = albumElapsed(left) < ALBUM_CLUE_AT[0];
+          answer.done = true;
+          answer.result = "correct";
+          answer.points = Math.ceil(left / 1e3) * ALBUM_POINTS_PER_SECOND + (bonus ? ALBUM_BONUS : 0);
+          if (bonus) answer.bonus = true;
+        } else {
+          answer.attempts++;
+          answer.done = answer.attempts >= ALBUM_ATTEMPTS;
+          answer.result = "wrong";
+        }
+        const result2 = { result: answer.result, points: answer.points, attempts: answer.attempts, done: answer.done, ...answer.bonus ? { bonus: true } : {} };
+        const keys2 = Object.keys(answer.requests);
+        if (keys2.length >= 20) delete answer.requests[keys2[0]];
+        answer.requests[p.request_id] = result2;
+        r.answers[s.id] = answer;
         this.recordPoll(r, s.id, now);
         r.revision++;
         this.settle(r);
@@ -2614,7 +2696,7 @@ var Goku = class {
   async handleDisconnect(room) {
     await this.ctx.blockConcurrencyWhile(async () => {
       const r = this.get("room", room);
-      const changed = r && isTimeline(r) && this.settle(r);
+      const changed = r && (isTimeline(r) || isPuzzle(r) || isAlbum(r)) && this.settle(r);
       await this.broadcast(room);
       if (changed) await this.schedule();
     });
@@ -2623,6 +2705,7 @@ var Goku = class {
 export {
   Goku,
   addPoints,
+  albumMatch,
   index_default as default
 };
 //# sourceMappingURL=index.js.map

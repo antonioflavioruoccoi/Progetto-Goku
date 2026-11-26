@@ -59,6 +59,15 @@ def main():
         deploy_version(prev)
         return print(f"Tornato alla versione {prev}")
 
+    # Manche 6: controlla foto e indizi.json e aggiorna dati e file da caricare (si ferma se manca qualcosa)
+    worker_file = os.path.join(ROOT, "server/worker-index.js")
+    before = open(worker_file, "rb").read()
+    if subprocess.run([sys.executable, os.path.join(ROOT, "server/build-album.py")]).returncode:
+        sys.exit("Pubblicazione annullata: correggi l'Album dei ricordi e riprova.")
+    if open(worker_file, "rb").read() != before and "--worker" not in sys.argv:
+        sys.exit("Pubblicazione annullata: indizi o foto dell'Album sono cambiati e vanno pubblicati anche nel server.\n"
+                 "Rilancia con: python3 .claude/deploy.py --worker server/worker-index.js (su GitHub: opzione 'server').")
+
     files = [l.rstrip("\n") for l in open(os.path.join(ROOT, ".claude/deploy-files.txt")) if l.strip()]
     manifest, paths = {}, {}
     for f in files:

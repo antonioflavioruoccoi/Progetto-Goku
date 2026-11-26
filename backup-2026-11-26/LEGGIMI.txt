@@ -1,0 +1,6 @@
+Backup della versione 28 del sito (commit Git 5f9bd2e, branch main) fatto il 26/11/2026
+PRIMA delle modifiche a Manche 5 e dell'aggiunta della Manche 6 "Album dei ricordi".
+SCADE il 29/11/2026: il primo task dopo quella data deve cancellare questa cartella.
+Contenuto: pagine, grafica, logica del sito e codice del server (server/worker-index.js).
+Le immagini non servono: sono invariate nella cronologia Git (commit 5f9bd2e).
+Per tornare indietro online: python3 .claude/deploy.py rollback (oppure il workflow "Pubblica online" con rollback).

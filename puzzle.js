@@ -11,6 +11,66 @@ const setText = (node, value) => { if (node.textContent !== value) node.textCont
 const calm = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 const vibrate = (pattern) => { try { navigator.vibrate?.(pattern); } catch {} };
 
+// Tessere a incastro: ogni pezzo scoperto e' il 30% piu' grande della sua casella e ha linguette e incavi.
+const PIECE = 1.3, TAB = 0.2;
+const piecesBox = Object.assign(document.createElement("div"), { id: "puzzle-pieces" });
+piecesBox.setAttribute("aria-hidden", "true");
+board.insertBefore(piecesBox, el("puzzle-burst"));
+// Sul telefono il puzzle non si vede: i giocatori guardano lo schermo principale.
+const hint = Object.assign(document.createElement("p"), { id: "puzzle-hint" });
+hint.innerHTML = "<strong>Chi o cosa c'è nell'immagine?</strong><span>Guarda lo schermo principale</span>";
+board.append(hint);
+
+// Contorno della tessera in un quadrato 140x140 (corpo 20..120): out = linguetta fuori, in = incavo.
+function piecePath(out) {
+  const k = out ? -1 : 1;
+  const side = (x0, y0, dx, dy, nx, ny) => {
+    const p = (t, h) => `${x0 + dx * t + nx * h * k} ${y0 + dy * t + ny * h * k}`;
+    return `L${p(.36, 0)} C${p(.42, 0)} ${p(.42, 6)} ${p(.38, 9)} C${p(.3, 15)} ${p(.4, 19)} ${p(.5, 19)} C${p(.6, 19)} ${p(.7, 15)} ${p(.62, 9)} C${p(.58, 6)} ${p(.58, 0)} ${p(.64, 0)} L${p(1, 0)} `;
+  };
+  return "M20 20 " + side(20, 20, 100, 0, 0, 1) + side(120, 20, 0, 100, -1, 0) + side(120, 120, -100, 0, 0, -1) + side(20, 120, 0, -100, 1, 0) + "Z";
+}
+const PATHS = [piecePath(true), piecePath(false)];
+const MASKS = PATHS.map((d) => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 140'><path d='${d}'/></svg>`)}")`);
+
+function makePiece(cell) {
+  const p = state.puzzle, r = Math.floor(cell / p.cols), c = cell % p.cols;
+  const kind = (r + c) % 2;
+  const size = PIECE * (1 + 2 * TAB); // lato della tessera in caselle
+  const piece = document.createElement("div");
+  piece.className = "puzzle-piece";
+  piece.style.cssText = `left:${((c + .5 - size / 2) / p.cols) * 100}%;top:${((r + .5 - size / 2) / p.rows) * 100}%;width:${(size / p.cols) * 100}%;height:${(size / p.rows) * 100}%`;
+  const art = document.createElement("div");
+  art.className = "puzzle-piece-art";
+  art.style.maskImage = art.style.webkitMaskImage = MASKS[kind];
+  const img = document.createElement("img");
+  img.alt = "";
+  img.src = image.src;
+  img.style.cssText = `width:${(p.cols / size) * 100}%;height:${(p.rows / size) * 100}%;left:${(-(c + .5 - size / 2) / size) * 100}%;top:${(-(r + .5 - size / 2) / size) * 100}%`;
+  art.append(img);
+  piece.append(art);
+  piece.insertAdjacentHTML("beforeend", `<svg viewBox="0 0 140 140" preserveAspectRatio="none"><path d="${PATHS[kind]}"/></svg>`);
+  return piece;
+}
+
+// Entra da fuori, si aggancia e "scatta" in posizione.
+function snapIn(piece, cell) {
+  if (calm()) return;
+  const p = state.puzzle, r = Math.floor(cell / p.cols), c = cell % p.cols;
+  const angle = ((cell * 137) % 360) * Math.PI / 180;
+  const dx = Math.cos(angle) * 160, dy = Math.sin(angle) * 160 - 40;
+  const spin = ((cell * 53) % 50) - 25;
+  piece.animate([
+    { transform: `translate(${dx}%, ${dy}%) rotate(${spin}deg) scale(1.2)`, opacity: 0, filter: "drop-shadow(0 26px 22px #000a)" },
+    { opacity: 1, offset: .12 },
+    { transform: "translate(0, 0) rotate(0deg) scale(1.06)", filter: "drop-shadow(0 10px 10px #0009)", offset: .72 },
+    { transform: "scale(.97)", filter: "drop-shadow(0 2px 3px #0008)", offset: .84 },
+    { transform: "none", filter: "drop-shadow(0 3px 5px #0008)" }
+  ], { duration: 950, easing: "cubic-bezier(.16, 1, .3, 1)" });
+  piece.classList.add("puzzle-snap");
+  board.animate([{ transform: "none" }, { transform: `translate(${c < p.cols / 2 ? 1 : -1}px, ${r < p.rows / 2 ? 1 : -1}px)`, offset: .5 }, { transform: "none" }], { duration: 140, delay: 700 });
+}
+
 let state = null, api = null, roundKey = "", tiles = [], opened = 0, sending = false, celebrated = "", lastFeedback = "";
 
 function setupRound(s) {
@@ -26,6 +86,8 @@ function setupRound(s) {
     return tile;
   });
   tilesBox.replaceChildren(...tiles);
+  piecesBox.replaceChildren();
+  piecesBox.removeAttribute("data-done");
   opened = 0;
   input.value = "";
   lastFeedback = "";
@@ -37,22 +99,20 @@ function setupRound(s) {
 function openTiles(count, all) {
   const order = state.puzzle.order;
   if (all) {
+    if (opened === Infinity) return;
     tiles.forEach((tile) => tile.setAttribute("data-open", "all"));
-    opened = order.length;
+    piecesBox.setAttribute("data-done", "");
+    opened = Infinity;
     return;
   }
   if (count === opened) return;
-  tiles.forEach((tile, i) => {
-    const step = order.indexOf(i);
-    if (step >= 0 && step < count) tile.setAttribute("data-open", "");
-    else tile.removeAttribute("data-open");
-  });
-  if (count > opened && opened > 0 && !calm()) {
-    const fresh = tiles[order[count - 1]];
-    fresh.classList.remove("puzzle-pop");
-    void fresh.offsetWidth;
-    fresh.classList.add("puzzle-pop");
-  }
+  const fresh = count === opened + 1;
+  piecesBox.replaceChildren(...order.slice(0, count).map((cell, step) => {
+    const piece = piecesBox.children[step]?.dataset.cell === String(cell) ? piecesBox.children[step] : makePiece(cell);
+    piece.dataset.cell = cell;
+    return piece;
+  }));
+  if (fresh && count > 0) snapIn(piecesBox.lastElementChild, order[count - 1]);
   opened = count;
 }
 
