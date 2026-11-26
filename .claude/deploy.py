@@ -3,6 +3,7 @@
 
 Uso:   python3 .claude/deploy.py            -> pubblica i file elencati in .claude/deploy-files.txt
        python3 .claude/deploy.py rollback   -> torna alla versione precedente
+       python3 .claude/deploy.py --worker server/worker-index.js -> pubblica i file E il codice del server indicato
 
 Come funziona: scarica dal Worker online il codice attuale e le impostazioni, carica i file del sito
 come nuova versione e la rende attiva. La chiave API la mette in automatico l'ambiente (api.cloudflare.com).
@@ -78,6 +79,8 @@ def main():
         parts[name] = body[:-2] if body.endswith(b"\r\n") else body
     for n in ("index.js", "index.js.map"):
         open(os.path.join(tmp, n), "wb").write(parts[n])
+    if "--worker" in sys.argv:  # codice del server nuovo (solo se richiesto esplicitamente)
+        open(os.path.join(tmp, "index.js"), "wb").write(open(os.path.join(ROOT, sys.argv[sys.argv.index("--worker") + 1]), "rb").read())
 
     # 2) carico solo i file nuovi o cambiati
     sess = ok(curl("-X", "POST", f"{API}/scripts/{WORKER}/assets-upload-session", "-H", "Content-Type: application/json",
