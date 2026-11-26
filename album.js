@@ -8,14 +8,45 @@ const setText = (node, value) => { if (node.textContent !== value) node.textCont
 const calm = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 const vibrate = (pattern) => { try { navigator.vibrate?.(pattern); } catch {} };
 
+let turned = "";
+const roundKeyOf = (s) => `${s.room.id}/${s.room.round}`;
 let state = null, api = null, roundKey = "", shownClues = 0, sending = false, lastFeedback = "", celebrated = "", pending = null;
 let seenBonus = new Set(), bonusQueue = [], bonusBusy = false;
+// Sullo schermo grande, accanto al VIP adulto, si rileggono i 3 indizi del round.
+const recap = Object.assign(document.createElement("ol"), { id: "album-recap" });
+el("album-mine").after(recap);
+
+// Dal secondo VIP il libro resta aperto: la pagina con la soluzione si volta e scopre il nuovo bambino.
+// Copie temporanee delle pagine (stessi id, quindi stessa grafica): getElementById trova sempre prima le originali.
+function turnPage(childSrc) {
+  if (calm()) return;
+  const under = el("album-back").cloneNode(true);
+  const front = el("album-right").cloneNode(true);
+  const back = el("album-left").cloneNode(true);
+  back.querySelector("img").src = childSrc;
+  const leaf = document.createElement("div");
+  leaf.className = "album-turn";
+  under.classList.add("album-turn-under");
+  back.classList.add("album-turn-back");
+  leaf.append(front, back);
+  for (const node of [under, leaf]) node.setAttribute("aria-hidden", "true");
+  el("album-book").append(under, leaf);
+  // Anche se l'animazione viene annullata (partita terminata, schermata nascosta) le copie spariscono
+  const done = () => { under.remove(); leaf.remove(); };
+  leaf.addEventListener("animationend", done, { once: true });
+  leaf.addEventListener("animationcancel", done, { once: true });
+  setTimeout(done, 2500);
+  turned = roundKeyOf(state);
+}
 
 function setupRound(s, host) {
   const a = s.album;
+  const turning = host && s.room.round > 1 && roundKey === `${s.room.id}/${s.room.round - 1}` && stage.dataset.phase === "reveal";
+  if (turning) { state = s; turnPage("/" + a.child); }
   roundKey = `${s.room.id}/${s.room.round}`;
-  // Libro subito chiuso: la nuova foto non si vede prima che la copertina si riapra (goAlbumTick lo riapre).
+  // Primo VIP: libro subito chiuso, la nuova foto non si vede prima che la copertina si apra (goAlbumTick lo riapre).
   stage.setAttribute("data-intro", "");
+  stage.toggleAttribute("data-cover", s.room.round === 1);
   // Il telefono non mostra la foto: i giocatori guardano lo schermo principale.
   if (host) el("album-child").src = "/" + a.child;
   else el("album-child").removeAttribute("src");
@@ -33,6 +64,7 @@ function setupRound(s, host) {
   input.value = "";
   lastFeedback = "";
   setText(el("album-feedback"), "");
+  recap.replaceChildren();
   setText(el("album-cover-round"), `Round ${s.room.round} di ${a.total}`);
   stage.removeAttribute("data-solved");
   el("album-ranking").replaceChildren();
@@ -147,6 +179,11 @@ window.goAlbum = (s, host, tools) => {
     if (host && !el("album-adult").getAttribute("src")) el("album-adult").src = "/" + a.adult;
     setText(el("album-adult-name"), a.answer);
     setText(el("album-answer"), `Era ${a.answer}!`);
+    if (!recap.childElementCount) recap.replaceChildren(...a.clues.map((clue, i) => {
+      const item = document.createElement("li");
+      item.append(Object.assign(document.createElement("small"), { textContent: `${i + 1}°` }), clue);
+      return item;
+    }));
     setText(el("album-mine"), !player ? "" : me.result === "correct" ? `Hai fatto +${me.points} punti` : "Questa volta 0 punti");
     renderRanking(s, me);
   }
@@ -158,6 +195,7 @@ window.goAlbumTick = (s, remaining, untilStart) => {
   const a = s.album, revealed = a.answer !== undefined;
   const intro = !revealed && untilStart > 0;
   stage.toggleAttribute("data-intro", intro);
+  stage.toggleAttribute("data-cover", intro && s.room.round === 1);
   const seconds = Math.ceil((revealed ? 0 : remaining) / 1000);
   const value = String(seconds).padStart(2, "0");
   if (el("album-seconds").textContent !== value) el("album-seconds").replaceChildren(Object.assign(document.createElement("span"), { textContent: value }));
@@ -168,7 +206,7 @@ window.goAlbumTick = (s, remaining, untilStart) => {
   const worth = seconds * a.points_per_second + (next === 0 ? a.bonus : 0);
   setText(el("album-phase"), s.room.phase === "paused" ? "In pausa"
     : revealed ? (s.room.round === a.total ? "Ecco chi era · poi il podio" : "Ecco chi era · l'host preme Avanti")
-    : intro ? "Si apre l'album…"
+    : intro ? (s.room.round === 1 ? "Si apre l'album…" : turned === roundKeyOf(s) ? "Si volta pagina…" : "Preparati…")
     : next >= 0 ? `Indizio ${next + 1} tra ${Math.ceil((a.clue_at[next] - elapsed) / 1000)} s · vale ${worth} punti`
     : `Ultimi secondi · vale ${worth} punti`);
   const canType = !intro && s.room.phase === "question" && remaining > 0 && !s.me?.done;

@@ -62,7 +62,7 @@
   transition: transform 1.3s var(--album-turn);
 }
 /* Libro chiuso: la copertina sta al centro, poi il libro scivola mentre si apre */
-.host #album-stage[data-intro] #album-book { transform: translateX(-25%); transition: none; }
+.host #album-stage[data-cover] #album-book { transform: translateX(-25%); transition: none; }
 .host #album-book {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   aspect-ratio: 1.5;
@@ -76,7 +76,7 @@
   box-shadow: 0 1px 0 var(--paper-edge), 0 22px 44px -12px #000a;
 }
 #album-left { display: none; border-radius: 14px 4px 4px 14px; background: var(--endpaper), linear-gradient(to left, #d9cbb0 0, var(--paper) 9%); }
-.host #album-left { display: grid; place-items: center; }
+.host #album-left { display: grid; place-items: center; grid-column: 1; grid-row: 1; }
 #album-right { grid-column: -2 / -1; grid-row: 1; display: grid; align-content: center; gap: 10px; border-radius: 4px 14px 14px 4px; }
 .player #album-right { border-radius: 14px; }
 .host #album-right { background: linear-gradient(to right, #d9cbb0 0, var(--paper) 9%); }
@@ -121,7 +121,7 @@
   pointer-events: none;
   transition: transform 1.3s var(--album-turn), visibility 0s linear 1.3s;
 }
-#album-stage[data-intro] #album-cover { transform: none; visibility: visible; transition: none; }
+#album-stage[data-cover] #album-cover { transform: none; visibility: visible; transition: none; }
 #album-cover-front, #album-cover-inside { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
 #album-cover-inside {
   transform: rotateY(180deg);
@@ -188,8 +188,8 @@
   box-shadow: 0 2px 6px #0007;
 }
 /* Riflesso che passa sulla pelle mentre il libro e' chiuso */
-#album-stage[data-intro] #album-cover-front { animation: album-cover-in .7s var(--album-ease) both; }
-#album-stage[data-intro] .album-cover-corners::after {
+#album-stage[data-cover] #album-cover-front { animation: album-cover-in .7s var(--album-ease) both; }
+#album-stage[data-cover] .album-cover-corners::after {
   content: ""; position: absolute; inset: -60px; background: linear-gradient(105deg, #0000 40%, #fff3 50%, #0000 60%);
   animation: album-sheen 2.4s ease-in-out .4s infinite;
 }
@@ -197,13 +197,13 @@
 @keyframes album-sheen { from { transform: translateX(-70%); } 60%, to { transform: translateX(70%); } }
 
 /* La pagina di sinistra compare quando la copertina e' atterrata sopra di lei */
-#album-stage[data-intro] :is(#album-left, #album-leaf) { opacity: 0; transition: none; }
-#album-stage[data-intro] #album-right { visibility: hidden; }
+#album-stage[data-cover] :is(#album-left, #album-leaf) { opacity: 0; transition: none; }
+#album-stage[data-cover] #album-right { visibility: hidden; }
 #album-left { transition: opacity .2s linear 1.15s; }
 .player #album-cover-front { border-radius: 16px; }
 .player #album-cover-inside { display: none; }
 /* Appena la copertina si e' posata, la foto da bambino viene "incollata" sulla pagina */
-.host #album-stage:not([data-intro]) #album-child-frame { animation: album-photo-in .7s var(--album-ease) 1.25s both; }
+.host #album-stage:not([data-cover]) #album-child-frame { animation: album-photo-in .7s var(--album-ease) 1.25s both; }
 @keyframes album-photo-in { from { transform: rotate(-10deg) translateY(-26px) scale(1.1); opacity: 0; } }
 
 /* Foto con angolini */
@@ -294,6 +294,25 @@
 #album-stage:not([data-phase="reveal"]) #album-right > :not(#album-count) { visibility: hidden; }
 @keyframes album-rise { from { transform: translateY(8px); opacity: 0; } }
 
+/* Indizi riletti accanto al VIP adulto (solo schermo grande) */
+#album-recap { display: grid; gap: 4px; margin: 0; padding: 0 0 8px; list-style: none; border-bottom: 1px solid var(--paper-edge); }
+#album-recap li { font: 600 clamp(1.15rem, 1.9vw, 1.6rem)/1.15 var(--hand); color: var(--paper-ink); text-wrap: pretty; }
+#album-recap small { margin-right: 6px; font: inherit; font-weight: 700; color: var(--leather); }
+#album-recap:empty, .player #album-recap { display: none; }
+
+/* Dal secondo VIP: la pagina con la soluzione si volta e scopre il nuovo bambino (copie temporanee create da album.js) */
+#album-book > .album-turn-under { grid-column: 1; grid-row: 1; position: relative; inset: auto; z-index: 1; transform: none; }
+#album-book > .album-turn {
+  grid-column: -2 / -1; grid-row: 1; position: relative; z-index: 3;
+  transform-origin: left center; transform-style: preserve-3d;
+  animation: album-page-turn 1.4s var(--album-turn) forwards;
+}
+.album-turn > * { position: absolute; inset: 0; margin: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.album-turn > .album-turn-back { transform: rotateY(180deg); }
+/* Le copie restano ferme e leggibili: niente animazioni d'ingresso ripetute, niente testi nascosti */
+#album-book :is(.album-turn, .album-turn-under) * { animation: none !important; visibility: visible !important; }
+@keyframes album-page-turn { to { transform: rotateY(-180deg); } }
+
 /* Bonus "Senza indizi!": annunciato su tutti gli schermi */
 #album-bonus { position: absolute; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 5; }
 .album-stamp {
@@ -318,7 +337,7 @@
   /* Niente rotazioni: la pagina e la copertina cambiano in dissolvenza, senza movimento */
   #album-leaf, #album-left, #album-book { transition: opacity .3s; transition-delay: 0s; }
   #album-cover { transform: none; transition: visibility 0s; }
-  .host #album-stage[data-intro] #album-book { transform: none; }
-  #album-stage[data-intro] #album-cover-front, .album-cover-corners::after, .album-face::after, #album-child-frame { animation: none !important; }
+  .host #album-stage[data-cover] #album-book { transform: none; }
+  #album-stage[data-cover] #album-cover-front, .album-cover-corners::after, .album-face::after, #album-child-frame { animation: none !important; }
   #album-clues li.album-write span, .album-stamp, #album-ranking li, #album-stage[data-solved] #album-front::after { animation-duration: .01s; animation-delay: 0s; }
 }

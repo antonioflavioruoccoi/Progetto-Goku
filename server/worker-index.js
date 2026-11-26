@@ -1545,7 +1545,7 @@ var meadowPerfect = /* @__PURE__ */ __name((items, choice) => choice.length === 
 var meadowPoints = /* @__PURE__ */ __name((items, choice) => items.some((item) => item.bomb && choice.includes(item.id)) ? 0 : choice.length * MEADOW_POINTS, "meadowPoints");
 
 
-// worker/puzzle.js (manche 5)
+// worker/puzzle.js (manche 3)
 var PUZZLE_IMAGES = [{"name": "Baby Yoda (Grogu)", "answers": ["Baby Yoda", "Grogu", "Din Grogu", "Il Bambino", "The Child"], "image": "assets/puzzle/ef16e38490905e14703c.webp", "ratio": 2.3333, "cols": 6, "rows": 6, "order": [34, 23, 24, 32, 29, 18, 31, 25, 17, 22, 33, 28, 19, 35, 26, 12, 20, 27, 11, 21, 13, 10, 8, 16, 9, 14, 15]}, {"name": "Roberto Benigni", "answers": ["Roberto Benigni", "Benigni"], "image": "assets/puzzle/509836421ab2dbb113f2.webp", "ratio": 1.7762, "cols": 6, "rows": 6, "order": [30, 35, 24, 29, 18, 23, 31, 34, 0, 5, 25, 28, 1, 6, 11, 19, 22, 32, 33, 2, 3, 12, 17, 7, 16, 26, 27, 13, 9, 8, 20, 14, 21, 15]}, {"name": "La Dama con l'ermellino", "answers": ["Dama con l'ermellino", "Dama con ermellino", "Dama dell'ermellino"], "image": "assets/puzzle/249874478dcec223a8f9.webp", "ratio": 0.727, "cols": 6, "rows": 6, "order": [30, 24, 19, 34, 28, 22, 31, 25, 16, 32, 20, 27, 33, 26, 21, 8, 14, 9, 15]}, {"name": "Joker", "answers": ["Joker", "Il Joker", "Joaquin Phoenix", "Arthur Fleck"], "image": "assets/puzzle/695583b7cbf174b434b0.webp", "ratio": 1.7762, "cols": 6, "rows": 6, "order": [34, 32, 26, 20, 27, 7, 16, 33, 21, 9, 14, 15, 8, 3, 2]}, {"name": "Marcello Mastroianni", "answers": ["Marcello Mastroianni", "Mastroianni"], "image": "assets/puzzle/f993435276761b943f77.webp", "ratio": 1.7762, "cols": 6, "rows": 6, "order": [35, 31, 29, 34, 4, 28, 32, 22, 2, 10, 26, 33, 3, 27, 20, 8, 9, 21, 16, 14, 15]}, {"name": "Miles Morales (Spider-Man)", "answers": ["Miles Morales", "Miles", "Spider-Man", "Spiderman", "Uomo Ragno", "Spider-Man Miles Morales"], "image": "assets/puzzle/b03f4b10696d9e134cd5.webp", "ratio": 1.7762, "cols": 6, "rows": 6, "order": [2, 34, 28, 33, 22, 10, 26, 16, 3, 20, 27, 21, 14, 15, 9, 8]}, {"name": "La Gioconda (Monna Lisa)", "answers": ["Gioconda", "Monna Lisa", "Mona Lisa"], "image": "assets/puzzle/d2ba0758bd6cba46132a.webp", "ratio": 0.671, "cols": 6, "rows": 6, "order": [30, 35, 24, 29, 31, 34, 18, 23, 25, 28, 12, 17, 19, 22, 6, 11, 32, 33, 26, 27, 7, 10, 20, 21, 13, 16, 2, 3, 14, 15, 8, 9]}, {"name": "Sophia Loren", "answers": ["Sophia Loren", "Sofia Loren", "Loren"], "image": "assets/puzzle/c0757651c29649737c43.webp", "ratio": 0.808, "cols": 6, "rows": 6, "order": [30, 24, 34, 28, 31, 2, 22, 25, 32, 33, 7, 26, 3, 20, 27, 10, 21, 8, 14, 16, 9, 15]}, {"name": "Avengers: Endgame", "answers": ["Avengers Endgame", "Avengers", "Endgame", "Vendicatori"], "image": "assets/puzzle/8a33d493c69d6a949335.webp", "ratio": 1.7762, "cols": 6, "rows": 6, "order": [32, 33, 28, 26, 22, 10, 16, 27, 20, 3, 21, 9, 14, 8, 15, 2]}, {"name": "Goku (Dragon Ball)", "answers": ["Goku", "Son Goku", "Kakarot", "Dragon Ball"], "image": "assets/puzzle/d54b03ea9f996f8f6211.webp", "ratio": 1.321, "cols": 6, "rows": 6, "order": [33, 25, 0, 10, 12, 1, 6, 7, 11, 13, 27, 24, 5, 9, 8, 2, 22, 20, 16, 21, 14, 15]}, {"name": "Pikachu", "answers": ["Pikachu", "Pokemon"], "image": "assets/puzzle/7029714ded97b689127e.webp", "ratio": 1.7762, "cols": 6, "rows": 6, "order": [6, 22, 12, 23, 17, 18, 1, 9, 4, 19, 21, 3, 2, 13, 26, 8, 32, 27, 20, 14, 15, 33]}, {"name": "Titanic", "answers": ["Titanic", "Jack e Rose"], "image": "assets/puzzle/cf86c316e90a4f12ed29.webp", "ratio": 2.3419, "cols": 6, "rows": 6, "order": [23, 25, 30, 32, 3, 7, 9, 1, 18, 22, 24, 20, 33, 26, 14, 2, 8, 13, 27, 15, 19, 21]}, {"name": "Il bacio di Klimt", "answers": ["Il bacio", "Bacio", "Il bacio di Klimt", "The Kiss"], "image": "assets/puzzle/b6eff5d88d7806730478.webp", "ratio": 0.999, "cols": 6, "rows": 6, "order": [30, 24, 34, 29, 22, 25, 31, 7, 13, 10, 33, 28, 19, 32, 16, 20, 26, 2, 27, 14, 21, 8, 15, 9, 3]}, {"name": "Avatar", "answers": ["Avatar", "Neytiri", "Na'vi", "Navi"], "image": "assets/puzzle/5bf2095e1c67238ee632.webp", "ratio": 1.7762, "cols": 6, "rows": 6, "order": [23, 19, 4, 13, 7, 25, 31, 28, 10, 34, 22, 16, 32, 9, 3, 26, 2, 20, 15, 21, 8, 14]}, {"name": "L'Urlo di Munch", "answers": ["L'urlo", "Urlo", "L'urlo di Munch", "The Scream"], "image": "assets/puzzle/f91f1932a22f424cfe1a.webp", "ratio": 0.785, "cols": 6, "rows": 6, "order": [2, 3, 6, 11, 30, 35, 7, 10, 24, 29, 31, 34, 17, 18, 23, 8, 9, 16, 25, 28, 32, 33, 12, 13, 14, 15, 26, 27, 22, 19, 20, 21]}, {"name": "Maria De Filippi", "answers": ["Maria De Filippi", "De Filippi"], "image": "assets/puzzle/bc439e3644562152dd9b.webp", "ratio": 0.651, "cols": 6, "rows": 6, "order": [30, 35, 24, 29, 31, 34, 19, 25, 22, 28, 32, 33, 26, 20, 27, 10, 16, 21, 8, 14, 9, 15]}, {"name": "Marco Mengoni", "answers": ["Marco Mengoni", "Mengoni"], "image": "assets/puzzle/049e0618b00d8ae089a0.webp", "ratio": 1.0, "cols": 6, "rows": 6, "order": [30, 34, 25, 28, 22, 31, 13, 19, 32, 16, 26, 20, 27, 33, 21, 14, 2, 15, 3, 8, 9]}, {"name": "Mina", "answers": ["Mina", "Mina Mazzini"], "image": "assets/puzzle/f27825068685500a1756.webp", "ratio": 1.0, "cols": 6, "rows": 6, "order": [35, 4, 31, 29, 23, 34, 1, 6, 25, 32, 12, 18, 2, 28, 33, 19, 10, 22, 13, 3, 7, 8, 9, 20, 21, 16, 26, 27, 14, 15]}, {"name": "Notte stellata di Van Gogh", "answers": ["Notte stellata", "La notte stellata", "Starry Night"], "image": "assets/puzzle/2a6c4ba678b6c38f76d3.webp", "ratio": 1.6, "cols": 6, "rows": 6, "order": [30, 29, 23, 35, 0, 24, 11, 34, 18, 28, 17, 2, 26, 32, 21, 27, 22, 12, 3, 25, 16, 6, 31, 1, 10, 19, 20, 13, 4, 5, 7, 33, 15, 9, 8, 14]}, {"name": "Il Padrino", "answers": ["Il Padrino", "Padrino", "The Godfather", "Don Vito Corleone", "Vito Corleone", "Don Corleone"], "image": "assets/puzzle/22bb7fe2c2e41eb56374.webp", "ratio": 1.3333, "cols": 6, "rows": 6, "order": [11, 22, 12, 2, 3, 27, 25, 24, 9, 13, 23, 10, 17, 26, 18, 8, 15, 20, 14, 21, 16, 19]}, {"name": "Tom Cruise", "answers": ["Tom Cruise", "Cruise"], "image": "assets/puzzle/ca4f86e2fcf59395023b.webp", "ratio": 1.5748, "cols": 6, "rows": 6, "order": [32, 33, 25, 19, 26, 27, 20, 21, 2, 14, 15, 3, 8, 9]}, {"name": "Yu-Gi-Oh!", "answers": ["Yu-Gi-Oh", "Yugioh", "Yugi", "Yami Yugi"], "image": "assets/puzzle/f485c2afa80fb3a521d8.webp", "ratio": 2.0204, "cols": 6, "rows": 6, "order": [30, 35, 24, 29, 31, 18, 32, 34, 25, 5, 23, 26, 17, 11, 33, 28, 19, 3, 27, 13, 20, 14, 8, 4, 9, 10, 15, 21, 22, 16]}];
 var PUZZLE_ROUNDS = 5;
 var PUZZLE_TILE_MS = 3e3;
@@ -1609,12 +1609,15 @@ var quizOf = /* @__PURE__ */ __name((r) => r.quiz || "pokemon", "quizOf");
 var cultureStages = [
   { id: "population", count: population_comparisons_default.pairs.length, duration: 15e3 },
   { id: "chronology", count: CHRONOLOGY_ROUNDS, duration: 3e4 },
-  { id: "vault", count: VAULT_ROUNDS, duration: VAULT_DURATION },
-  { id: "meadow", count: MEADOW_ROUNDS, duration: 3e4 },
   { id: "puzzle", count: PUZZLE_ROUNDS, duration: 6e4 },
+  { id: "meadow", count: MEADOW_ROUNDS, duration: 3e4 },
+  { id: "vault", count: VAULT_ROUNDS, duration: VAULT_DURATION },
   { id: "album", count: ALBUM_ROUNDS, duration: ALBUM_DURATION }
 ];
-var cultureStage = /* @__PURE__ */ __name((r) => quizOf(r) === "culture" ? cultureStages[(r.manche || 1) - 1] : null, "cultureStage");
+// Stanze create prima dell'inversione delle manche 3 e 5 (26/11/2026): finiscono la partita nel vecchio ordine
+var legacyCultureStages = [0, 1, 4, 3, 2, 5].map((i) => cultureStages[i]);
+var stagesOf = /* @__PURE__ */ __name((r) => r.culture_order === 2 ? cultureStages : legacyCultureStages, "stagesOf");
+var cultureStage = /* @__PURE__ */ __name((r) => quizOf(r) === "culture" ? stagesOf(r)[(r.manche || 1) - 1] : null, "cultureStage");
 var isVault = /* @__PURE__ */ __name((r) => cultureStage(r)?.id === "vault", "isVault");
 var isChronology = /* @__PURE__ */ __name((r) => cultureStage(r)?.id === "chronology", "isChronology");
 var isMeadow = /* @__PURE__ */ __name((r) => cultureStage(r)?.id === "meadow", "isMeadow");
@@ -1853,10 +1856,14 @@ var Goku = class {
     return s && r && (s.role === "admin" || s.id === r.host_id || r.players[s.id]);
   }
   publicRoom(r) {
-    const { players, answers, order, population_pairs, clueOrder, priceOrder, chronologyOrder, chronology_points, vaultOrder, meadowOrder, puzzleOrder, albumOrder, vaultResult, polling, settled, ...publicData } = r;
+    const { players, answers, order, population_pairs, clueOrder, priceOrder, chronologyOrder, chronology_points, vaultOrder, meadowOrder, puzzleOrder, albumOrder, vaultResult, polling, settled, culture_order, ...publicData } = r;
     publicData.quiz ||= "pokemon";
     publicData.manche ||= publicData.quiz === "culture" ? 1 : "cards";
-    if (publicData.quiz === "culture") publicData.manche_total = albumOrder ? 6 : puzzleOrder ? 5 : meadowOrder ? 4 : vaultOrder ? 3 : 2;
+    if (publicData.quiz === "culture") {
+      let total = 2;
+      while (stagesOf(r)[total] && r[stagesOf(r)[total].id + "Order"]) total++;
+      publicData.manche_total = total;
+    }
     return publicData;
   }
   advanceRound(r, now = Date.now()) {
@@ -1865,17 +1872,12 @@ var Goku = class {
       if (r.manche === "clues" && r.round === PRICE_START - 1) return this.beginPrice(r);
     }
     if (r.round === rounds(r)) {
-      if (cultureStage(r)?.id === "population") {
+      const next = quizOf(r) === "culture" ? stagesOf(r)[r.manche] : null;
+      if (next?.id === "chronology") {
         r.manche = 2;
         r.chronologyOrder ??= drawChronology();
-      } else if (isChronology(r) && r.vaultOrder) {
-        r.manche = 3;
-      } else if (isVault(r) && r.meadowOrder) {
-        r.manche = 4;
-      } else if (isMeadow(r) && r.puzzleOrder) {
-        r.manche = 5;
-      } else if (isPuzzle(r) && r.albumOrder) {
-        r.manche = 6;
+      } else if (next && r[next.id + "Order"]) {
+        r.manche++;
       } else {
         r.phase = "finished";
         return;
@@ -2383,7 +2385,7 @@ var Goku = class {
         players: {},
         answers: {},
         name_filter: p.name_filter !== false,
-        ...selectedQuiz === "culture" ? { population_year: populationYear, population_pairs: drawPopulationPairs(), chronologyOrder: drawChronology(), vaultOrder: drawVault(), meadowOrder: drawMeadow(), puzzleOrder: drawPuzzle(), albumOrder: drawAlbum() } : {},
+        ...selectedQuiz === "culture" ? { culture_order: 2, population_year: populationYear, population_pairs: drawPopulationPairs(), chronologyOrder: drawChronology(), vaultOrder: drawVault(), meadowOrder: drawMeadow(), puzzleOrder: drawPuzzle(), albumOrder: drawAlbum() } : {},
         ...selectedQuiz === "pokemon" ? { order, priceOrder: selectPriceCards(quiz_default.priceCards) } : {}
       };
       this.put("room", r2.id, r2);

@@ -1,4 +1,4 @@
-// Manche 5 di Cultura generale: "Puzzle". L'immagine si scopre un pezzo ogni 3 secondi.
+// Manche 3 di Cultura generale: "Puzzle". L'immagine si scopre un pezzo ogni 3 secondi.
 // app.js chiama window.goPuzzle (a ogni aggiornamento dello stato) e window.goPuzzleTick (10 volte al secondo).
 const el = (id) => document.getElementById(id);
 const stage = el("puzzle-stage");
@@ -41,7 +41,7 @@ function shapeOf(sides) {
   const key = sides.join();
   if (!shapes.has(key)) {
     const d = piecePath(sides);
-    shapes.set(key, { d, mask: `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 140'><path d='${d}'/></svg>`)}")` });
+    shapes.set(key, { mask: `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 140 140' preserveAspectRatio='none'><path d='${d}'/></svg>`)}")` });
   }
   return shapes.get(key);
 }
@@ -62,7 +62,6 @@ function makePiece(cell) {
   img.style.cssText = `width:${(p.cols / size) * 100}%;height:${(p.rows / size) * 100}%;left:${(-(c - TAB) / size) * 100}%;top:${(-(r - TAB) / size) * 100}%`;
   art.append(img);
   piece.append(art);
-  piece.insertAdjacentHTML("beforeend", `<svg viewBox="0 0 140 140" preserveAspectRatio="none"><path d="${shape.d}"/></svg>`);
   return piece;
 }
 
@@ -80,7 +79,6 @@ function snapIn(piece, cell) {
     { transform: "scale(.97)", filter: "drop-shadow(0 2px 3px #0008)", offset: .84 },
     { transform: "none", filter: "drop-shadow(0 3px 5px #0008)" }
   ], { duration: 950, easing: "cubic-bezier(.16, 1, .3, 1)" });
-  piece.classList.add("puzzle-snap");
   board.animate([{ transform: "none" }, { transform: `translate(${c < p.cols / 2 ? 1 : -1}px, ${r < p.rows / 2 ? 1 : -1}px)`, offset: .5 }, { transform: "none" }], { duration: 140, delay: 700 });
 }
 
@@ -111,11 +109,15 @@ function openTiles(count, all) {
   }
   if (count === opened) return;
   const fresh = count === opened + 1;
-  piecesBox.replaceChildren(...order.slice(0, count).map((cell, step) => {
-    const piece = piecesBox.children[step]?.dataset.cell === String(cell) ? piecesBox.children[step] : makePiece(cell);
-    piece.dataset.cell = cell;
-    return piece;
-  }));
+  // I pezzi gia' posati restano nel DOM: reinserirli faceva ripartire le loro animazioni (lampo su tutti i pezzi)
+  let keep = 0;
+  while (keep < count && piecesBox.children[keep]?.dataset.cell === String(order[keep])) keep++;
+  while (piecesBox.children.length > keep) piecesBox.lastElementChild.remove();
+  for (let step = keep; step < count; step++) {
+    const piece = makePiece(order[step]);
+    piece.dataset.cell = order[step];
+    piecesBox.append(piece);
+  }
   if (fresh && count > 0) snapIn(piecesBox.lastElementChild, order[count - 1]);
   opened = count;
 }
@@ -225,7 +227,7 @@ window.goPuzzleTick = (s, remaining, untilStart) => {
   if (el("puzzle-seconds").textContent !== value) el("puzzle-seconds").replaceChildren(Object.assign(document.createElement("span"), { textContent: value }));
   stage.toggleAttribute("data-urgent", !intro && !revealed && seconds <= 5 && s.room.phase === "question");
   el("puzzle-progress").firstElementChild.style.transform = `scaleX(${revealed ? 0 : Math.min(1, remaining / s.duration_ms)})`;
-  setText(el("puzzle-phase"), s.room.phase === "paused" ? "In pausa" : revealed ? (s.room.round === p.total ? "Soluzione · poi il podio" : "Soluzione · prossima immagine") : intro ? "Preparati…" : `Pezzo ${Math.min(p.order.length, Math.floor(elapsed / p.tile_ms) + 1)} di ${p.order.length} · vale ${seconds * p.points_per_second} punti`);
+  setText(el("puzzle-phase"), s.room.phase === "paused" ? "In pausa" : revealed ? (s.room.round === p.total ? (s.room.manche < s.room.manche_total ? "Soluzione · poi la prossima manche" : "Soluzione · poi il podio") : "Soluzione · prossima immagine") : intro ? "Preparati…" : `Pezzo ${Math.min(p.order.length, Math.floor(elapsed / p.tile_ms) + 1)} di ${p.order.length} · vale ${seconds * p.points_per_second} punti`);
   const canType = !intro && s.room.phase === "question" && remaining > 0 && !s.me?.done;
   input.disabled = el("puzzle-send").disabled = !canType || sending;
 };
