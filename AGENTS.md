@@ -19,7 +19,7 @@ Quiz multiplayer online con licenza. Repo: `antonioflavioruoccoi/Progetto-Goku`.
 - Prima di una modifica grande fai un backup: dura **72 ore**, il primo task dopo la scadenza lo elimina. Attuale: `backup-2026-11-25/`, scade il 28/11/2026.
 - Dopo ogni modifica al sito, se non ci sono errori, pubblica subito **senza chiedere**, salvo indicazione contraria.
 - "Online" = su Cloudflare: `python3 .claude/deploy.py` (`rollback` per tornare indietro). Carica solo i file di [.claude/deploy-files.txt](.claude/deploy-files.txt): se aggiungi un file al sito, aggiungilo lì.
-- Limite noto (25/11/2026): dal cloud il caricamento fallisce con "Unauthorized". Va fatto da un computer con accesso a Cloudflare.
+- Dal cloud `deploy.py` fallisce con "Unauthorized" al caricamento dei file. Lì si pubblica con GitHub Actions: committa e pusha sul tuo branch, poi avvia il workflow "Pubblica online" ([.github/workflows/deploy.yml](.github/workflows/deploy.yml)) su quel branch con lo strumento GitHub `actions_run_trigger`. Opzione `server: true` solo se è cambiato `server/worker-index.js` e la richiesta lo autorizza; `rollback: true` per tornare indietro. Controlla l'esito del workflow prima di dire "online".
 
 ## Verifica
 Avvia `python3 -m http.server 8000` e apri http://localhost:8000 (non con doppio clic). Quiz originale: prova avvio, pausa, risposta o scadenza, **Continua**, **Rigioca**; se cambi carte, durata o punti, aggiorna le etichette in `index.html` e `game.js`. Multiplayer: una partita vera si prova solo online. Controlla sempre in verticale su telefono.

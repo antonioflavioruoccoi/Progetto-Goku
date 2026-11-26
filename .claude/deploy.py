@@ -16,10 +16,13 @@ SITE = "https://dr-goku.antonioflavioruocco-i.workers.dev"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 API = f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT}/workers"
 tmp = tempfile.mkdtemp()
+# Su GitHub (Actions) la chiave arriva dal segreto CLOUDFLARE_API_TOKEN; nell'ambiente cloud la mette il proxy.
+TOKEN = os.environ.get("CLOUDFLARE_API_TOKEN")
+AUTH = ["-H", f"Authorization: Bearer {TOKEN}"] if TOKEN else []
 
 
 def curl(*args, jwt=None):
-    cmd = ["curl", "-sS", "-m", "300"] + (["-H", f"Authorization: Bearer {jwt}"] if jwt else []) + list(args)
+    cmd = ["curl", "-sS", "-m", "300"] + (["-H", f"Authorization: Bearer {jwt}"] if jwt else AUTH) + list(args)
     out = subprocess.run(cmd, capture_output=True, text=True).stdout
     try:
         return json.loads(out)
@@ -67,7 +70,7 @@ def main():
     ver = ok(curl(f"{API}/scripts/{WORKER}/versions/{old_version}"), "lettura versione")
     assets_cfg = ver["resources"]["script_runtime"]["assets"]
     bindings = [b for b in ver["resources"]["bindings"] if b["type"] != "secret_text"]
-    raw = subprocess.run(["curl", "-sS", f"{API}/scripts/{WORKER}/content/v2"], capture_output=True).stdout
+    raw = subprocess.run(["curl", "-sS", *AUTH, f"{API}/scripts/{WORKER}/content/v2"], capture_output=True).stdout
     # (la chiave API viene aggiunta dall'ambiente; riscarico con curl() per sicurezza se vuoto)
     if not raw.startswith(b"--"):
         sys.exit("ERRORE: codice del Worker non scaricato")
