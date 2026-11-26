@@ -3,6 +3,7 @@
 
 Uso:   python3 .claude/deploy.py            -> pubblica i file elencati in .claude/deploy-files.txt
        python3 .claude/deploy.py rollback   -> torna alla versione precedente
+       python3 .claude/deploy.py --worker server/worker-index.js -> pubblica i file E il codice del server indicato
 
 Come funziona: scarica dal Worker online il codice attuale e le impostazioni, carica i file del sito
 come nuova versione e la rende attiva. La chiave API la mette in automatico l'ambiente (api.cloudflare.com).
@@ -15,10 +16,13 @@ SITE = "https://dr-goku.antonioflavioruocco-i.workers.dev"
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 API = f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT}/workers"
 tmp = tempfile.mkdtemp()
+# Su GitHub (Actions) la chiave arriva dal segreto CLOUDFLARE_API_TOKEN; nell'ambiente cloud la mette il proxy.
+TOKEN = os.environ.get("CLOUDFLARE_API_TOKEN")
+AUTH = ["-H", f"Authorization: Bearer {TOKEN}"] if TOKEN else []
 
 
 def curl(*args, jwt=None):
-    cmd = ["curl", "-sS", "-m", "300"] + (["-H", f"Authorization: Bearer {jwt}"] if jwt else []) + list(args)
+    cmd = ["curl", "-sS", "-m", "300"] + (["-H", f"Authorization: Bearer {jwt}"] if jwt else AUTH) + list(args)
     out = subprocess.run(cmd, capture_output=True, text=True).stdout
     try:
         return json.loads(out)
@@ -66,7 +70,7 @@ def main():
     ver = ok(curl(f"{API}/scripts/{WORKER}/versions/{old_version}"), "lettura versione")
     assets_cfg = ver["resources"]["script_runtime"]["assets"]
     bindings = [b for b in ver["resources"]["bindings"] if b["type"] != "secret_text"]
-    raw = subprocess.run(["curl", "-sS", f"{API}/scripts/{WORKER}/content/v2"], capture_output=True).stdout
+    raw = subprocess.run(["curl", "-sS", *AUTH, f"{API}/scripts/{WORKER}/content/v2"], capture_output=True).stdout
     # (la chiave API viene aggiunta dall'ambiente; riscarico con curl() per sicurezza se vuoto)
     if not raw.startswith(b"--"):
         sys.exit("ERRORE: codice del Worker non scaricato")
@@ -78,6 +82,8 @@ def main():
         parts[name] = body[:-2] if body.endswith(b"\r\n") else body
     for n in ("index.js", "index.js.map"):
         open(os.path.join(tmp, n), "wb").write(parts[n])
+    if "--worker" in sys.argv:  # codice del server nuovo (solo se richiesto esplicitamente)
+        open(os.path.join(tmp, "index.js"), "wb").write(open(os.path.join(ROOT, sys.argv[sys.argv.index("--worker") + 1]), "rb").read())
 
     # 2) carico solo i file nuovi o cambiati
     sess = ok(curl("-X", "POST", f"{API}/scripts/{WORKER}/assets-upload-session", "-H", "Content-Type: application/json",

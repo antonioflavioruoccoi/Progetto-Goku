@@ -1,0 +1,27 @@
+# Pubblica il sito su Cloudflare (Worker "dr-goku") da GitHub.
+# Si avvia a mano (o da Claude) da: Actions > Pubblica online > Run workflow, scegliendo il branch.
+name: Pubblica online
+on:
+  workflow_dispatch:
+    inputs:
+      server:
+        description: "Pubblica anche il codice del server (server/worker-index.js)"
+        type: boolean
+        default: false
+      rollback:
+        description: "Invece di pubblicare, torna alla versione precedente"
+        type: boolean
+        default: false
+concurrency: deploy-dr-goku
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pubblica
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [ "${{ inputs.rollback }}" = "true" ]; then python3 .claude/deploy.py rollback
+          elif [ "${{ inputs.server }}" = "true" ]; then python3 .claude/deploy.py --worker server/worker-index.js
+          else python3 .claude/deploy.py; fi

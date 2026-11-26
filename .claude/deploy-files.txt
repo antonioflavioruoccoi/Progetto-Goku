@@ -98,6 +98,7 @@ assets/interface/maximize.svg
 assets/interface/minimize.svg
 assets/interface/pause.svg
 assets/interface/play.svg
+assets/interface/puzzle.svg
 assets/interface/target.svg
 assets/interface/timer.svg
 assets/interface/trophy.svg
@@ -180,6 +181,28 @@ assets/pokemon-cardmarket-100-500/48-charizard-stormfront-103-100.webp
 assets/pokeprice/castelia-poster.webp
 assets/pokeprice/hilda-and-tepig-watching-castelia-city-pokemon-pixel-moewalls-com.mp4
 assets/pokeprice/nunito-latin.woff2
+assets/puzzle/049e0618b00d8ae089a0.webp
+assets/puzzle/123170fcfc7a0b24a830.webp
+assets/puzzle/249874478dcec223a8f9.webp
+assets/puzzle/2a6c4ba678b6c38f76d3.webp
+assets/puzzle/509836421ab2dbb113f2.webp
+assets/puzzle/695583b7cbf174b434b0.webp
+assets/puzzle/79b9565c8a4c3e0345e1.webp
+assets/puzzle/8369fd6d86ba3a447a08.webp
+assets/puzzle/8a33d493c69d6a949335.webp
+assets/puzzle/add3877510b6ab4e0d78.webp
+assets/puzzle/b03f4b10696d9e134cd5.webp
+assets/puzzle/b0bff1cd1754f86cbc6e.webp
+assets/puzzle/b6eff5d88d7806730478.webp
+assets/puzzle/bc439e3644562152dd9b.webp
+assets/puzzle/c0757651c29649737c43.webp
+assets/puzzle/ca4f86e2fcf59395023b.webp
+assets/puzzle/d2ba0758bd6cba46132a.webp
+assets/puzzle/ef16e38490905e14703c.webp
+assets/puzzle/f27825068685500a1756.webp
+assets/puzzle/f485c2afa80fb3a521d8.webp
+assets/puzzle/f91f1932a22f424cfe1a.webp
+assets/puzzle/f993435276761b943f77.webp
 da modificare.webp
 game.js
 host/index.html
@@ -190,6 +213,7 @@ pokeball.webp
 pokemon-firered-leafgreen-font-recreation-web.otf
 pokemon_pokedex_nazionale.txt
 poliwhirlcard.webp
+puzzle.js
 show_skarmory-illustration-rare-209-191-surging-sparks.webp
 style.css
 surfingpikachusfondo.jpg
