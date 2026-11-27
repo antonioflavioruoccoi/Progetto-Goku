@@ -249,6 +249,24 @@
 .live-shell:not(.host, .player) #app :is(.license button, .room-item button + button) { border-color: #7d4250; background: transparent; color: #ffb3b3; }
 .live-shell:not(.host, .player) #app :is(.license button, .room-item button + button):hover:enabled { background: var(--cg-bad-bg); }
 
+/* Menu a tendina delle ultime 20 licenze e stanze (le più vecchie il server le cancella). */
+.live-shell:not(.host, .player) .dash-drop > summary {
+  display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 10px 16px;
+  border: 1px solid var(--cg-line); border-radius: 12px; background: var(--cg-panel-2);
+  font-weight: 750; cursor: pointer; list-style: none; user-select: none;
+  transition: border-color .2s var(--ease-out), background .2s var(--ease-out);
+}
+.live-shell:not(.host, .player) .dash-drop > summary::-webkit-details-marker { display: none; }
+.live-shell:not(.host, .player) .dash-drop > summary::after {
+  content: ""; width: 9px; height: 9px; margin-left: auto; border: solid var(--cg-accent); border-width: 0 2px 2px 0;
+  transform: translateY(-2px) rotate(45deg); transition: transform .25s var(--ease-out);
+}
+.live-shell:not(.host, .player) .dash-drop[open] > summary { border-color: var(--cg-accent); }
+.live-shell:not(.host, .player) .dash-drop[open] > summary::after { transform: translateY(2px) rotate(-135deg); }
+.live-shell:not(.host, .player) .dash-drop > summary:active { background: color-mix(in srgb, var(--cg-accent) 12%, var(--cg-panel-2)); }
+.live-shell:not(.host, .player) .dash-count { min-width: 28px; padding: 2px 8px; border-radius: 999px; background: var(--cg-accent); color: var(--cg-accent-ink); font-size: .85rem; text-align: center; }
+.live-shell:not(.host, .player) .dash-drop > div { max-height: min(60dvh, 520px); margin-top: 10px; overflow-y: auto; overscroll-behavior: contain; animation: dash-reveal .3s var(--ease-out) both; }
+
 .live-shell:not(.host, .player) :is(a, button, input, select, [tabindex]):focus-visible { outline: 3px solid var(--cg-accent); outline-offset: 3px; }
 
 /* Desktop: modulo e lista affiancati (Invita | Licenze, Crea | Stanze). */

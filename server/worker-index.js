@@ -301,8 +301,7 @@ var population_comparisons_2019_default = {
 // worker/name-filter.js
 var homoglyphs = { "\u0430": "a", "\u0435": "e", "\u043E": "o", "\u0440": "p", "\u0441": "c", "\u0445": "x", "\u0456": "i", "\u0443": "y", "\u043A": "k", "\u043C": "m", "\u0442": "t", "\u0432": "b", "\u043D": "h" };
 var leet = { 0: "o", 1: "i", 2: "z", 3: "e", 4: "a", 5: "s", 6: "g", 7: "t", 8: "b", 9: "g" };
-var banned = [
-  // Blasfemia
+var blasphemy = [
   ["diocan"],
   ["dioporc"],
   ["diobest"],
@@ -331,6 +330,13 @@ var banned = [
   ["dioschifo"],
   ["ziocan"],
   ["porcozio"],
+  ["gesu", ["gesuald"]],
+  ["jesus"],
+  ["gesus"]
+];
+var banned = [
+  // Blasfemia (anche scritta al contrario, es. "oidocrop": vedi inappropriateName)
+  ...blasphemy,
   // Sessualità e volgarità
   ["sborr", ["sborni"]],
   ["cazz"],
@@ -462,16 +468,22 @@ function variants(raw) {
   return [...forms].map((plain) => ({ plain, squeezed: squeeze(plain) }));
 }
 __name(variants, "variants");
-var rules = banned.map(([root, allow = [], raw = false]) => ({
+var toRule = ([root, allow = [], raw = false]) => ({
   raw,
   root: raw ? root : squeeze(root),
   allow: raw ? allow : allow.map(squeeze)
-}));
+});
+var rules = banned.map(toRule);
+var reversedRules = blasphemy.map(toRule);
 var digitRules = [/14\W*88/, /k\W*k\W*k/i];
 function inappropriateName(nickname) {
   const name = String(nickname ?? "");
   if (digitRules.some((rule) => rule.test(name))) return true;
-  return variants(name).some((form) => rules.some(({ raw, root, allow }) => {
+  return matches(name, rules) || matches([...name].reverse().join(""), reversedRules);
+}
+__name(inappropriateName, "inappropriateName");
+function matches(name, list) {
+  return variants(name).some((form) => list.some(({ raw, root, allow }) => {
     const text = raw ? form.plain : form.squeezed;
     if (!text.includes(root)) return false;
     let rest = text;
@@ -479,7 +491,7 @@ function inappropriateName(nickname) {
     return rest.includes(root);
   }));
 }
-__name(inappropriateName, "inappropriateName");
+__name(matches, "matches");
 
 // data/population-countries.json
 var population_countries_default = {
@@ -1919,6 +1931,13 @@ var Goku = class {
     );
     this.nextPruneAt = now + 36e5;
   }
+  // Tiene solo le 20 licenze o stanze più recenti (stanze vecchie senza data: conta l'ultima domanda).
+  keepNewest(kind, limit = 20) {
+    for (const old of this.newest(kind).slice(limit)) this.del(kind, old.id);
+  }
+  newest(kind) {
+    return this.all(kind).sort((a, b) => (b.created || b.starts_at || 0) - (a.created || a.starts_at || 0));
+  }
   license(s) {
     return s?.license ? this.get("license", s.license) : null;
   }
@@ -2402,6 +2421,7 @@ var Goku = class {
         redeemed: null
       };
       this.put("license", l.id, l);
+      this.keepNewest("license");
       return { id: l.id, invite: true };
     }
     if (action === "license_revoke") {
@@ -2418,7 +2438,7 @@ var Goku = class {
       if (s.role === "player") fail("Solo Admin o Host");
       return {
         admin,
-        licenses: this.all("license").filter((l) => admin || l.id === s.license).map((l) => ({
+        licenses: this.newest("license").filter((l) => admin || l.id === s.license).map((l) => ({
           id: l.id,
           name: l.name || "",
           starts_at: l.created,
@@ -2429,7 +2449,7 @@ var Goku = class {
           redeemed: !!l.redeemed,
           status: l.revoked ? "revocato" : l.expires <= now ? "scaduto" : l.redeemed ? "attivo" : "disponibile"
         })),
-        rooms: this.all("room").filter((r2) => admin || r2.host_id === s.id).map((r2) => this.publicRoom(r2))
+        rooms: this.newest("room").filter((r2) => admin || r2.host_id === s.id).map((r2) => this.publicRoom(r2))
       };
     }
     if (action === "create") {
@@ -2464,6 +2484,7 @@ var Goku = class {
       const r2 = {
         id: crypto.randomUUID(),
         code,
+        created: now,
         host_id: s.id,
         license_id: admin ? null : s.license,
         quiz: selectedQuiz,
@@ -2482,6 +2503,7 @@ var Goku = class {
         ...selectedQuiz === "pokemon" ? { order, priceOrder: selectPriceCards(quiz_default.priceCards) } : {}
       };
       this.put("room", r2.id, r2);
+      this.keepNewest("room");
       return { id: r2.id, code };
     }
     if (action === "join") {
@@ -2814,6 +2836,7 @@ export {
   Goku,
   addPoints,
   albumMatch,
+  inappropriateName,
   shadesScore,
   index_default as default
 };
