@@ -1,0 +1,12 @@
+Backup fatto il 27/11/2026 (commit Git 1da5c3c) PRIMA del restyling della manche 7 "50 Sfumature"
+e dell'aggiunta di 18 nuovi marchi.
+SCADE il 30/11/2026: il primo task dopo quella data deve cancellare questa cartella.
+Contenuto: pagine, grafica e logica della manche, dati dei marchi e codice del server (server/worker-index.js).
+Le immagini non servono: sono invariate nella cronologia Git (commit 1da5c3c).
+Per tornare indietro online: il workflow "Pubblica online" con rollback (oppure python3 .claude/deploy.py rollback).
+
+----
+Backup del 27/11/2026, prima di: nuova grafica dashboard (stile Cultura generale), mascotte sul logo, fix link licenze Host (pagina invite/).
+Contiene app.css, app.js, admin/host/play index.html, deploy-files.txt.
+Ripristino: tar xzf backup-2026-11-27/prima-di-dashboard-e-mascotte.tar.gz
+Scade il 30/11/2026.

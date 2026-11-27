@@ -76,7 +76,8 @@ def build(file, item):
     core = m > 0.98
     if core.sum() < 200:
         fail([f"{file}: zona troppo piccola, controlla \"colore\""])
-    color = "#" + "".join(f"{round(v):02x}" for v in px[core][:, :3].mean(0))
+    # media in float64 e limitata a 255: in float32 un'area grande di 255 puo' dare 256 ("#1000000")
+    color = "#" + "".join(f"{min(255, round(v)):02x}" for v in px[core][:, :3].astype(np.float64).mean(0))
     # Filtro mediano: toglie i puntini sparsi e rende netto il confine della zona
     zone = np.asarray(Image.fromarray(((m > 0.5) * 255).astype(np.uint8)).filter(ImageFilter.MedianFilter(5))) > 127
     painted = m > 0

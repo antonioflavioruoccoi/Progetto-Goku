@@ -3,6 +3,8 @@
 const el = (id) => document.getElementById(id);
 const stage = el("shades-stage");
 const bars = { h: el("shades-h"), s: el("shades-s"), v: el("shades-v") };
+// Quadrato colore: in orizzontale la saturazione, in verticale la luminosita' (pilota le barre s e v nascoste)
+const pad = el("shades-pad");
 const setText = (node, value) => { if (node.textContent !== value) node.textContent = value; };
 const vibrate = (pattern) => { try { navigator.vibrate?.(pattern); } catch {} };
 // Colori dei tubetti: titolo multicolore e "macchie" della tavolozza
@@ -47,6 +49,9 @@ function paintBars() {
   stage.style.setProperty("--pick-full", hsvToHex({ h: c.h, s: 100, v: c.v }));
   stage.style.setProperty("--pick-bright", hsvToHex({ h: c.h, s: c.s, v: 100 }));
   stage.style.setProperty("--pick-gray", hsvToHex({ h: c.h, s: 0, v: c.v }));
+  stage.style.setProperty("--pick-hue", hsvToHex({ h: c.h, s: 100, v: 100 }));
+  stage.style.setProperty("--pick-s", c.s / 100);
+  stage.style.setProperty("--pick-v", c.v / 100);
   setText(el("shades-h-value"), `${c.h}°`);
   setText(el("shades-s-value"), `${c.s}%`);
   setText(el("shades-v-value"), `${c.v}%`);
@@ -61,7 +66,10 @@ function setupRound(s, host) {
   const mask = `url("/${x.mask}")`;
   el("shades-fill").style.maskImage = el("shades-fill").style.webkitMaskImage = mask;
   setText(el("shades-category"), x.category);
-  setText(el("shades-prompt"), `${x.name} · ${x.part}`);
+  const name = document.createElement("strong"), part = document.createElement("span");
+  name.textContent = x.name;
+  part.textContent = x.part;
+  el("shades-prompt").replaceChildren(name, " ", part);
   // Come in Colortoon si parte da un colore a caso: nessun vantaggio per chi non tocca nulla
   bars.h.value = Math.floor(Math.random() * 360);
   bars.s.value = 35 + Math.floor(Math.random() * 50);
@@ -80,9 +88,9 @@ function setupRound(s, host) {
 function hint(mine, target) {
   const a = hexToHsv(mine), b = hexToHsv(target);
   const hue = Math.min(Math.abs(a.h - b.h), 360 - Math.abs(a.h - b.h));
-  if (Math.abs(a.v - b.v) >= 8) return a.v > b.v ? "Un po' troppo chiaro: abbassa la luminosità." : "Un po' troppo scuro: alza la luminosità.";
-  if (Math.abs(a.s - b.s) >= 8) return a.s > b.s ? "Troppo acceso: abbassa la saturazione." : "Troppo spento: alza la saturazione.";
-  if (hue >= 8) return "Luce giusta, ritocca la tonalità.";
+  if (Math.abs(a.v - b.v) >= 8) return a.v > b.v ? "Un po' troppo chiaro: serviva più in basso nel quadrato." : "Un po' troppo scuro: serviva più in alto nel quadrato.";
+  if (Math.abs(a.s - b.s) >= 8) return a.s > b.s ? "Troppo acceso: serviva più a sinistra nel quadrato." : "Troppo spento: serviva più a destra nel quadrato.";
+  if (hue >= 8) return "Chiarezza giusta: ritocca la tinta sulla barra arcobaleno.";
   return "Occhio da pittore!";
 }
 
@@ -157,12 +165,13 @@ window.goShadesTick = (s, remaining, untilStart) => {
   el("shades-progress").firstElementChild.style.transform = `scaleX(${revealed ? 0 : Math.min(1, remaining / s.duration_ms)})`;
   const last = s.room.round === x.total;
   setText(el("shades-phase"), s.room.phase === "paused" ? "In pausa"
-    : revealed ? (last ? "Ecco il colore giusto · poi il podio" : "Ecco il colore giusto · l'host preme Avanti")
+    : revealed ? (!s.can_control ? "Ecco il colore giusto" : last ? "Ecco il colore giusto. Poi il podio." : "Ecco il colore giusto. Premi Avanti.")
     : intro ? "Prepara i pennelli…"
     : s.me?.done ? "Colore consegnato: guarda lo schermo"
     : s.can_control ? "Ricreate il colore sul telefono" : "Ricrea il colore originale");
   const canPaint = !intro && s.room.phase === "question" && remaining > 0 && !!s.me && !s.me.done && !s.can_control;
   for (const bar of Object.values(bars)) bar.disabled = !canPaint || sending;
+  pad.toggleAttribute("data-disabled", !canPaint || sending);
   el("shades-send").disabled = !canPaint || sending;
   // Se il tempo sta per finire e hai gia' mosso le barre, il colore parte da solo (margine per reti lente)
   if (canPaint && touched && remaining < 2500 && autoSent !== roundKey) {
@@ -197,3 +206,24 @@ async function send() {
   }
 }
 el("shades-send").addEventListener("click", send);
+
+// Trascinamento nel quadrato (mouse e touch): il dito resta "agganciato" anche se esce dal bordo
+const clamp01 = (n) => Math.min(1, Math.max(0, n));
+function padAt(event) {
+  const r = pad.getBoundingClientRect();
+  bars.s.value = Math.round(clamp01((event.clientX - r.left) / r.width) * 100);
+  bars.v.value = Math.round((1 - clamp01((event.clientY - r.top) / r.height)) * 100);
+  touched = true;
+  paintBars();
+}
+pad.addEventListener("pointerdown", (event) => {
+  if (pad.hasAttribute("data-disabled")) return;
+  event.preventDefault();
+  pad.setPointerCapture(event.pointerId);
+  pad.setAttribute("data-drag", "");
+  padAt(event);
+});
+pad.addEventListener("pointermove", (event) => { if (pad.hasPointerCapture(event.pointerId)) padAt(event); });
+const padEnd = () => { if (pad.hasAttribute("data-drag")) { pad.removeAttribute("data-drag"); vibrate(8); } };
+pad.addEventListener("pointerup", padEnd);
+pad.addEventListener("pointercancel", padEnd);
