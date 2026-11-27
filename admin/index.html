@@ -125,10 +125,11 @@
     <p id="shades-hint"></p>
   </div>
   <div id="shades-tools">
-    <label class="shades-bar" for="shades-h"><span>Tonalità <b id="shades-h-value"></b></span><input id="shades-h" type="range" min="0" max="359" step="1" value="180"></label>
-    <label class="shades-bar" for="shades-s"><span>Saturazione <b id="shades-s-value"></b></span><input id="shades-s" type="range" min="0" max="100" step="1" value="50"></label>
-    <label class="shades-bar" for="shades-v"><span>Luminosità <b id="shades-v-value"></b></span><input id="shades-v" type="range" min="0" max="100" step="1" value="50"></label>
-    <button id="shades-send" type="button">Consegna il colore</button>
+    <div id="shades-pad" aria-hidden="true"><i id="shades-pad-thumb"></i></div>
+    <label class="shades-bar" for="shades-h"><span class="shades-sr">Tonalità <b id="shades-h-value"></b></span><input id="shades-h" type="range" min="0" max="359" step="1" value="180"></label>
+    <label class="shades-bar shades-sr" for="shades-s"><span>Saturazione <b id="shades-s-value"></b></span><input id="shades-s" type="range" min="0" max="100" step="1" value="50"></label>
+    <label class="shades-bar shades-sr" for="shades-v"><span>Luminosità <b id="shades-v-value"></b></span><input id="shades-v" type="range" min="0" max="100" step="1" value="50"></label>
+    <button id="shades-send" type="button"><i aria-hidden="true"></i>Consegna il colore</button>
   </div>
   <div id="shades-side"><p id="shades-count"></p><ol id="shades-board" aria-label="Classifica"></ol></div>
 </section>
