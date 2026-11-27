@@ -1994,6 +1994,7 @@ body.culture-quiz {
   --vault-gold: var(--cg-accent);
   --vault-aqua: var(--cg-accent);
   --vault-violet: var(--cg-muted);
+  --panel-shadow: none;
   min-height: 100dvh;
   background: var(--cg-bg);
   color: var(--cg-ink);
@@ -2032,12 +2033,12 @@ body.culture-quiz #app :is(#controls button, #fullscreen, #chronology-reset, #ch
   transition: background-color .15s ease, border-color .15s ease, color .15s ease, transform .1s ease;
 }
 body.culture-quiz #app :is(#controls button, #fullscreen, #chronology-reset, #vault-prev, #vault-next):hover:enabled { background: #30406a; }
-body.culture-quiz #app :is([data-command="start"], [data-command="resume"], [data-command="advance"], #chronology-send, #meadow-send, #vault-send, #join-form button) {
+body.culture-quiz #app :is([data-command="start"], [data-command="resume"], [data-command="advance"], [data-command="next"], #chronology-send, #meadow-send, #vault-send, #join-form button) {
   border-color: var(--cg-accent);
   background: var(--cg-accent);
   color: var(--cg-accent-ink);
 }
-body.culture-quiz #app :is([data-command="start"], [data-command="resume"], [data-command="advance"], #chronology-send, #meadow-send, #vault-send, #join-form button):hover:enabled {
+body.culture-quiz #app :is([data-command="start"], [data-command="resume"], [data-command="advance"], [data-command="next"], #chronology-send, #meadow-send, #vault-send, #join-form button):hover:enabled {
   border-color: #f3dc95;
   background: #f3dc95;
 }
@@ -2058,7 +2059,7 @@ body.culture-quiz.chronology-quiz:has(#chronology-stage[data-ranking]) #controls
 }
 
 /* Barra superiore e comandi del conduttore. */
-body.culture-quiz .scoreboard { color: var(--cg-muted); }
+body.culture-quiz .scoreboard { color: var(--cg-muted); border-width: 1px; }
 body.culture-quiz .scoreboard strong { color: var(--cg-ink); font-size: 1.05em; font-weight: 700; letter-spacing: .04em; margin-left: 4px; }
 body.culture-quiz #round { color: var(--cg-ink); font-weight: 700; }
 /* Il suggerimento Shift + N resta per il conduttore ma non disturba il pubblico. */
@@ -2084,13 +2085,15 @@ body.culture-final #app #results {
 }
 
 /* ---------- Lobby ---------- */
-body.culture-quiz #app > nav, body.culture-quiz.lobby #app > header #subtitle { display: none; }
+body.culture-quiz #app > nav, body.culture-quiz #app > header #subtitle { display: none; }
 body.culture-quiz.lobby #app { width: min(100% - 32px, 1100px); }
-body.culture-quiz.lobby h1 {
+body.culture-quiz #app > header h1 {
   margin: 0 0 4px;
   color: var(--cg-ink);
   font: 750 clamp(2.4rem, 6vw, 4.6rem)/1 var(--cg-title);
   letter-spacing: -.03em;
+  -webkit-text-stroke: 0;
+  text-shadow: none;
 }
 body.culture-quiz.lobby .scoreboard { border: 0; background: transparent; padding: 4px 0; }
 body.culture-quiz.lobby #lobby { padding: clamp(18px, 3.5dvh, 36px) clamp(16px, 4vw, 52px); color: var(--cg-ink); }
@@ -2106,9 +2109,10 @@ body.culture-quiz.lobby #qr { background: white; padding: 6px; border-radius: 12
 body.culture-quiz.lobby .player-chip { background: var(--cg-panel-2); color: var(--cg-ink); border: 1px solid var(--cg-line); border-radius: 999px; padding: 8px 14px; }
 body.culture-quiz.lobby .player-chip.offline { opacity: .55; }
 body.culture-quiz.lobby #room > p:has(#back) { margin: 18px 0 0; }
-body.culture-quiz.lobby #back { color: var(--cg-muted); font-size: .85rem; opacity: .6; }
-body.culture-quiz.lobby #back:hover { opacity: 1; }
+body.culture-quiz #back { color: var(--cg-muted); font-size: .85rem; opacity: .6; }
+body.culture-quiz #back:hover { opacity: 1; }
 body.culture-quiz.player.lobby #lobby { text-align: center; }
+body.culture-quiz.player.lobby :is(#qr, #join-link) { display: none; }
 
 /* ---------- Apertura di manche (icona, titolo grande centrato, una riga di regola) ---------- */
 body.culture-quiz #culture-opening {
@@ -2131,7 +2135,7 @@ body.culture-quiz #culture-opening h2 {
   text-wrap: balance;
 }
 body.culture-quiz #culture-opening p { max-width: 40ch; margin: 0; color: var(--cg-muted); font-size: clamp(1rem, 2.4vw, 1.5rem); text-wrap: balance; }
-body.culture-quiz #culture-opening #culture-opening-step { color: var(--cg-accent); font-size: clamp(.8rem, 1.6vw, 1.05rem); font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+body.culture-quiz #culture-opening #culture-opening-step { color: var(--cg-accent); font-size: clamp(.9rem, 1.8vw, 1.15rem); font-weight: 600; }
 body.culture-quiz #culture-opening-rules {
   display: grid;
   gap: clamp(8px, 1.6dvh, 16px);
@@ -2143,8 +2147,7 @@ body.culture-quiz #culture-opening-rules {
 }
 body.culture-quiz #culture-opening-rules li {
   padding: clamp(10px, 1.8dvh, 18px) clamp(14px, 2.4vw, 24px);
-  border: 1px solid var(--cg-line);
-  border-left: 4px solid var(--cg-accent);
+  border: 1px solid var(--cg-line-soft);
   border-radius: 12px;
   background: var(--cg-panel);
   color: var(--cg-ink);
@@ -2382,14 +2385,11 @@ body.culture-quiz.player [data-result="correct"] .chronology-detail { color: var
 body.culture-quiz.player [data-result="wrong"] .chronology-detail { color: var(--cg-bad); }
 body.culture-quiz #chronology-status { color: var(--cg-muted); }
 body.culture-quiz [data-phase="waiting"] #chronology-status, body.culture-quiz [data-phase="reveal"] #chronology-status { color: var(--cg-ink); }
-body.culture-quiz.player #chronology-stage[data-solution] #chronology-phase { animation: cg-breathe 1.8s ease-in-out infinite; }
-@keyframes cg-breathe { 50% { opacity: .55; } }
 /* Classifica di Cronologia: stretta e centrata, nome e punti vicini. */
 body.culture-quiz .chronology-leaderboard { width: min(100%, 760px); justify-self: center; }
 body.culture-quiz .chronology-leaderboard h2 { text-align: center; color: var(--cg-ink); letter-spacing: -.025em; }
 body.culture-quiz .chronology-ranking-row {
   border: 1px solid var(--cg-line-soft);
-  border-left: 4px solid var(--cg-line);
   border-radius: 10px;
   background: var(--cg-panel);
   color: var(--cg-ink);
