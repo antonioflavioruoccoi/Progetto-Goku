@@ -62,10 +62,12 @@
   background-blend-mode: multiply;
   box-shadow: 0 22px 40px -18px #000d, 0 3px 8px #0006;
 }
-.player #shades-canvas { max-height: 38svh; padding: 10px; }
+/* Telefono: niente telaio né trama, il disegno occupa solo lo spazio rimasto (anche con caratteri grandi) */
+.player #shades-easel { align-content: stretch; }
+.player #shades-canvas { align-self: stretch; width: 100%; height: 100%; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; container-type: size; }
 /* Il disegno sta sia in larghezza sia in altezza: la larghezza nasce dall'altezza disponibile */
 #shades-art { position: relative; aspect-ratio: var(--ratio); width: min(100%, calc(50svh * var(--ratio)), 680px); }
-.player #shades-art { width: min(100%, calc(27svh * var(--ratio))); }
+.player #shades-art { width: min(100cqw, calc(100cqh * var(--ratio))); border-radius: 10px; overflow: hidden; }
 #shades-art-img { display: block; width: 100%; height: 100%; user-select: none; -webkit-user-select: none; }
 /* Zona da colorare: sul telefono prende il colore delle barre, alla soluzione quello originale */
 #shades-fill {
