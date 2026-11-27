@@ -148,8 +148,6 @@ assets/interface/timer.svg
 assets/interface/trophy.svg
 assets/interface/user-plus.svg
 assets/interface/x.svg
-assets/mascot/biscotto.webp
-assets/mascot/cervello.webp
 assets/pokeindizi/background/103.png
 assets/pokeindizi/background/115.png
 assets/pokeindizi/background/12.png
@@ -293,6 +291,7 @@ game.js
 host/index.html
 index.html
 invite/index.html
+mascot.js
 pbl.085.fomantis.png
 play/index.html
 pokeball.webp

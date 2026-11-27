@@ -286,8 +286,7 @@
   position: fixed;
   z-index: 60;
   left: 0;
-  bottom: max(6px, env(safe-area-inset-bottom));
-  width: clamp(78px, 22vw, 120px);
+  bottom: max(4px, env(safe-area-inset-bottom));
   margin: 0;
   padding: 0;
   border: 0;
@@ -303,12 +302,11 @@
 .mascot:hover:enabled, .mascot:active:enabled { background: none; box-shadow: none; }
 .mascot:focus-visible { outline: 3px solid #e8cb77; outline-offset: 4px; border-radius: 12px; }
 .mascot-body { display: block; transform-origin: 50% 100%; animation: mascot-fall .75s cubic-bezier(.55, 0, 1, .45) both; }
-.mascot img { display: block; width: 100%; height: auto; transform: scaleX(var(--dir, 1)); transform-origin: 50% 100%; pointer-events: none; user-select: none; -webkit-user-drag: none; }
-.mascot.is-landed .mascot-body { animation: mascot-land .5s var(--ease-out, cubic-bezier(.16, 1, .3, 1)) both; }
+/* pixel art disegnata in mascot.js: ingrandita a pixel interi, nitida, girata verso dove cammina */
+.mascot canvas { display: block; height: auto; image-rendering: pixelated; transform: scaleX(var(--dir, 1)); pointer-events: none; }
 .mascot.is-awake .mascot-body { animation: mascot-wake .6s ease-out both; }
-.mascot.is-walking img { animation: mascot-waddle .42s ease-in-out infinite alternate; }
-.mascot.is-waving .mascot-body { animation: mascot-wave .9s ease-in-out 2 both; }
-.mascot.is-waving img { animation: none; }
+/* da pronta niente animazioni CSS sul corpo, sennò togliendo is-awake ripartirebbe la caduta */
+.mascot.is-ready .mascot-body { animation: none; }
 .mascot.is-leaving { opacity: 0; transition: opacity .3s ease; }
 /* Polvere all'atterraggio. */
 .mascot::before, .mascot::after {
@@ -329,7 +327,7 @@
 
 .mascot-bubble {
   position: absolute;
-  bottom: calc(100% + 6px);
+  bottom: calc(100% - 9px * var(--s, 2));
   left: 50%;
   width: max-content;
   max-width: min(220px, 70vw);
@@ -368,34 +366,18 @@
 .mascot[data-edge='right'] .mascot-bubble.is-on { transform: none; }
 .mascot[data-edge='right'] .mascot-bubble::after { left: 70%; }
 
-@keyframes mascot-fall { from { transform: translateY(-110vh) rotate(-10deg); } to { transform: none; } }
-@keyframes mascot-land {
-  0% { transform: scale(1.18, .78); }
-  45% { transform: scale(.94, 1.08) translateY(-10px); }
-  100% { transform: none; }
-}
+@keyframes mascot-fall { from { transform: translateY(-110vh); } to { transform: none; } }
 @keyframes mascot-wake {
-  0% { filter: brightness(.6) saturate(.4); transform: none; }
-  35% { filter: brightness(1.5) drop-shadow(0 0 10px #e8cb77); transform: translateY(-14px); }
-  60% { transform: none; }
-  100% { filter: none; transform: none; }
-}
-@keyframes mascot-waddle {
-  from { transform: scaleX(var(--dir, 1)) rotate(-4deg); }
-  to { transform: scaleX(var(--dir, 1)) translateY(-5px) rotate(4deg); }
-}
-@keyframes mascot-wave {
-  0%, 100% { transform: none; }
-  20% { transform: rotate(-9deg) translateY(-6px); }
-  45% { transform: rotate(8deg); }
-  70% { transform: rotate(-6deg) translateY(-3px); }
+  0% { filter: brightness(.7); }
+  35% { filter: brightness(1.35) drop-shadow(0 0 8px #e8cb77); }
+  100% { filter: none; }
 }
 @keyframes mascot-dust-l { 0% { opacity: .7; transform: none; } 100% { opacity: 0; transform: translate(-60%, -8px) scale(1.6); } }
 @keyframes mascot-dust-r { 0% { opacity: .7; transform: none; } 100% { opacity: 0; transform: translate(60%, -8px) scale(1.6); } }
 
 @media (prefers-reduced-motion: reduce) {
   .live-shell:not(.host, .player) #app *, #app.is-quaking { animation: none !important; }
-  .mascot-body, .mascot img, .mascot::before, .mascot::after { animation: none !important; }
+  .mascot-body, .mascot::before, .mascot::after { animation: none !important; }
   .mascot { animation: dash-fade .3s ease both; }
   @keyframes dash-fade { from { opacity: 0; } }
 }
