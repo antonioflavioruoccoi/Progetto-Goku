@@ -3,8 +3,10 @@
 const el = (id) => document.getElementById(id);
 const stage = el("shades-stage");
 const bars = { h: el("shades-h"), s: el("shades-s"), v: el("shades-v") };
-// Quadrato colore: in orizzontale la saturazione, in verticale la luminosita' (pilota le barre s e v nascoste)
+// Quadrato colore: in orizzontale la saturazione, in verticale la luminosita' (pilota le barre s e v nascoste).
+// Accanto, la striscia verticale delle tinte (pilota la barra h nascosta). Le barre restano per la tastiera.
 const pad = el("shades-pad");
+const hueStrip = el("shades-hue");
 const setText = (node, value) => { if (node.textContent !== value) node.textContent = value; };
 const vibrate = (pattern) => { try { navigator.vibrate?.(pattern); } catch {} };
 // Colori dei tubetti: titolo multicolore e "macchie" della tavolozza
@@ -52,6 +54,7 @@ function paintBars() {
   stage.style.setProperty("--pick-hue", hsvToHex({ h: c.h, s: 100, v: 100 }));
   stage.style.setProperty("--pick-s", c.s / 100);
   stage.style.setProperty("--pick-v", c.v / 100);
+  stage.style.setProperty("--pick-h", c.h / 360);
   setText(el("shades-h-value"), `${c.h}°`);
   setText(el("shades-s-value"), `${c.s}%`);
   setText(el("shades-v-value"), `${c.v}%`);
@@ -66,10 +69,11 @@ function setupRound(s, host) {
   const mask = `url("/${x.mask}")`;
   el("shades-fill").style.maskImage = el("shades-fill").style.webkitMaskImage = mask;
   setText(el("shades-category"), x.category);
+  // Nome sulla prima riga, cosa colorare sulla seconda: niente righe spezzate a meta' frase
   const name = document.createElement("strong"), part = document.createElement("span");
   name.textContent = x.name;
-  part.textContent = x.part;
-  el("shades-prompt").replaceChildren(name, " ", part);
+  part.textContent = `Colora ${x.part}`;
+  el("shades-prompt").replaceChildren(name, part);
   // Come in Colortoon si parte da un colore a caso: nessun vantaggio per chi non tocca nulla
   bars.h.value = Math.floor(Math.random() * 360);
   bars.s.value = 35 + Math.floor(Math.random() * 50);
@@ -132,7 +136,13 @@ window.goShades = (s, host, tools) => {
   stage.toggleAttribute("data-paused", room.phase === "paused");
   stage.toggleAttribute("data-done", !!me?.done);
   setText(el("shades-round"), `${room.round}/${x.total}`);
-  setText(el("shades-count"), `${s.received}/${s.players.length} hanno consegnato`);
+  const count = `${s.received}/${s.players.length}`;
+  if (el("shades-count").dataset.count !== count) {
+    el("shades-count").dataset.count = count;
+    const n = document.createElement("b");
+    n.textContent = count;
+    el("shades-count").replaceChildren(n, s.players.length === 1 ? " ha consegnato" : " hanno consegnato");
+  }
 
   if (revealed) {
     if (!stage.hasAttribute("data-revealed")) {
@@ -167,11 +177,12 @@ window.goShadesTick = (s, remaining, untilStart) => {
   setText(el("shades-phase"), s.room.phase === "paused" ? "In pausa"
     : revealed ? (!s.can_control ? "Ecco il colore giusto" : last ? "Ecco il colore giusto. Poi il podio." : "Ecco il colore giusto. Premi Avanti.")
     : intro ? "Prepara i pennelli…"
-    : s.me?.done ? "Colore consegnato: guarda lo schermo"
+    : s.me?.done ? "In attesa degli altri giocatori"
     : s.can_control ? "Ricreate il colore sul telefono" : "Ricrea il colore originale");
   const canPaint = !intro && s.room.phase === "question" && remaining > 0 && !!s.me && !s.me.done && !s.can_control;
   for (const bar of Object.values(bars)) bar.disabled = !canPaint || sending;
   pad.toggleAttribute("data-disabled", !canPaint || sending);
+  hueStrip.toggleAttribute("data-disabled", !canPaint || sending);
   el("shades-send").disabled = !canPaint || sending;
   // Se il tempo sta per finire e hai gia' mosso le barre, il colore parte da solo (margine per reti lente)
   if (canPaint && touched && remaining < 2500 && autoSent !== roundKey) {
@@ -207,23 +218,30 @@ async function send() {
 }
 el("shades-send").addEventListener("click", send);
 
-// Trascinamento nel quadrato (mouse e touch): il dito resta "agganciato" anche se esce dal bordo
+// Trascinamento nel quadrato e sulla striscia (mouse e touch): il dito resta "agganciato" anche se esce dal bordo
 const clamp01 = (n) => Math.min(1, Math.max(0, n));
-function padAt(event) {
-  const r = pad.getBoundingClientRect();
+function draggable(node, apply) {
+  const at = (event) => {
+    apply(node.getBoundingClientRect(), event);
+    touched = true;
+    paintBars();
+  };
+  node.addEventListener("pointerdown", (event) => {
+    if (node.hasAttribute("data-disabled")) return;
+    event.preventDefault();
+    node.setPointerCapture(event.pointerId);
+    node.setAttribute("data-drag", "");
+    at(event);
+  });
+  node.addEventListener("pointermove", (event) => { if (node.hasPointerCapture(event.pointerId)) at(event); });
+  const end = () => { if (node.hasAttribute("data-drag")) { node.removeAttribute("data-drag"); vibrate(8); } };
+  node.addEventListener("pointerup", end);
+  node.addEventListener("pointercancel", end);
+}
+draggable(pad, (r, event) => {
   bars.s.value = Math.round(clamp01((event.clientX - r.left) / r.width) * 100);
   bars.v.value = Math.round((1 - clamp01((event.clientY - r.top) / r.height)) * 100);
-  touched = true;
-  paintBars();
-}
-pad.addEventListener("pointerdown", (event) => {
-  if (pad.hasAttribute("data-disabled")) return;
-  event.preventDefault();
-  pad.setPointerCapture(event.pointerId);
-  pad.setAttribute("data-drag", "");
-  padAt(event);
 });
-pad.addEventListener("pointermove", (event) => { if (pad.hasPointerCapture(event.pointerId)) padAt(event); });
-const padEnd = () => { if (pad.hasAttribute("data-drag")) { pad.removeAttribute("data-drag"); vibrate(8); } };
-pad.addEventListener("pointerup", padEnd);
-pad.addEventListener("pointercancel", padEnd);
+draggable(hueStrip, (r, event) => {
+  bars.h.value = Math.min(359, Math.round(clamp01((event.clientY - r.top) / r.height) * 360));
+});

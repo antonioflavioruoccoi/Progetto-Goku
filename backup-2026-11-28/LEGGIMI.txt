@@ -1,0 +1,6 @@
+Backup del 28/11/2026 (commit Git fba0c43) PRIMA della revisione UX/UI della manche 7 "50 Sfumature"
+(selettore colore con barra verticale, immagine senza cornice) e dei 18 nuovi marchi.
+SCADE il 01/12/2026: il primo task dopo quella data deve cancellare questa cartella.
+Contenuto: pagine, grafica e logica della manche, dati dei marchi, codice del server.
+Ripristino: tar xzf backup-2026-11-28/sfumature-prima-della-revisione.tar.gz
+Per tornare indietro online: workflow "Pubblica online" con rollback.
